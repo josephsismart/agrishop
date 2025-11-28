@@ -1,5 +1,7 @@
+<?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
 <!DOCTYPE html>
 <html lang="en">
+<?php $role_lvl = $this->session->agrishop_login_level; ?>
 
 <head>
     <title><?= $system_title ?> | <?= $page_title ?></title>
@@ -13,14 +15,19 @@
     <meta name="keywords" content="">
     <meta name="description" content="">
 
+
+    <link rel="stylesheet" href="<?= base_url() ?>plugins/fontawesome-free/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ" crossorigin="anonymous">
     <link rel="stylesheet" type="text/css" href="<?php echo base_url(); ?>dist/layout_shop/css/vendor.css">
     <link rel="stylesheet" type="text/css" href="<?php echo base_url(); ?>dist/layout_shop/css/style.css">
+    <link rel="stylesheet" href="<?= base_url() ?>plugins/sweetalert2-theme-bootstrap-4/bootstrap-4.min.css">
 
+    <!-- DataTables -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&family=Open+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <script src="<?= base_url() ?>plugins/jquery/jquery.min.js"></script>
 
 </head>
 
@@ -249,7 +256,11 @@
     </svg>
 
     <div class="preloader-wrapper">
-        <div class="preloader">
+        <div class="text-center mt-5">
+            <i class="fas fa-circle-notch fa-spin fa-4x" style="color: #4bcf1fff;"></i>
+        </div>
+        <div class="text-center mt-5">
+            <img src="<?php echo base_url(); ?>dist/layout_shop/images/logo.svg" width="240" height="70" alt="logo">
         </div>
     </div>
 
@@ -296,54 +307,138 @@
         </div>
     </div>
 
-    <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasNavbar">
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasNavbar">
 
         <div class="offcanvas-header justify-content-between">
             <h4 class="fw-normal text-uppercase fs-6">Menu</h4>
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
 
+        <div class="offcanvas-body">
+
+            <ul class="navbar-nav justify-content-end menu-list list-unstyled d-flex gap-md-3 mb-0">
+                <li class="nav-item border-dashed active">
+                    <a href="index.html" class="nav-link d-flex align-items-center gap-3 text-dark p-2">
+                        <i class="fa fa-chart-line"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item border-dashed">
+                    <a href="#" data-bs-toggle="modal" data-bs-target="#profileModal" class="nav-link d-flex align-items-center gap-3 text-dark p-2">
+                        <i class="fa fa-user"></i>
+                        <span>My Profile</span>
+                    </a>
+                </li>
+                <!-- <?php //if ($role_lvl == 2) { 
+                        ?> -->
+                <?php if ($role_lvl != 2 && $this->session->agrishop_request_registration == 0) { ?>
+                    <li class="nav-item border-dashed">
+                        <a href="#" data-bs-toggle="modal" data-bs-target="#registerFarmerModal" class="nav-link d-flex align-items-center gap-3 text-dark p-2 bg-success">
+                            <i class="fa fa-paste"></i>
+                            <span>Register as Farmer</span>
+                        </a>
+                    </li>
+                <?php } ?>
+                <?php if ($this->session->agrishop_request_registration == 1) { ?>
+                    <li class="nav-item border-dashed">
+                        <a href="#" class="nav-link d-flex align-items-center gap-3 text-dark p-2 bg-warning">
+                            <i class="fa fa-exclamation-triangle"></i>
+                            <span>Pending Registration as Farmer</span>
+                        </a>
+                    </li>
+                <?php } ?>
+                <!-- <?php //if ($role_lvl == 2) { 
+                        ?> -->
+                <li class="nav-item border-dashed">
+                    <a href="<?php base_url() ?>userfarmer/Farms" class="nav-link d-flex align-items-center gap-3 text-dark p-2">
+                        <i class="fa fa-tractor"></i>
+                        <span>My Farms</span>
+                    </a>
+                </li>
+                <li class="nav-item border-dashed">
+                    <a href="index.html" class="nav-link d-flex align-items-center gap-3 text-dark p-2">
+                        <i class="fa fa-carrot"></i>
+                        <span>My Produce</span>
+                    </a>
+                </li>
+                <!-- <?php //} 
+                        ?> -->
+                <!-- <?php //if ($role_lvl == 1 or $role_lvl == 2) { 
+                        ?> -->
+                <li class="nav-item border-dashed">
+                    <a href="index.html" class="nav-link d-flex align-items-center gap-3 text-dark p-2">
+                        <i class="fa fa-shopping-basket"></i>
+                        <span>My Cart</span>
+                    </a>
+                </li>
+                <li class="nav-item border-dashed">
+                    <a href="index.html" class="nav-link d-flex align-items-center gap-3 text-dark p-2">
+                        <i class="fa fa-table"></i>
+                        <span>My Orders</span>
+                    </a>
+                </li>
+                <!-- <?php //} 
+                        ?> -->
+                <li class="nav-item border-dashed">
+                    <a href="<?= base_url() ?>logout" class="nav-link d-flex align-items-center gap-3 text-dark p-2">
+                        <i class="fa fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </a>
+                </li>
+            </ul>
+
+        </div>
+
     </div>
 
     <header>
-        <div class="container-fluid">
+        
+        <div class="container-lg">
             <div class="row py-3 border-bottom">
 
-                <div class="col-3 text-center text-sm-start d-flex gap-3 justify-content-center justify-content-md-start">
-                    <div class="d-flex align-items-center my-3 my-sm-0">
-                        <a href="index.html">
-                            <img src="<?php echo base_url(); ?>dist/layout_shop/images/logo.svg" alt="logo" class="img-fluid">
-                        </a>
-                    </div>
-                    <!-- <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar"
-              aria-controls="offcanvasNavbar">
-              <svg width="24" height="24" viewBox="0 0 24 24"><use xlink:href="#menu"></use></svg>
-            </button> -->
-
+                <div class="col-5 text-center text-sm-start d-flex gap-3">
+                    <a href="index.html">
+                        <img src="<?php echo base_url(); ?>dist/layout_shop/images/logo.svg" alt="logo" class="img-fluid">
+                    </a>
                 </div>
 
-
-
-
-
-                <div class="col-9">
+                <div class="col-7">
                     <ul class="d-flex justify-content-end list-unstyled m-0">
                         <li>
-                            <a href="<?php echo base_url(); ?>login" class="p-2 mx-1" style="text-decoration: none;">
-                                <i class="fa fa-user"></i>Login
-                            </a>
+                            <?php if ($role_lvl != "") { ?>
+                                <a href="<?php if ($role_lvl == 0) {
+                                                echo base_url(); ?>user_admin<?php } elseif ($role_lvl == 1) {
+                                                                                                    echo base_url(); ?>user_consumer<?php } elseif ($role_lvl == 2) {
+                                                                                                    echo base_url(); ?>user_farmer<?php } ?>" class="p-2 mx-1" style="text-decoration: none;font-weight: bold">
+                                    <i class="fa fa-user"></i> <?php echo $this->session->agrishop_login_uname; ?>
+                                </a>
+                            <?php } else { ?>
+                                <a href="<?php echo base_url(); ?>login" class="p-2 mx-1" style="text-decoration: none;">
+                                    <i class="fa fa-user"></i> Login
+                                </a>
+                            <?php } ?>
                         </li>
-                        <li>
-                            <a href="<?php echo base_url(); ?>register" class="p-2 mx-1" style="text-decoration: none;">
-                                <i class="fa fa-user"></i>Register
-                            </a>
-                        </li>
+                        <?php if ($role_lvl == "") { ?>
+                            <li><a href="<?php echo base_url(); ?>signup" class="p-2 mx-1" style="text-decoration: none;">
+                                    <i class="fa fa-user"></i> Sign Up
+                                </a>
+                            </li>
+                        <?php } ?>
+                        <?php if ($role_lvl != "") { ?>
+                            <li>
+                                <a href="#" class="p-2 mx-1" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar">
+                                    <svg width="24" height="24" viewBox="0 0 24 24">
+                                        <use xlink:href="#menu"></use>
+                                    </svg>
+                                </a>
+                            </li>
+                        <?php } ?>
                     </ul>
                 </div>
 
                 <div class="col-12 mt-3">
                     <div class="search-bar row bg-light p-2 rounded-4">
-                      
+
                         <div class="col-11">
                             <form id="search-form" class="text-center" action="index.html" method="post">
                                 <input type="text" class="form-control border-0 bg-transparent" placeholder="Search for more than 20,000 products">
@@ -369,7 +464,9 @@
                     <p class="fs-4">Order now to lock in peak freshness before it’s gone.</p>
                     <div class="d-flex gap-3">
                         <a href="#" class="btn bg-danger text-uppercase fs-6 rounded-pill px-4 py-3 mt-3 text-white">Start Shopping</a>
-                        <a href="#" class="btn btn-dark text-uppercase fs-6 rounded-pill px-4 py-3 mt-3">Join Now</a>
+                        <?php if (!$this->session->agrishop_login_id) { ?>
+                            <a href="<?= base_url() ?>signup" class="btn btn-dark text-uppercase fs-6 rounded-pill px-4 py-3 mt-3">Sign Up Now</a>
+                        <?php } ?>
                     </div>
                     <div class="row my-5">
                         <div class="col">
@@ -2883,11 +2980,35 @@
             </div>
         </div>
     </div>
+
+    <?php $this->load->view('interface/system/layout/modals') ?>
+
     <script src="<?php echo base_url(); ?>dist/layout_shop/js/jquery-1.11.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe" crossorigin="anonymous"></script>
     <script src="<?php echo base_url(); ?>dist/layout_shop/js/plugins.js"></script>
     <script src="<?php echo base_url(); ?>dist/layout_shop/js/script.js"></script>
+    <script src="<?= base_url() ?>plugins/sweetalert2/sweetalert2.min.js"></script>
+    <script src="<?= base_url() ?>plugins/jquery/jquery.form.min.js"></script>
+    <!-- DataTables -->
+    <script src="<?= base_url() ?>plugins/datatables/jquery.dataTables.js"></script>
+    <script src="<?= base_url() ?>plugins/datatables-bs4/js/dataTables.bootstrap4.js"></script>
+    <script src="<?= base_url() ?>plugins/datatables/extensions/buttons/js/dataTables.buttons.min.js"></script>
+    <script src="<?= base_url() ?>plugins/datatables/extensions/buttons/js/buttons.print.min.js"></script>
+    <script src="<?= base_url() ?>plugins/datatables/extensions/buttons/js/jszip.min.js"></script>
+    <script src="<?= base_url() ?>plugins/datatables/extensions/buttons/js/buttons.flash.min.js"></script>
+    <script src="<?= base_url() ?>plugins/datatables/extensions/buttons/js/buttons.html5.min.js"></script>
+    <script src="<?= base_url() ?>plugins/bootstrap-switch/js/bootstrap-switch.min.js"></script>
+    <script src="<?= base_url() ?>plugins/datatables/extensions/buttons/js/dataTables.buttons.min.js"></script>
+    <script src="<?= base_url() ?>plugins/datatables/extensions/responsive/js/dataTables.responsive.min.js"></script>
+    
+    <?php $this->load->view('interface/system/layout/script') ?>
+    <!-- <script type="text/javascript">
+        getTable("FarmList", 0, 5);
+    </script> -->
+
+
 </body>
+
 
 </html>

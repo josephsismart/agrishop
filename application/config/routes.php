@@ -58,6 +58,7 @@ $route['translate_uri_dashes'] = FALSE;
 //admin
 $route['map'] = 'system/Map';
 $route['login'] = 'system/Login';
+$route['signup'] = 'system/Signup';
 $route['index'] = 'system/Index';
 $route['registration'] = 'system/Registration';
 
@@ -66,6 +67,7 @@ $route['changepassword'] = 'userpassword/Changepassword';
 
 $route['logout'] = 'system/Login/request_logout';
 $route['requestlogin'] = 'system/Login/request_login';
+$route['requestsignup'] = 'system/Signup/request_signup';
 
 // $route['save_national'] = 'useradmin/Dataentry/savenational';
 // $route['save_local'] = 'uservalidator/Dataentry/savelocal';

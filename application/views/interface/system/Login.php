@@ -18,11 +18,11 @@
     <link rel="stylesheet" href="<?= base_url() ?>dist/css/adminlte.min.css">
 </head>
 
-<body class="hold-transition login-page" style="background-image : url(<?= $system_op ?> );background-repeat: no-repeat; background-size: 45%;background-position: center center;overflow:hidden;">
+<body class="hold-transition login-page">
     <div class="login-box">
 
         <!-- Preloader -->
-        <div class="preloader flex-column justify-content-center align-items-center">
+        <div class="preloader flex-column justify-content-center align-items-center bg-white">
             <!-- <img class="animation__shake" src="<?= $system_svg ?>" alt="AdminLTELogo" height="500" width="500"/> -->
             <img src="<?php echo base_url(); ?>dist/layout_shop/images/logo.svg" width="240" height="70" alt="logo">
             <!-- Agusan National High School Information System  -->
@@ -30,7 +30,9 @@
         <!-- /.login-logo -->
         <div class="card card-outline card-success">
             <div class="card-header text-center">
-                <img src="<?php echo base_url(); ?>dist/layout_shop/images/logo.svg" width="240" height="70" alt="logo">
+                <a href="<?= base_url() ?>index" class="d-block">
+                    <img src="<?php echo base_url(); ?>dist/layout_shop/images/logo.svg" width="240" height="70" alt="logo">
+                </a>
             </div>
             <div class="card-body">
                 <?php if ($this->input->get("login_attempt") == md5(0) || $this->input->get("login_attempt") == md5(1)) : ?>
@@ -39,7 +41,7 @@
                 <?php if ($this->input->get("login_attempt") != md5(0) || $this->input->get("login_attempt") != md5(1)) : ?>
                     <p class="login-box-msg">Sign in to start your session</p>
                 <?php endif ?>
-
+                
                 <form action="<?= base_url() ?>requestlogin" method="post">
                     <div class="input-group mb-3">
                         <input type="text" name="username" class="form-control <?php if ($this->input->get("login_attempt") == md5(0)) : ?> is-invalid <?php endif ?>" placeholder="Email" autofocus autocomplete="off" required>

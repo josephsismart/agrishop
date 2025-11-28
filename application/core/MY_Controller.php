@@ -12,7 +12,7 @@ class MY_Controller extends CI_Controller
         $data = [
             "system_title"  => "AgriShop",
             // "system_title"  => "Agusan National High School",
-            "system_logo"   => base_url("dist/img/media/icons/icon.png"),
+            "system_logo"   => base_url("dist/layout_shop/img/media/icons/icon.png"),
             "system_svg"    => base_url("dist/layout_shop/images/logo1.svg"),
             "system_op"    => base_url("dist/img/media/icons/icon_op.png"),
             "system_svg_1x1"    => base_url("dist/img/media/icons/1x1.png"),
@@ -35,9 +35,9 @@ class MY_Controller extends CI_Controller
 
     public function public_create_page($data = [])
     {
-        $level = $this->session->schoolmis_login_level;
-        $defaultPassword = $this->session->schoolmis_change_password;
-        $uri = $this->session->schoolmis_login_uri;
+        $level = $this->session->agrishop_login_level;
+        $defaultPassword = $this->session->agrishop_change_password;
+        $uri = $this->session->agrishop_login_uri;
         if ($level != "") {
             if ($defaultPassword == 't') {
                 return $this->load->view('interface/userpassword/layout/Page', $data, false);
@@ -54,10 +54,10 @@ class MY_Controller extends CI_Controller
 
     public function redirect()
     {
-        $login = $this->session->schoolmis_login_id;
-        $defaultPassword = $this->session->schoolmis_change_password;
-        $uri = $this->session->schoolmis_login_uri;
-        $landing = $this->session->schoolmis_login_landing;
+        $login = $this->session->agrishop_login_id;
+        $defaultPassword = $this->session->agrishop_change_password;
+        $uri = $this->session->agrishop_login_uri;
+        $landing = $this->session->agrishop_login_landing;
         if (!$login) {
             redirect(base_url('/'));
         }
@@ -72,7 +72,7 @@ class MY_Controller extends CI_Controller
 
     public function redirect2()
     {
-        $login = $this->session->schoolmis_login_id;
+        $login = $this->session->agrishop_login_id;
         if (!$login) {
             redirect(base_url('/'));
         }
@@ -80,11 +80,12 @@ class MY_Controller extends CI_Controller
 
     public function redirect_home()
     {
-        $level = $this->session->schoolmis_login_level;
-        $defaultPassword = $this->session->schoolmis_change_password;
-        $uri = $this->session->schoolmis_login_uri;
-        $landing = $this->session->schoolmis_login_landing;
-        if (isset($this->session->schoolmis_login_id) && $this->uri->segment(1) == "" || $this->uri->segment(1) == "login" || $this->uri->segment(1) == "map") {
+        $level = $this->session->agrishop_login_level;
+        $defaultPassword = $this->session->agrishop_change_password;
+        $uri = $this->session->agrishop_login_uri;
+        $landing = $this->session->agrishop_login_landing;
+        // if (isset($this->session->agrishop_login_id) && $this->uri->segment(1) == "" || $this->uri->segment(1) == "login" || $this->uri->segment(1) == "map") {
+        if (isset($this->session->agrishop_login_id) && $this->uri->segment(1) == "" || $this->uri->segment(1) == "login" || $this->uri->segment(1) == "map") {
             if ($level != "") {
                 if ($defaultPassword == 1) {
                     redirect(base_url('userpassword/changepassword'));
@@ -97,7 +98,7 @@ class MY_Controller extends CI_Controller
 
     public function redirect_session()
     {
-        $login = $this->session->schoolmis_login_id;
+        $login = $this->session->agrishop_login_id;
         if (!$login) {
             redirect(base_url('/'));
         }
@@ -608,7 +609,7 @@ class MY_Controller extends CI_Controller
     public function confirmPassword($a)
     {
         $pwd = md5($a);
-        $login_id = $this->session->schoolmis_login_id;
+        $login_id = $this->session->agrishop_login_id;
         $query = $this->db->query("SELECT 1 AS pwd FROM tbl_user WHERE id=$login_id AND password='$pwd' LIMIT 1");
         return $query->row("pwd");
     }
@@ -645,8 +646,8 @@ class MY_Controller extends CI_Controller
 
     public function userlog($action)
     {
-        $login_id = $this->session->schoolmis_login_id;
-        $login_alias = $this->session->schoolmis_login_uname;
+        $login_id = $this->session->agrishop_login_id;
+        $login_alias = $this->session->agrishop_login_uname;
         $now = $this->now();
         $action = addslashes($action);
         $ip = $this->get_ip();
@@ -706,8 +707,8 @@ class MY_Controller extends CI_Controller
             }
         }
         if ($exist == true) {
-            $login_id = $this->session->schoolmis_login_id;
-            $login_alias = $this->session->schoolmis_login_uname;
+            $login_id = $this->session->agrishop_login_id;
+            $login_alias = $this->session->agrishop_login_uname;
             $now = $this->now();
             // $action = $action; //addslashes($action);
             $ip = $this->get_ip();
@@ -728,8 +729,8 @@ class MY_Controller extends CI_Controller
     public function learnerlog($action)
     {
         $sy = $this->getOnLoad()["sy_id"];
-        $login_id = $this->session->schoolmis_login_id;
-        $login_alias = $this->session->schoolmis_login_uname;
+        $login_id = $this->session->agrishop_login_id;
+        $login_alias = $this->session->agrishop_login_uname;
         $now = $this->now();
         $action = addslashes($action);
         $ip = $this->get_ip();
