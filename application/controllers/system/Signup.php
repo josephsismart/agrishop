@@ -76,20 +76,28 @@ class Signup extends MY_Controller
                 "barangay_id" => $barangay,
 
             ];
-            if ($valid_id != "" && $this->db->insert("public.person", $data_person)) {
-                $inid = $this->db->insert_id();
-                $data_farmer = [
-                    "person_id" => $inid,
-                    "date_registered" => Date('Y-m-d'),
-                    "id_img_path" => 'id_path',
-                    "presented_valid_id" => $valid_id,
-                    "organization" => $organization,
-                ];
-                $this->db->insert("public.farmer", $data_farmer);
-            }
-
             if ($this->db->insert("public.person", $data_person)) {
                 $inid = $this->db->insert_id();
+
+                if ($valid_id != "") {
+
+                    $data_farmer = [
+                        "person_id" => $inid,
+                        "date_registered" => Date('Y-m-d'),
+                        "presented_valid_id" => $valid_id,
+                        "organization" => $organization,
+                    ];
+
+                    if (isset($_FILES['picFarmerID']) && $_FILES['picFarmerID']['error'] === UPLOAD_ERR_OK) {
+                        // Normal upload
+                        $upload = $this->uploadImg($_FILES['picFarmerID'], $first_name, 'farmer', 'picFarmerID');
+                        $data_farmer += [
+                            "id_img_path" => $upload
+                        ];
+                    }
+                    $this->db->insert("public.farmer", $data_farmer);
+                }
+
                 $data_user = [
                     "person_id" => $inid,
                     "username" => $username,
