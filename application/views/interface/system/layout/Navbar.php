@@ -28,12 +28,12 @@ $farm_produce = base_url() . $uri . '/FarmProduce';
             <!-- <?php //if ($role_lvl == 2) { 
                     ?> -->
             <?php if ($role_lvl != 2 && $this->session->agrishop_request_registration == 0) { ?>
-                <li class="nav-item border-dashed">
+                <!-- <li class="nav-item border-dashed">
                     <a href="#" data-bs-toggle="modal" data-bs-target="#registerFarmerModal" class="nav-link d-flex align-items-center gap-3 text-dark p-2 bg-success">
                         <i class="fa fa-paste"></i>
                         <span>Register as Farmer</span>
                     </a>
-                </li>
+                </li> -->
             <?php } ?>
             <?php if ($this->session->agrishop_request_registration == 1) { ?>
                 <li class="nav-item border-dashed">

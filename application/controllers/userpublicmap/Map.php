@@ -103,12 +103,12 @@ class Map extends MY_Controller
                             })'><i class='fa fa-cart'></i> Add to cart</span>";
             $data[] = array(
                 $add_to_cart,
-                '<input type="number" style="width: 100px;" id="qty'.$value->fp_id.'" min="1" max="'.$value->qty_left.'" value="1" class="form-control form-control-sm">',
+                '<input type="number" style="width: 100px;" id="qty' . $value->fp_id . '" min="1" max="' . $value->qty_left . '" value="1" class="form-control form-control-sm">',
                 $image_path,
                 $value->produce,
                 $value->harvest_schedule,
                 $value->qty_left,
-                $value->price.'/'.$value->uom,
+                $value->price . '/' . $value->uom,
                 // $value->class_name,
                 // $is_seasonal,
                 // $is_active,
@@ -121,6 +121,60 @@ class Map extends MY_Controller
             'data' => $data,
         );
         echo json_encode($response);
+    }
+
+    public function search_barangay()
+    {
+        $keyword = $this->input->post('keyword');
+
+        if (strlen($keyword) < 3) {
+            echo json_encode([]);
+            return;
+        }
+
+        // Split the keyword into individual words
+        $words = explode(' ', $keyword);
+
+        // Build dynamic "ILIKE" filters
+        $conditions = "";
+        foreach ($words as $w) {
+            $w = trim($w);
+            if ($w !== "") {
+                $conditions .= " AND CONCAT(
+                t1.description,' ',
+                t2.description,', ',
+                t3.description,', ',
+                t4.region
+            ) ILIKE '%" . $this->db->escape_like_str($w) . "%' ";
+            }
+        }
+
+        $query = $this->db->query("SELECT 
+                                        t1.id,
+                                        UPPER(CONCAT(
+                                            t1.description, ' ',
+                                            t2.description, ', ',
+                                            t3.description, ', ',
+                                            t4.region
+                                        )) AS address
+                                    FROM tbl_barangay t1
+                                    LEFT JOIN tbl_citymun t2 ON t1.citymun_id = t2.id
+                                    LEFT JOIN tbl_province t3 ON t2.province_id = t3.id
+                                    LEFT JOIN tbl_region t4 ON t3.region_id = t4.id
+                                    WHERE 1=1 
+                                    $conditions
+                                    ORDER BY t1.description 
+                                    LIMIT 10");
+
+        $results = [];
+        foreach ($query->result() as $row) {
+            $results[] = [
+                'id'   => $row->id,
+                'text' => $row->address
+            ];
+        }
+
+        echo json_encode($results);
     }
 }
 

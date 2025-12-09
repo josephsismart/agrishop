@@ -71,6 +71,8 @@ $route['requestsignup'] = 'system/Signup/request_signup';
 $route['sendSMS'] = 'system/Signup/sendSMS';
 $route['sendEmail'] = 'system/Signup/email_verification';
 
+$route['search-barangay'] = 'userpublicmap/map/search_barangay';
+
 // $route['save_national'] = 'useradmin/Dataentry/savenational';
 // $route['save_local'] = 'uservalidator/Dataentry/savelocal';
 // $route['get_national'] = 'useradmin/Dataentry/getnational';

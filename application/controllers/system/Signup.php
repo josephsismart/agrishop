@@ -28,18 +28,19 @@ class Signup extends MY_Controller
         // $sy = $this->getOnLoad()["sy_id"];
         $ret = false;
         $uri = "";
-        
+
         $first_name = strtoupper(trim($this->input->post('firstname')));
         $last_name = strtoupper(trim($this->input->post('lastname')));
         $sex = $this->input->post('sex') == 'MALE' ? TRUE : FALSE; //strtoupper(trim($this->input->post('sex')));
         $birthDate = strtoupper(trim($this->input->post('birthDate')));
         $contact = strtoupper(trim($this->input->post('contact')));
         $email = strtoupper(trim($this->input->post('email')));
-        
+        $barangay = trim($this->input->post('barangay'));
+
 
         $username = $this->input->post('username');
         $password = md5($this->input->post('password')); //md5($this->input->post('password'));
-        
+
         #for farmers
         $valid_id = $this->input->post('valid_id');
         $picFarmerID = $this->input->post('picFarmerID');
@@ -72,14 +73,28 @@ class Signup extends MY_Controller
                 "birthdate" => $birthDate,
                 "contact_num" => $contact,
                 "email_address" => $email,
+                "barangay_id" => $barangay,
+
             ];
+            if ($valid_id != "" && $this->db->insert("public.person", $data_person)) {
+                $inid = $this->db->insert_id();
+                $data_farmer = [
+                    "person_id" => $inid,
+                    "date_registered" => Date('Y-m-d'),
+                    "id_img_path" => 'id_path',
+                    "presented_valid_id" => $valid_id,
+                    "organization" => $organization,
+                ];
+                $this->db->insert("public.farmer", $data_farmer);
+            }
+
             if ($this->db->insert("public.person", $data_person)) {
                 $inid = $this->db->insert_id();
                 $data_user = [
                     "person_id" => $inid,
                     "username" => $username,
                     "password" => $password,
-                    "role_id" => 1,
+                    "role_id" => $valid_id ? 3 : 2,
                 ];
 
                 if ($this->db->insert("public.user", $data_user)) {
@@ -88,16 +103,24 @@ class Signup extends MY_Controller
                         "agrishop_person_id" => $inid,
                         "agrishop_login_id" => $this->db->insert_id(),
                         "agrishop_login_uname" => $username,
-                        "agrishop_login_level" => 1,
-                        "agrishop_login_uri" => "user_consumer",
-                        "agrishop_login_landing" => "index",
+                        "agrishop_login_level" => $valid_id ? 2 : 1,
+                        "agrishop_login_uri" =>   $valid_id ? "userfarmer" : "",
+                        "agrishop_login_landing" => $valid_id ? "FarmProduce" : "index",
                         "agrishop_pass" => $password,
                         "agrishop_change_password" => 'f',
                         "agrishop_login_name" => $first_name . ' ' . $last_name,
                         "agrishop_login_img" => 'dist/img/media/personnel/default.jpg',
                     ];
                     $this->session->set_userdata($data_session);
-                    $ret = ["success" => true];
+
+                    $level = $valid_id ? 2 : 1;
+                    $defaultPassword = 'f';
+                    $uri = $valid_id ? "userfarmer" : "";
+                    $landing = $valid_id ? "FarmProduce" : "index";
+                    $ret = [
+                        "success" => true,
+                        "redirect_to" => base_url($uri . '/' . $landing)
+                    ];
                 }
             }
         }

@@ -133,6 +133,16 @@ class FarmProduce extends MY_Controller
         $farm_id = $requestData['search']['farm_id'];
         $searchValue = isset($requestData['search']['value']) ? $requestData['search']['value'] : '';
 
+        // RETURN EMPTY IF FARM ID IS MISSING
+        if (!$farm_id || $farm_id == "" || $farm_id == "0") {
+            echo json_encode([
+                "draw" => intval($requestData['draw']),
+                "recordsTotal" => 0,
+                "recordsFiltered" => 0,
+                "data" => []
+            ]);
+            return;
+        }
         // Calculate pagination parameters using the separate function
         list($limit, $offset) = $this->calculatePagination($requestData);
 
@@ -145,6 +155,17 @@ class FarmProduce extends MY_Controller
                                     ILIKE '%$searchValue%'");
 
         $totalRecords = $thisQuery->row()->total;
+
+        // RETURN EMPTY IF NO DATA
+        if ($totalRecords == 0) {
+            echo json_encode([
+                "draw" => intval($requestData['draw']),
+                "recordsTotal" => 0,
+                "recordsFiltered" => 0,
+                "data" => []
+            ]);
+            return;
+        }
 
         $query = $this->db->query("SELECT fp.id as fp_id,p.id,p.name as produce,pql.harvest_schedule,pql.uom,pql.price,pql.qty_left ,pc.class_name,p.description,
                                     p.is_seasonal,p.is_active,p.created_at, p.img_path 
@@ -168,7 +189,7 @@ class FarmProduce extends MY_Controller
             $is_seasonal = $value->is_seasonal == 't' ? "<span class='badge bg-blue'>SEASONAL</span>" : "<span class='badge bg-gray'>NON-SEASONAL</span>";
             $image_path = "<img src='$img' width='50' height='50' class='rounded' data-toggle='t0
             .0.ooltip' data-placement='top' title=''>";
-            
+
             $add_produce = "<span class='badge bg-success' type='button' onclick='add_qty({
                                 id: \"$value->fp_id\",
                                 img_path: \"$img\",

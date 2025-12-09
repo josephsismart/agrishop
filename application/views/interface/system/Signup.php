@@ -21,8 +21,8 @@
     <link rel="stylesheet" href="<?= base_url() ?>dist/css/adminlte.min.css?v=3.2.0">
 </head>
 
-<body class="register-page" style="min-height: 568.802px;">
-    <div class="register-box">
+<body class="register-page" style="min-height:1200px;">
+    <div>
 
         <!-- Preloader -->
         <div class="preloader flex-column justify-content-center align-items-center" style="background-color:#ffffff;">
@@ -53,16 +53,16 @@
                     <div class="card-header p-0">
                         <ul class="nav nav-tabs" id="custom-tabs-one-tab" role="tablist">
                             <li class="nav-item" style="width: 50%;">
-                                <a class="nav-link" id="custom-tabs-one-customer-tab" data-toggle="pill" href="#custom-tabs-one-customer" role="tab" aria-controls="custom-tabs-one-customer" aria-selected="true">Customer</a>
+                                <a class="nav-link active" id="custom-tabs-one-customer-tab" data-toggle="pill" href="#custom-tabs-one-customer" role="tab" aria-controls="custom-tabs-one-customer" aria-selected="true">Customer</a>
                             </li>
                             <li class="nav-item" style="width: 50%;">
-                                <a class="nav-link active" id="custom-tabs-one-farmer-tab" data-toggle="pill" href="#custom-tabs-one-farmer" role="tab" aria-controls="custom-tabs-one-farmer" aria-selected="false">Farmer</a>
+                                <a class="nav-link" id="custom-tabs-one-farmer-tab" data-toggle="pill" href="#custom-tabs-one-farmer" role="tab" aria-controls="custom-tabs-one-farmer" aria-selected="false">Farmer</a>
                             </li>
                         </ul>
                     </div>
                     <div class="card-body">
                         <div class="tab-content" id="custom-tabs-one-tabContent">
-                            <div class="tab-pane fade" id="custom-tabs-one-customer" role="tabpanel" aria-labelledby="custom-tabs-one-customer-tab">
+                            <div class="tab-pane fade active show" id="custom-tabs-one-customer" role="tabpanel" aria-labelledby="custom-tabs-one-customer-tab">
                                 <div>
                                     <?= form_open(base_url('/requestsignup'), 'id=form_save_dataRequestSignupCustomer'); ?>
 
@@ -130,6 +130,14 @@
                                         </div>
                                     </div>
 
+                                    <div class="input-group mb-3">
+                                        <input name="barangay" hidden>
+                                        <input type="text" class="form-control form-control-sm barangayInput" placeholder="TYPE BARANGAY (min 3 chars)" autocomplete="off">
+                                        <div class="input-group-append">
+                                            <div class="input-group-text"><span class="fas fa-home"></span></div>
+                                        </div>
+                                    </div>
+                                    <ul class="list-group barangayResults" style="position:absolute; z-index:9999; width:100%; display:none;"></ul>
                                     <hr>
 
                                     <!-- Username -->
@@ -142,7 +150,7 @@
 
                                     <!-- Password -->
                                     <div class="input-group mb-2">
-                                        <input type="password" name="password" class="form-control form-control-sm password" placeholder="PASSWORD" onkeyup="passwordChecker('RequestSignup','password','confirmpassword');">
+                                        <input type="password" name="password" class="form-control form-control-sm password" placeholder="PASSWORD" onkeyup="passwordChecker('RequestSignupCustomer','password','confirmpassword');">
                                         <div class="input-group-append">
                                             <div class="input-group-text"><span class="fas fa-lock"></span></div>
                                         </div>
@@ -160,7 +168,7 @@
 
                                     <!-- Confirm Password -->
                                     <div class="input-group mb-2">
-                                        <input type="password" name="confirmpassword" class="form-control form-control-sm confirmpassword" placeholder="CONFIRM PASSWORD" onkeyup="passwordChecker('RequestSignup','password','confirmpassword');">
+                                        <input type="password" name="confirmpassword" class="form-control form-control-sm confirmpassword" placeholder="CONFIRM PASSWORD" onkeyup="passwordChecker('RequestSignupCustomer','password','confirmpassword');">
                                         <div class="input-group-append">
                                             <div class="input-group-text"><span class="fas fa-lock"></span></div>
                                         </div>
@@ -177,7 +185,7 @@
 
                                     <!-- Terms -->
                                     <div class="form-check mb-3">
-                                        <input type="checkbox" class="form-check-input" id="agreeTerms" name="terms" value="agree">
+                                        <input type="checkbox" class="form-check-input" id="agreeTerms1" name="terms" value="agree">
                                         <label class="form-check-label" for="agreeTerms">I agree to the <a href="#">terms</a></label>
                                     </div>
 
@@ -196,7 +204,7 @@
                                 </div>
                                 <!-- /.social-auth-links -->
                             </div>
-                            <div class="tab-pane fade active show" id="custom-tabs-one-farmer" role="tabpanel" aria-labelledby="custom-tabs-one-farmer-tab">
+                            <div class="tab-pane fade" id="custom-tabs-one-farmer" role="tabpanel" aria-labelledby="custom-tabs-one-farmer-tab">
                                 <div>
                                     <?= form_open(base_url('/requestsignup'), 'id=form_save_dataRequestSignupFarmer'); ?>
 
@@ -264,18 +272,21 @@
                                         </div>
                                     </div>
                                     <div class="input-group mb-3">
-                                        <input type="email" name="email" class="form-control form-control-sm" placeholder="EMAIL">
+                                        <input name="barangay" hidden>
+                                        <input type="text" class="form-control form-control-sm barangayInput" placeholder="TYPE BARANGAY (min 3 chars)" autocomplete="off">
                                         <div class="input-group-append">
-                                            <div class="input-group-text"><span class="fas fa-envelope"></span></div>
+                                            <div class="input-group-text"><span class="fas fa-home"></span></div>
                                         </div>
                                     </div>
+
+                                    <!-- dropdown container -->
+                                    <ul class="list-group barangayResults" style="position:absolute; z-index:9999; width:100%; display:none;"></ul>
 
                                     <hr>
 
                                     <div class="input-group mb-3">
-                                        <select name="valid_id" class="form-control form-select-sm select2">
+                                        <select name="valid_id" class="form-control form-select-sm select2" style="width:90%">
                                             <option value="" selected disabled>VALID ID TO BE PRESENTED</option>
-                                            <option value="DR">DR</option>
                                             <option value="PHILIPPINE NATIONAL ID (PHILSYS)">PHILIPPINE NATIONAL ID (PHILSYS)</option>
                                             <option value="SSS ID">SSS ID</option>
                                             <option value="UMID">UMID</option>
@@ -312,7 +323,7 @@
                                     </center>
 
                                     <div class="input-group mb-3">
-                                        <select name="organization" class="form-control form-select-sm">
+                                        <select name="organization" class="form-control form-select-sm select2" style="width:90%">
                                             <option value="" selected disabled>ORGANIZATION MEMBERSHIP (OPTIONAL)</option>
                                             <?php $this->load->view('interface/system/layout/options_select_for_organization') ?>
                                         </select>
@@ -334,7 +345,7 @@
 
                                     <!-- Password -->
                                     <div class="input-group mb-2">
-                                        <input type="password" name="password" class="form-control form-control-sm password" placeholder="PASSWORD" onkeyup="passwordChecker('RequestSignup','password','confirmpassword');">
+                                        <input type="password" name="password" class="form-control form-control-sm password" placeholder="PASSWORD" onkeyup="passwordChecker('RequestSignupFarmer','password','confirmpassword');">
                                         <div class="input-group-append">
                                             <div class="input-group-text"><span class="fas fa-lock"></span></div>
                                         </div>
@@ -352,7 +363,7 @@
 
                                     <!-- Confirm Password -->
                                     <div class="input-group mb-2">
-                                        <input type="password" name="confirmpassword" class="form-control form-control-sm confirmpassword" placeholder="CONFIRM PASSWORD" onkeyup="passwordChecker('RequestSignup','password','confirmpassword');">
+                                        <input type="password" name="confirmpassword" class="form-control form-control-sm confirmpassword" placeholder="CONFIRM PASSWORD" onkeyup="passwordChecker('RequestSignupFarmer','password','confirmpassword');">
                                         <div class="input-group-append">
                                             <div class="input-group-text"><span class="fas fa-lock"></span></div>
                                         </div>
@@ -402,16 +413,81 @@
 
     <!-- jQuery -->
     <script src="<?= base_url() ?>plugins/jquery/jquery.min.js"></script>
+    <script src="<?= base_url() ?>plugins/jquery/jquery.form.min.js"></script>
     <!-- Bootstrap 4 -->
     <script src="<?= base_url() ?>plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
     <!-- AdminLTE App -->
     <script src="<?= base_url() ?>plugins/select2/js/select2.full.min.js"></script>
     <script src="<?= base_url() ?>plugins/sweetalert2/sweetalert2.min.js"></script>
     <script src="<?= base_url() ?>dist/js/adminlte.min.js"></script>
-    <script src="<?= base_url() ?>plugins/jquery/jquery.form.min.js"></script>
 
     <script type="text/javascript">
         var valid = 0;
+
+        $(document).on('click', '.barangay-item', function() {
+            let id = $(this).data('id');
+            let name = $(this).data('name');
+
+            // Set selected value to input
+            $('.barangayInput').val(name);
+
+            // Store barangay id in hidden input (recommended)
+            $('#barangay_id').val(id);
+
+            // Hide dropdown
+            $('.barangayResults').hide();
+            $('[name=barangay]').val(id)
+        });
+
+        $(function() {
+            $('.select2').select2()
+        });
+
+        $('.barangayInput').on('keyup', function() {
+            let keyword = $(this).val();
+
+            if (keyword.length < 3) {
+                $('.barangayResults').hide();
+                return;
+            }
+
+            $.ajax({
+                url: "<?= base_url('search-barangay') ?>",
+                type: "POST",
+                data: {
+                    keyword: keyword
+                },
+                success: function(res) {
+                    let data = JSON.parse(res);
+
+                    if (data.length === 0) {
+                        $('.barangayResults').hide();
+                        return;
+                    }
+
+                    let html = "";
+                    data.forEach(row => {
+                        html += `<li class="list-group-item barangay-item" data-id="${row.id}" data-name="${row.text}">
+                    ${row.text}
+                </li>`;
+                    });
+
+                    $('.barangayResults').html(html).show();
+                }
+            });
+        });
+
+        // when clicked
+        $(document).on('click', '.barangay-item', function() {
+            let name = $(this).data('name');
+            let id = $(this).data('id');
+
+            $('.barangayInput').val(name); // show selected barangay
+            $('.barangayResults').hide(); // hide list
+
+            // optional: save to hidden field if needed
+            // $("#barangay_id").val(id);
+        });
 
         function validate(form_id) {
             let invalid = 0;
@@ -496,9 +572,12 @@
                         successAlert("Successfully Registered!");
                         $(".sbmtbttn").hide();
                         $(".redirect").show();
-                        setTimeout(function() {
-                            location.reload();
-                        }, 2000)
+                        // setTimeout(function() {
+                        //     location.reload();
+                        // }, 2000)
+                        if (d.success) {
+                            window.location.href = d.redirect_to;
+                        }
                     } else if (d.exist == true) {
                         existAlert("User already exist!");
                     } else if (d.fill == true) {
@@ -513,7 +592,8 @@
             $("#form_save_data" + formId).ajaxForm(saveData);
         }
 
-        saveForm("RequestSignup", [null], null);
+        saveForm("RequestSignupCustomer", [null], null);
+        saveForm("RequestSignupFarmer", [null], null);
 
         function clean(a) {
             var str = a;
