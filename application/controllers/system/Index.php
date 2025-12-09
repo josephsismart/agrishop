@@ -7,6 +7,9 @@ class Index extends MY_Controller
     public function __construct()
     {
         parent::__construct();
+        $this->load->model('mainModel');
+        $this->load->helper('date');
+        date_default_timezone_set("Asia/Manila");
     }
 
     public function index()
@@ -19,6 +22,7 @@ class Index extends MY_Controller
         ];
         $this->load->view('interface/system/Index', $data);
     }
+
 }
 
 /* End of file Login_admin.php */

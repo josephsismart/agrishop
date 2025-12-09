@@ -23,10 +23,15 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ" crossorigin="anonymous">
 <link rel="stylesheet" type="text/css" href="<?php echo base_url(); ?>dist/layout_shop/css/vendor.css">
 <link rel="stylesheet" type="text/css" href="<?php echo base_url(); ?>dist/layout_shop/css/style.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <!-- Google Font: Source Sans Pro -->
 <!-- Select2 -->
 <style type="text/css">
     /* @import url("https://code.highcharts.com/css/highcharts.css"); */
+    
+    #map { height: 600px; width: 100%; margin-bottom: 10px; }
+    .buttons { margin-bottom: 10px; }
+    .buttons button { margin-right: 5px; margin-bottom: 5px; }
 
     #cameraStream.mirrored {
         transform: scaleX(-1);

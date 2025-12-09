@@ -188,8 +188,8 @@ $uri = 'userteacher'; //$this->session->schoolmis_login_uri;
 
 
 <!-- /.modal -->
-<!-- <div class="modal fade show" id="modal-default" aria-modal="true" style="padding-right: 16px; display: block;"> -->
-<div class="modal fade" id="modalGradesList" data-backdrop="static">
+<div class="modal fade show" id="modal-default" aria-modal="true" style="padding-right: 16px; display: block;">
+<!-- <div class="modal fade" id="modalGradesList" data-backdrop="static"> -->
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header bg-gradient-primary p-2 px-3">

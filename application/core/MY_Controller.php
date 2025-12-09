@@ -811,14 +811,13 @@ class MY_Controller extends CI_Controller
         }
     }
 
-    public function uploadImg($pic, $id, $path_)
+    public function uploadImg($pic, $picname, $path_, $dupload)
     {
-        $s = $this->getOnLoad()["sy"];
         $newImageName = null;
         $isUploaded = false;
 
         if (isset($pic) && !$isUploaded) {
-            $config['upload_path'] = "dist/img/media/$path_/" . $s . "/";
+            $config['upload_path'] = "dist/img/media/$path_/";
 
             if (!is_dir($config['upload_path'])) {
                 mkdir($config['upload_path'], 0777, true);
@@ -827,7 +826,7 @@ class MY_Controller extends CI_Controller
             $config['allowed_types'] = 'gif|jpg|jpeg|png';
             $this->load->library('upload', $config);
 
-            if (!$this->upload->do_upload('pic')) {
+            if (!$this->upload->do_upload($dupload)) {
                 $myPic = null;
             } else {
                 $isUploaded = true;
@@ -837,9 +836,10 @@ class MY_Controller extends CI_Controller
                 $extension = pathinfo($myPic['file_name'], PATHINFO_EXTENSION);
 
                 // Final new image name
-                $newImageName = $id . "." . $extension;
+                $cleanName = preg_replace('/[^a-z0-9_-]/', '', strtolower($picname));
+                $newImageName = $cleanName . "_" . time() . "." . $extension;
                 $newImagePath = $config['upload_path'] . $newImageName;
-
+                
                 // Config for image_lib (to resize/copy)
                 $config['image_library'] = 'gd2';
                 $config['source_image'] = $myPic['full_path'];   // original uploaded file

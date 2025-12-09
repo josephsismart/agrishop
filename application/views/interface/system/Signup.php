@@ -15,12 +15,14 @@
     <!-- icheck bootstrap -->
     <link rel="stylesheet" href="<?= base_url() ?>plugins/sweetalert2-theme-bootstrap-4/bootstrap-4.min.css">
     <link rel="stylesheet" href="<?= base_url() ?>plugins/icheck-bootstrap/icheck-bootstrap.min.css">
+    <link rel="stylesheet" href="<?= base_url() ?>plugins/select2/css/select2.min.css">
+    <link rel="stylesheet" href="<?= base_url() ?>plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css">
     <!-- Theme style -->
-    <link rel="stylesheet" href="<?= base_url() ?>dist/css/adminlte.min.css">
+    <link rel="stylesheet" href="<?= base_url() ?>dist/css/adminlte.min.css?v=3.2.0">
 </head>
 
-<body class="hold-transition login-page">
-    <div class="login-box">
+<body class="register-page" style="min-height: 568.802px;">
+    <div class="register-box">
 
         <!-- Preloader -->
         <div class="preloader flex-column justify-content-center align-items-center" style="background-color:#ffffff;">
@@ -28,13 +30,14 @@
             <!-- Agusan National High School Information System  -->
         </div>
         <!-- /.login-logo -->
+
         <div class="card card-outline card-success">
             <div class="card-header text-center">
                 <a href="<?= base_url() ?>index" class="d-block">
                     <img src="<?php echo base_url(); ?>dist/layout_shop/images/logo.svg" width="240" height="70" alt="logo">
                 </a>
             </div>
-            <div class="card-body">
+            <div class="card-body register-card-body p-0">
                 <?php $signup_attempt = $this->input->get("signup_attempt");
                 $firstname = $this->input->get("firstname");
                 $lastname = $this->input->get("lastname"); ?>
@@ -44,114 +47,351 @@
                 <?php if ($signup_attempt == md5(1)) : ?>
                     <p class="text-warning text-center text-sm"><i class="fa fa-exclamation-triangle"></i> User already exists. Please try again.</p>
                 <?php endif ?>
-                
-                <?= form_open(base_url('/requestsignup'), 'id=form_save_dataRequestSignup'); ?>
-                <!-- <form action="<?= base_url() ?>requestsignup" method="post" id="form_save_dataRequestSignup"> -->
-                    <div class="input-group mb-3">
-                        <input type="text" name="firstname" class="form-control <?php if ($signup_attempt == md5(0)) : ?> is-invalid <?php endif ?>" style="text-transform: uppercase;" placeholder="FIRST NAME" autofocus autocomplete="off" value=<?php if ($signup_attempt == md5(1)) : echo $firstname;
-                                                                                                                                                                                                                                                    endif ?>>
-                        <div class="input-group-append">
-                            <div class="input-group-text">
-                                <span class="fas fa-user"></span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="input-group mb-3">
-                        <input type="text" name="lastname" class="form-control <?php if ($signup_attempt == md5(0)) : ?> is-invalid <?php endif ?>" style="text-transform: uppercase;" placeholder="LAST NAME" autofocus autocomplete="off" value=<?php if ($signup_attempt == md5(1)) : echo $lastname;
-                                                                                                                                                                                                                                                    endif ?>>
-                        <div class="input-group-append">
-                            <div class="input-group-text">
-                                <span class="fas fa-user"></span>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- <div class="input-group mb-3">
-                        <input type="date" name="birthdate" class="form-control" placeholder="Birthdate" autofocus autocomplete="off" required>
-                        <div class="input-group-append">
-                            <div class="input-group-text">
-                                <span class="fas fa-birthday-cake"></span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="input-group mb-3">
-                        <input type="text" name="address" class="form-control" placeholder="Address" autofocus autocomplete="off" required>
-                        <div class="input-group-append">
-                            <div class="input-group-text">
-                                <span class="fas fa-home"></span>
-                            </div>
-                        </div>
-                    </div> -->
-                    <div class="input-group mb-3 mt-5">
-                        <input type="text" name="username" class="form-control <?php if ($signup_attempt == md5(0)) : ?> is-invalid 
-                            <?php elseif ($signup_attempt == md5(1)) : ?> is-warning <?php endif ?>" placeholder="Username" autofocus autocomplete="off">
-                        <div class="input-group-append">
-                            <div class="input-group-text">
-                                <span class="fas fa-envelope"></span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="input-group mb-3">
-                        <input type="password" name="password" class="form-control password" onkeyup="passwordChecker('RequestSignup','password','confirmpassword');" placeholder="Password">
-                        <div class="input-group-append">
-                            <div class="input-group-text">
-                                <span class="fas fa-lock"></span>
-                            </div>
-                        </div>
-                    </div>
 
-                    <div class="input-group mb-2">
-                        <span class="badge bg-danger atleast" style="display:none;">
-                            <i class="fa fa-times-circle"></i> PASSWORD MUST BE AT LEAST `8` CHARACTERS
-                        </span>
-                        <span class="badge bg-success good8" style="display:none;">
-                            <i class="fa fa-check-circle"></i> PASSWORD AT LEAST `8` CHARACTERS
-                        </span>
-                    </div>
 
-                    <div class="input-group mb-3">
-                        <input type="password" name="confirmpassword" class="form-control confirmpassword" onkeyup="passwordChecker('RequestSignup','password','confirmpassword');" placeholder="Confirm Password">
-                        <div class="input-group-append">
-                            <div class="input-group-text">
-                                <span class="fas fa-lock"></span>
+                <div class="card card-danger card-tabs">
+                    <div class="card-header p-0">
+                        <ul class="nav nav-tabs" id="custom-tabs-one-tab" role="tablist">
+                            <li class="nav-item" style="width: 50%;">
+                                <a class="nav-link" id="custom-tabs-one-customer-tab" data-toggle="pill" href="#custom-tabs-one-customer" role="tab" aria-controls="custom-tabs-one-customer" aria-selected="true">Customer</a>
+                            </li>
+                            <li class="nav-item" style="width: 50%;">
+                                <a class="nav-link active" id="custom-tabs-one-farmer-tab" data-toggle="pill" href="#custom-tabs-one-farmer" role="tab" aria-controls="custom-tabs-one-farmer" aria-selected="false">Farmer</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content" id="custom-tabs-one-tabContent">
+                            <div class="tab-pane fade" id="custom-tabs-one-customer" role="tabpanel" aria-labelledby="custom-tabs-one-customer-tab">
+                                <div>
+                                    <?= form_open(base_url('/requestsignup'), 'id=form_save_dataRequestSignupCustomer'); ?>
+
+                                    <!-- First & Last Name -->
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <div class="input-group mb-3">
+                                                <input type="text" name="firstname" class="form-control form-control-sm <?php if ($signup_attempt == md5(0)) : ?>is-invalid<?php endif ?>" placeholder="FIRST NAME" style="text-transform: uppercase;" autocomplete="off" value="<?= ($signup_attempt == md5(1)) ? $firstname : '' ?>" autofocus>
+                                                <div class="input-group-append">
+                                                    <div class="input-group-text"><span class="fas fa-user"></span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="input-group mb-3">
+                                                <input type="text" name="lastname" class="form-control form-control-sm <?php if ($signup_attempt == md5(0)) : ?>is-invalid<?php endif ?>" placeholder="LAST NAME" style="text-transform: uppercase;" autocomplete="off" value="<?= ($signup_attempt == md5(1)) ? $lastname : '' ?>">
+                                                <div class="input-group-append">
+                                                    <div class="input-group-text"><span class="fas fa-user"></span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Sex & Birth Date -->
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <div class="input-group mb-3">
+                                                <select name="sex" class="form-control form-select-sm">
+                                                    <option value="" selected disabled>SEX</option>
+                                                    <option value="MALE">MALE</option>
+                                                    <option value="FEMALE">FEMALE</option>
+                                                </select>
+                                                <div class="input-group-append">
+                                                    <div class="input-group-text"><span class="fas fa-venus-mars"></span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="input-group mb-3">
+                                                <input type="date" name="birthDate" class="form-control form-control-sm <?php if ($signup_attempt == md5(0)) : ?>is-invalid<?php endif ?>">
+                                                <div class="input-group-append">
+                                                    <div class="input-group-text"><span class="fas fa-calendar-alt"></span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Contact Number & Email -->
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <div class="input-group mb-3">
+                                                <input type="tel" name="contact" class="form-control form-control-sm" placeholder="CONTACT NUMBER">
+                                                <div class="input-group-append">
+                                                    <div class="input-group-text"><span class="fas fa-phone"></span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="input-group mb-3">
+                                                <input type="email" name="email" class="form-control form-control-sm" placeholder="EMAIL">
+                                                <div class="input-group-append">
+                                                    <div class="input-group-text"><span class="fas fa-envelope"></span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <hr>
+
+                                    <!-- Username -->
+                                    <div class="input-group mb-3">
+                                        <input type="text" name="username" class="form-control form-control-sm <?php if ($signup_attempt == md5(0)) : ?>is-invalid<?php elseif ($signup_attempt == md5(1)) : ?>is-warning<?php endif ?>" placeholder="USERNAME" autocomplete="off">
+                                        <div class="input-group-append">
+                                            <div class="input-group-text"><span class="fas fa-user-circle"></span></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Password -->
+                                    <div class="input-group mb-2">
+                                        <input type="password" name="password" class="form-control form-control-sm password" placeholder="PASSWORD" onkeyup="passwordChecker('RequestSignup','password','confirmpassword');">
+                                        <div class="input-group-append">
+                                            <div class="input-group-text"><span class="fas fa-lock"></span></div>
+                                        </div>
+                                    </div>
+
+
+                                    <div class="input-group mb-2">
+                                        <span class="badge bg-danger atleast" style="display:none;">
+                                            <i class="fa fa-times-circle"></i> PASSWORD MUST BE AT LEAST `8` CHARACTERS
+                                        </span>
+                                        <span class="badge bg-success good8" style="display:none;">
+                                            <i class="fa fa-check-circle"></i> PASSWORD AT LEAST `8` CHARACTERS
+                                        </span>
+                                    </div>
+
+                                    <!-- Confirm Password -->
+                                    <div class="input-group mb-2">
+                                        <input type="password" name="confirmpassword" class="form-control form-control-sm confirmpassword" placeholder="CONFIRM PASSWORD" onkeyup="passwordChecker('RequestSignup','password','confirmpassword');">
+                                        <div class="input-group-append">
+                                            <div class="input-group-text"><span class="fas fa-lock"></span></div>
+                                        </div>
+                                    </div>
+
+                                    <div class="input-group mb-2">
+                                        <span class="badge bg-danger bad" style="display:none;">
+                                            <i class="fa fa-times-circle"></i> PASSWORD MISMATCH
+                                        </span>
+                                        <span class="badge bg-success good" style="display:none;">
+                                            <i class="fa fa-check-circle"></i> PASSWORD MATCH
+                                        </span>
+                                    </div>
+
+                                    <!-- Terms -->
+                                    <div class="form-check mb-3">
+                                        <input type="checkbox" class="form-check-input" id="agreeTerms" name="terms" value="agree">
+                                        <label class="form-check-label" for="agreeTerms">I agree to the <a href="#">terms</a></label>
+                                    </div>
+
+                                    <!-- Buttons -->
+                                    <div class="d-grid mb-3">
+                                        <button type="submit" class="btn btn-success btn-sm btn-block fw-semibold">Register</button>
+                                    </div>
+
+                                    <p class="text-center text-muted mb-2">or</p>
+
+                                    <div class="d-grid">
+                                        <a href="<?= base_url() ?>login" class="btn btn-outline-secondary btn-sm btn-block">Login</a>
+                                    </div>
+
+                                    <?= form_close(); ?>
+                                </div>
+                                <!-- /.social-auth-links -->
+                            </div>
+                            <div class="tab-pane fade active show" id="custom-tabs-one-farmer" role="tabpanel" aria-labelledby="custom-tabs-one-farmer-tab">
+                                <div>
+                                    <?= form_open(base_url('/requestsignup'), 'id=form_save_dataRequestSignupFarmer'); ?>
+
+                                    <!-- First & Last Name -->
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <div class="input-group mb-3">
+                                                <input type="text" name="firstname" class="form-control form-control-sm <?php if ($signup_attempt == md5(0)) : ?>is-invalid<?php endif ?>" placeholder="FIRST NAME" style="text-transform: uppercase;" autocomplete="off" value="<?= ($signup_attempt == md5(1)) ? $firstname : '' ?>" autofocus>
+                                                <div class="input-group-append">
+                                                    <div class="input-group-text"><span class="fas fa-user"></span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="input-group mb-3">
+                                                <input type="text" name="lastname" class="form-control form-control-sm <?php if ($signup_attempt == md5(0)) : ?>is-invalid<?php endif ?>" placeholder="LAST NAME" style="text-transform: uppercase;" autocomplete="off" value="<?= ($signup_attempt == md5(1)) ? $lastname : '' ?>">
+                                                <div class="input-group-append">
+                                                    <div class="input-group-text"><span class="fas fa-user"></span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Sex & Birth Date -->
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <div class="input-group mb-3">
+                                                <select name="sex" class="form-control form-select-sm">
+                                                    <option value="" selected disabled>SEX</option>
+                                                    <option value="MALE">MALE</option>
+                                                    <option value="FEMALE">FEMALE</option>
+                                                </select>
+                                                <div class="input-group-append">
+                                                    <div class="input-group-text"><span class="fas fa-venus-mars"></span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="input-group mb-3">
+                                                <input type="date" name="birthDate" class="form-control form-control-sm <?php if ($signup_attempt == md5(0)) : ?>is-invalid<?php endif ?>">
+                                                <div class="input-group-append">
+                                                    <div class="input-group-text"><span class="fas fa-calendar-alt"></span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Contact Number & Email -->
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <div class="input-group mb-3">
+                                                <input type="tel" name="contact" class="form-control form-control-sm" placeholder="CONTACT NUMBER">
+                                                <div class="input-group-append">
+                                                    <div class="input-group-text"><span class="fas fa-phone"></span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="input-group mb-3">
+                                                <input type="email" name="email" class="form-control form-control-sm" placeholder="EMAIL">
+                                                <div class="input-group-append">
+                                                    <div class="input-group-text"><span class="fas fa-envelope"></span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="input-group mb-3">
+                                        <input type="email" name="email" class="form-control form-control-sm" placeholder="EMAIL">
+                                        <div class="input-group-append">
+                                            <div class="input-group-text"><span class="fas fa-envelope"></span></div>
+                                        </div>
+                                    </div>
+
+                                    <hr>
+
+                                    <div class="input-group mb-3">
+                                        <select name="valid_id" class="form-control form-select-sm select2">
+                                            <option value="" selected disabled>VALID ID TO BE PRESENTED</option>
+                                            <option value="DR">DR</option>
+                                            <option value="PHILIPPINE NATIONAL ID (PHILSYS)">PHILIPPINE NATIONAL ID (PHILSYS)</option>
+                                            <option value="SSS ID">SSS ID</option>
+                                            <option value="UMID">UMID</option>
+                                            <option value="DRIVER'S LICENSE">DRIVER'S LICENSE</option>
+                                            <option value="PASSPORT">PASSPORT</option>
+                                            <option value="POSTAL ID">POSTAL ID</option>
+                                            <option value="PRC ID">PRC ID</option>
+                                            <option value="TIN ID">TIN ID</option>
+                                            <option value="VOTER'S ID">VOTER'S ID</option>
+                                            <option value="VOTER'S CERTIFICATE">VOTER'S CERTIFICATE</option>
+                                            <option value="PHILHEALTH ID">PHILHEALTH ID</option>
+                                            <option value="SENIOR CITIZEN ID">SENIOR CITIZEN ID</option>
+                                            <option value="PWD ID">PWD ID</option>
+                                            <option value="GSIS ID">GSIS ID</option>
+                                            <option value="PAG-IBIG ID">PAG-IBIG ID</option>
+                                            <option value="STUDENT ID (if minor)">STUDENT ID (if minor)</option>
+                                            <option value="AFP ID">AFP ID</option>
+                                            <option value="PNP ID">PNP ID</option>
+                                        </select>
+                                        <div class="input-group-append">
+                                            <div class="input-group-text"><span class="fas fa-id-card"></span></div>
+                                        </div>
+                                    </div>
+
+                                    <center class="mt-3">
+                                        <div class="form-group">
+                                            <label class="col-form-label">ID Picture</label><br />
+                                            <img name="previewPicFarmerID" src="<?= base_url("dist/img/media/icons/id_preview.png"); ?>" onclick="$('[name=picFarmerID]').trigger('click')" width="120" height="120" class="border border-white border-2 rounded elevation-1" type="button" alt="User Image">
+                                        </div>
+
+                                        <div class="form-group">
+                                            <input name="picFarmerID" type="file" accept="image/*" onchange="imageView('picFarmerID','previewPicFarmerID','imgtargetLink')" nr="1" hidden />
+                                        </div>
+                                    </center>
+
+                                    <div class="input-group mb-3">
+                                        <select name="organization" class="form-control form-select-sm">
+                                            <option value="" selected disabled>ORGANIZATION MEMBERSHIP (OPTIONAL)</option>
+                                            <?php $this->load->view('interface/system/layout/options_select_for_organization') ?>
+                                        </select>
+                                        <div class="input-group-append">
+                                            <div class="input-group-text"><span class="fas fa-id-card"></span></div>
+                                        </div>
+                                    </div>
+
+
+                                    <hr>
+
+                                    <!-- Username -->
+                                    <div class="input-group mb-3">
+                                        <input type="text" name="username" class="form-control form-control-sm <?php if ($signup_attempt == md5(0)) : ?>is-invalid<?php elseif ($signup_attempt == md5(1)) : ?>is-warning<?php endif ?>" placeholder="USERNAME" autocomplete="off">
+                                        <div class="input-group-append">
+                                            <div class="input-group-text"><span class="fas fa-user-circle"></span></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Password -->
+                                    <div class="input-group mb-2">
+                                        <input type="password" name="password" class="form-control form-control-sm password" placeholder="PASSWORD" onkeyup="passwordChecker('RequestSignup','password','confirmpassword');">
+                                        <div class="input-group-append">
+                                            <div class="input-group-text"><span class="fas fa-lock"></span></div>
+                                        </div>
+                                    </div>
+
+
+                                    <div class="input-group mb-2">
+                                        <span class="badge bg-danger atleast" style="display:none;">
+                                            <i class="fa fa-times-circle"></i> PASSWORD MUST BE AT LEAST `8` CHARACTERS
+                                        </span>
+                                        <span class="badge bg-success good8" style="display:none;">
+                                            <i class="fa fa-check-circle"></i> PASSWORD AT LEAST `8` CHARACTERS
+                                        </span>
+                                    </div>
+
+                                    <!-- Confirm Password -->
+                                    <div class="input-group mb-2">
+                                        <input type="password" name="confirmpassword" class="form-control form-control-sm confirmpassword" placeholder="CONFIRM PASSWORD" onkeyup="passwordChecker('RequestSignup','password','confirmpassword');">
+                                        <div class="input-group-append">
+                                            <div class="input-group-text"><span class="fas fa-lock"></span></div>
+                                        </div>
+                                    </div>
+
+                                    <div class="input-group mb-2">
+                                        <span class="badge bg-danger bad" style="display:none;">
+                                            <i class="fa fa-times-circle"></i> PASSWORD MISMATCH
+                                        </span>
+                                        <span class="badge bg-success good" style="display:none;">
+                                            <i class="fa fa-check-circle"></i> PASSWORD MATCH
+                                        </span>
+                                    </div>
+
+                                    <!-- Terms -->
+                                    <div class="form-check mb-3">
+                                        <input type="checkbox" class="form-check-input" id="agreeTerms" name="terms" value="agree">
+                                        <label class="form-check-label" for="agreeTerms">I agree to the <a href="#">terms</a></label>
+                                    </div>
+
+                                    <!-- Buttons -->
+                                    <div class="d-grid mb-3">
+                                        <button type="submit" class="btn btn-danger btn-sm btn-block fw-semibold">Register as Farmer</button>
+                                    </div>
+
+                                    <p class="text-center text-muted mb-2">or</p>
+
+                                    <div class="d-grid">
+                                        <a href="<?= base_url() ?>login" class="btn btn-outline-secondary btn-sm btn-block">Login</a>
+                                    </div>
+
+                                    <?= form_close(); ?>
+                                </div>
+                                <!-- /.social-auth-links -->
                             </div>
                         </div>
                     </div>
-
-                    <div class="input-group mb-2">
-                        <span class="badge bg-danger bad" style="display:none;">
-                            <i class="fa fa-times-circle"></i> PASSWORD MISMATCH
-                        </span>
-                        <span class="badge bg-success good" style="display:none;">
-                            <i class="fa fa-check-circle"></i> PASSWORD MATCH
-                        </span>
-                    </div>
-                    <div class="row">
-                        <div class="col-8">
-                            <div class="icheck-primary">
-                                <input type="checkbox" id="agreeTerms" name="terms" value="agree">
-                                <label for="agreeTerms">
-                                    I agree to the <a href="#">terms</a>
-                                </label>
-                            </div>
-                        </div>
-                        <!-- /.col -->
-                        <div class="col-4">
-                            <button type="submit" class="btn btn-primary btn-block">Register</button>
-                        </div>
-                        <!-- /.col -->
-                        <div class="col-12 mb-n2">
-                            <p class="text-center text-sm text-gray">or</p>
-                        </div>
-                        <div class="col-12">
-                            <a href="<?= base_url() ?>login" type="button" class="btn btn-default btn-block"><i class="fab fa-login mr-2"></i> Login</a>
-                        </div>
-                    </div>
-                </form>
-                <!-- /.social-auth-links -->
-
-                <!-- <p class="mb-1">
-            <a href="forgot-password.html">I forgot my password</a>
-          </p> -->
+                    <!-- /.card -->
+                </div>
 
             </div>
             <!-- /.card-body -->
@@ -165,12 +405,14 @@
     <!-- Bootstrap 4 -->
     <script src="<?= base_url() ?>plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
     <!-- AdminLTE App -->
+    <script src="<?= base_url() ?>plugins/select2/js/select2.full.min.js"></script>
     <script src="<?= base_url() ?>plugins/sweetalert2/sweetalert2.min.js"></script>
     <script src="<?= base_url() ?>dist/js/adminlte.min.js"></script>
     <script src="<?= base_url() ?>plugins/jquery/jquery.form.min.js"></script>
 
     <script type="text/javascript">
         var valid = 0;
+
         function validate(form_id) {
             let invalid = 0;
             $($("#" + form_id).find("input").get().reverse()).each(function() {
@@ -317,6 +559,26 @@
                 icon: 'warning',
                 title: '  ' + a,
             })
+        }
+
+
+        function imageView(a, b, c) {
+            var fileInput = $("[name=" + a + "]")[0]; // Get the file input element
+            var file = fileInput.files[0]; // Get the selected file
+
+            if (file.size > 25 * 1024 * 1024) {
+                // Picture size is above 2MB
+                alert("Picture must be less than 2MB");
+                return; // You can handle this case according to your requirements
+            }
+
+            var reader = new FileReader();
+
+            reader.onload = function(e) {
+                $("[name=" + b + "]").attr('src', e.target.result); // Set the source of the image element
+            };
+
+            reader.readAsDataURL(file);
         }
     </script>
 

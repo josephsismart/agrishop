@@ -68,6 +68,8 @@ $route['changepassword'] = 'userpassword/Changepassword';
 $route['logout'] = 'system/Login/request_logout';
 $route['requestlogin'] = 'system/Login/request_login';
 $route['requestsignup'] = 'system/Signup/request_signup';
+$route['sendSMS'] = 'system/Signup/sendSMS';
+$route['sendEmail'] = 'system/Signup/email_verification';
 
 // $route['save_national'] = 'useradmin/Dataentry/savenational';
 // $route['save_local'] = 'uservalidator/Dataentry/savelocal';

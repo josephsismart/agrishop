@@ -63,7 +63,7 @@ class Login extends MY_Controller
                         ($row1->level == 1 ? "userconsumer" : 
                         ($row1->level == 2 ? "userfarmer" : "")))),
                     
-                    "agrishop_login_landing"    => $row1->change_pwd == 't' ? "changepassword" : ($row1->level == 6 ? "dataentry" : "dataentry"), //($value->level==2?"dataentry":"dashboard"),
+                    "agrishop_login_landing"    => $row1->change_pwd == 't' ? "changepassword" : ($row1->level == 2 ? "farmproduce" : "dataentry"), //($value->level==2?"dataentry":"dashboard"),
                     "agrishop_pass"             => $row1->password, // $query->row('password'),
                     "agrishop_change_password"  => $row1->change_pwd, // $query->row('change_password'),
                     "agrishop_login_name"       => 'AAAA',#$row2->full_name, // $this->personName($query->row('person_id'),'n'),
@@ -106,8 +106,8 @@ class Login extends MY_Controller
                     if ($defaultPassword == 't') {
                         redirect(base_url('ud440aed189/changepassword'));
                     } else {
-                        redirect(base_url('index'));
-                        // redirect(base_url($uri . '/' . $landing));
+                        $row1->level == 2 ? redirect(base_url($uri . '/' . $landing)) : redirect(base_url('index'));
+                        
                         // ($query->row('level')==1?redirect(base_url($uri.'/dataentry')):redirect(base_url($uri.'/dashboard')));
                     }
                 }

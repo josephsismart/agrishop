@@ -30,8 +30,14 @@ $uri = $this->session->agrishop_login_uri;
 <script src="<?= base_url() ?>plugins/sweetalert2/sweetalert2.min.js"></script>
 <!-- AdminLTE App -->
 <script src="<?= base_url() ?>dist/js/adminlte.min.js"></script>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <script type="text/javascript">
+    $('#modalFarmInfo').on('shown.bs.modal', function() {
+        map.invalidateSize(); // <-- this tells Leaflet to recalc the map size
+        map.setView([8.7, 125.6], 9); // optional: recenter map if needed
+    });
+
     $(".close-sidebar-btn").click(function() {
         // $(".sidebar").slideToggle();
         // $(".main-sidebar").slideToggle();
@@ -87,20 +93,6 @@ $uri = $this->session->agrishop_login_uri;
 
         defaultImg('pic', 'previewPic', 'imgtargetLink', 'MALE');
 
-        // if (b == f1) {
-        //     getFetchList(f1, "RegionList", null, 1, {
-        //         v: null
-        //     }, 1, 1);
-        //     getFetchList(f1, "ProvinceList", null, 1, {
-        //         v: 16
-        //     }, 1, 1);
-        //     getFetchList(f1, "CityMunList", null, 1, {
-        //         v: 1602
-        //     }, 1, 1);
-        //     getFetchList(f1, "BarangayList", null, 1, {
-        //         v: 160201
-        //     }, 1, 1);
-        // }
     }
 
     function delay(form, a, b) {
@@ -110,37 +102,6 @@ $uri = $this->session->agrishop_login_uri;
         }, 1000)
     }
 
-    function getDetails(a, b, c) {
-        // hideUpdate();
-        // clear_form("form_save_data" + a);
-        $("#form_save_data" + a + " .submitBtnPrimary").html(c == 1 ? "Update Data" : "Save Data");
-        c == 1 ? $("#form_save_data" + a + " .submitBtnPrimary").removeClass("btn-primary").addClass("btn-info") : $("#form_save_data" + a + " .submitBtnPrimary").removeClass("btn-info").addClass("btn-primary");
-        $("#form_save_data" + a + " .clearBtn").html(c == 1 ? "cancel" : "clear");
-        c == 1 ? $("#form_save_data" + a + " .clearBtn").removeClass("btn-gray").addClass("btn-danger") : $("#form_save_data" + a + " .clearBtn").removeClass("btn-danger").addClass("btn-gray");
-
-        $.each(b, function(k, v) {
-            $("#form_save_data" + a).each(function() {
-                $("[name='" + k + "']").prop("checked", v);
-                $("[name='" + k + "']").val(v);
-                $("[class='" + k + "']").html(v);
-                $("[name='" + k + "']").trigger("change");
-                if (k == "img_path") {
-                    // console.log(v)
-                    if (v == null) {
-                        defaultImg('pic', 'previewPic', 'imgtargetLink', 'MALE');
-                    } else {
-                        var reader = new FileReader();
-                        $("[name=pic]").val("");
-                        // $("[name=previewPic]").attr("src", "<?= base_url() ?>" + v);
-                        $("[name=previewPic]").attr("src", v);
-                        reader.onload = function(e) {
-                            document.getElementById(b).src = e.target.result;
-                        };
-                    }
-                }
-            });
-        });
-    }
 
     function validate(form_id) {
         let invalid = 0;
@@ -203,13 +164,13 @@ $uri = $this->session->agrishop_login_uri;
                     return false;
                 }
                 a = $("#form_save_data" + formId + " .submitBtnPrimary").text();
-                $("#form_save_data" + formId + " .submitBtnPrimary").attr("disabled", true);
+                // $("#form_save_data" + formId + " .submitBtnPrimary").attr("disabled", true);
                 $("#form_save_data" + formId + " .submitBtnPrimary").html("<span class=\"fa fa-spinner fa-pulse\"></span>");
             },
             success: function(data) {
                 var d = JSON.parse(data);
                 if (d.success == true) {
-                    successAlert("Successfully Saved!");
+                    successAlert(d.message);
                     clear_form(formId);
                     $("#modal" + formId).modal('hide');
                     for (var i = 0; i < tblId.length; i++) {
@@ -219,8 +180,6 @@ $uri = $this->session->agrishop_login_uri;
                     tbl ? $("#btn" + tbl).trigger("click") : null;
                 } else if (d.success == false && d.exist == true) {
                     existAlert(d.message);
-                } else if (d.existCode == true) {
-                    existAlert("Code already taken!<br/>by: " + d.existPerson);
                 } else {
                     failAlert("Something went wrong!");
                 }
@@ -263,13 +222,14 @@ $uri = $this->session->agrishop_login_uri;
             //     [10, 25, 50, 100]
             // ],
             ajax: {
-                url: "<?= base_url($uri . '/farms/get') ?>" + tableId,
+                url: "<?= base_url($uri . '/' . $current_location . '/get') ?>" + tableId,
                 type: "POST",
                 data: function(d) {
                     drawCounter++;
                     d.length = pl;
                     d.draw = drawCounter;
                     d.search.value = $('#tbl' + tableId + '_filter input').val();
+                    d.search.farm_id = $('#farmList').val();
                 }
             },
 
@@ -286,6 +246,25 @@ $uri = $this->session->agrishop_login_uri;
         $("#tbl" + tableId + "_filter").addClass("row");
         $("#tbl" + tableId + "_filter label").css("width", "97%");
         $("#tbl" + tableId + "_filter .form-control-sm").css("width", "97%");
+    }
+
+    function add_qty(data) {
+        $('#modalFarmProduceSupply').modal('show');
+
+        // Hidden fields
+        $('[name=fp_id]').val(data.id);
+
+        // Visible display-only text
+        $('[name=show_produceName]').text(data.produce);
+        $('[name=show_classification]').text(data.class_name);
+        $('[name=show_uom]').text(data.uom);
+        $('[name=show_seasonal]').text(data.is_seasonal === 't' ? 'Seasonal' : 'Non-Seasonal');
+        $('[name=show_qty_left]').text(data.qty_left);
+        $('[name=price]').text(data.price);
+
+        // Image
+        $('[name=previewPicProduce]').attr("src", data.img_path);
+
     }
 
     function imageView(a, b, c) {
@@ -309,45 +288,12 @@ $uri = $this->session->agrishop_login_uri;
 
     function defaultImg(a, b, c, d) {
         var reader = new FileReader();
-        $("[name=pic]").val("");
+        $("[name=picProduce]").val("");
         // img = (d == 'FEMALE' ? 'defaultf.png' : 'defaultm.png');
-        $("[name=previewPic]").attr("src", "<?= $system_svg_1x1 ?>");
+        $("[name=previewPicProduce]").attr("src", "<?= $system_svg_1x1 ?>");
         reader.onload = function(e) {
             document.getElementById(b).src = e.target.result;
         };
-    }
-
-    // function getTablez(tableId, dtd, pl) {
-    //     var drawCounter = 0;
-    //     $("#tbl" + tableId).DataTable().destroy();
-    //     var table_data = $("#tbl" + tableId).DataTable({
-
-    //         "processing": true,
-    //         "serverSide": true,
-    //         ajax: {
-    //             url: "<?= base_url($uri . '/getdata/get') ?>" + tableId,
-    //             type: "POST",
-    //             data: function(d) {
-    //                 // Calculate the offset (start) based on the page number
-    //                 // d.start = (d.start / d.length) + 1;
-    //                 // d.length = pl; // Set the limit (length) to the desired value
-    //                 // d.draw = d.draw || 1; // Set the default value to 1 if not provided
-
-    //                 drawCounter++;
-    //                 d.draw = drawCounter;
-    //                 // Include the search value in the AJAX request
-    //                 d.search.value = $('.dataTables_filter input').val();
-    //             }
-    //         },
-    //         "lengthMenu": [10, 25, 50, 100], // Options for records per page
-    //         "pageLength": 10,
-    //     });
-
-    //     // Rest of your code...
-    // }
-
-    function searchPersonnel() {
-        alert('a')
     }
 
     function tblReload(tableId) {
@@ -360,162 +306,6 @@ $uri = $this->session->agrishop_login_uri;
         }, false); // false = keep current pagination
 
 
-
-        // $('.select2').select2()
-        // $('.select2bs4').select2({
-        //     theme: 'bootstrap4'
-        // });
-        // $('[data-toggle="tooltip"]').tooltip()
-        // $('.select2').each(function () {
-        //     let $parent = $(this).closest('.modal');
-        //     $(this).select2({
-        //         dropdownParent: $parent.length ? $parent : $('body') // fallback if not inside a modal
-        //     });
-        // });
-
-    }
-
-    function getSbjctAssPrsnnlFN2(module, grade_id, rmsecid) {
-        // Optional: open modal or panel
-        $('#modalSubjectAssignment').modal('show'); // if using modal
-
-        // Store rmsecid somewhere for reuse
-        $('#subjectAssgnContainer').data('rmsecid', rmsecid);
-
-        // Trigger first tab (Monday) to load
-        $('#dayTabs .nav-link[data-day="Monday"]').trigger('click');
-    }
-
-    // $(document).ready(function () {
-    //     console.log(dayTabs('Monday'));
-    // });
-
-    function getSbjctAssPrsnnlFN(tableId, a, b) {
-        grdlvl = a;
-        rmid = b;
-        tblReload(tableId);
-    }
-
-    // $(document).on('click', '#dayTabs .nav-link', function () {
-    //     const day = $(this).data('day');
-    //     dayTabs(day);
-    // });
-
-    function dayTabs(day, tableId = null) {
-        const rmsecid = $('#form_save_dataSbjctAssPrsnnl input[name="rmsecid"]').val();
-
-        $('#dayTabs .nav-link').removeClass('active');
-        $(`#dayTabs .nav-link[data-day="${day}"]`).addClass('active');
-
-        $.get("<?= base_url($uri . '/getdata/getScheduleByDay') ?>", {
-            rmsecid: rmsecid,
-            day_of_week: day
-        }, function(res) {
-            $('#subjectAssgnContainer').html(res); // Now it works — because response is HTML
-        });
-    }
-
-    function getSbjctAssPrsnnl(tableId) {
-        $("#tbl" + tableId).DataTable().destroy();
-        var table, table_data = $("#tbl" + tableId).DataTable({
-            "order": [
-                [0, "asc"]
-            ],
-            dom: 'Bfrtip',
-            buttons: [],
-            searching: false,
-            "info": false,
-            "paging": false,
-            "ordering": false,
-            "oLanguage": {
-                "sSearch": ""
-            },
-            // language: {
-            //     searchPlaceholder: "Search...",
-            // },
-            pageLength: -1,
-            lengthMenu: [
-                [-1],
-                ["Show all rows"]
-            ],
-            ajax: {
-                url: "<?= base_url($uri . '/getdata/get') ?>" + tableId,
-                type: "POST",
-                data: function(d) {
-                    d.grdlvl = grdlvl;
-                    d.rmid = rmid;
-                }
-            }
-        });
-        $("#tbl" + tableId).on('draw.dt', function() {
-            // $("#tbl" + tableId).DataTable().destroy();
-
-            // $(".searchBtn").attr("disabled", false);
-            // $(".searchBtn").html("<span class=\"fa fa-search\"></span>");
-            $("#form_save_data" + tableId + " .select" + tableId).select2();
-
-            // $(".searchBtn").attr("disabled", false);
-            // $(".searchBtn").html("<span class=\"fa fa-search\"></span>");
-            // $("#tbl" + tableId).DataTable().destroy();
-            // $(".collapse" + tableId).trigger('click');
-
-            grdlvl != 0 ? $("#modal" + tableId).modal('show') : "";
-        });
-        // $("#tbl"+tableId+"_filter").addClass("row");
-        // $("#tbl"+tableId+"_filter label").css("width","99%");
-        // $("#tbl"+tableId+"_filter .form-control-sm").css("width","99%");
-    }
-
-    function QR_BAR_Generator(a, b, c) {
-        var qrcode = new QRCode(document.getElementById("qqqq1" + a), {
-            text: '7' + b,
-            height: (c == 'visitor' ? 133 : 100),
-            width: (c == 'visitor' ? 133 : 100)
-        });
-        var qrcode = new QRCode(document.getElementById("qqqq2" + a), {
-            text: '6' + b,
-            height: 133,
-            width: 133,
-        });
-        // JsBarcode("#bbbb1" + a, '7' + c, {
-        //     pixelRatio: 80,
-        //     displayValue: false,
-        //     margin: 0
-        // });
-        // JsBarcode("#bbbb0" + a, '6' + c, {
-        //     pixelRatio: 100,
-        //     displayValue: false
-        // });
-        // JsBarcode("#bbbb"+a, c,{displayValue: false});
-        // $("#bbbb"+a).attr('src', z);
-    }
-
-    function autoSizeFont(text, minFontSize, maxFontSize, maxWidth) {
-        var $tempElement = $('<span>').text(text).hide().appendTo('body');
-        var fontSize = maxFontSize;
-
-        // Set the initial font size
-        $tempElement.css('font-size', fontSize + 'px');
-
-        // Check if the text width exceeds the maximum width
-        while ($tempElement.width() > maxWidth && fontSize > minFontSize) {
-            fontSize--;
-            $tempElement.css('font-size', fontSize + 'px');
-        }
-
-        // Clean up the temporary element
-        $tempElement.remove();
-
-        return fontSize;
-    }
-
-    function ifnull(a) {
-        let b = a;
-        if ((a == "null") || (a == null) || (a == "") || (a == '')) {
-            // alert(a)
-            b = '-';
-        }
-        return b;
     }
 
     function getLocation(a, b, c, e) {
@@ -550,6 +340,8 @@ $uri = $this->session->agrishop_login_uri;
         ).then(function() {
             s2 == 1 ? $("#form_save_data" + formId + " .select" + getList).select2() : "";
         });
+        console.log('tesssssssss')
+        console.log(formId, getList, getQ, s2, where, sel, e);
     }
 
     $('#form_save_dataGradeSubject .selectSubjectList').on("select2:select", function(e) {
@@ -558,43 +350,6 @@ $uri = $this->session->agrishop_login_uri;
         // console.log(unselected_value);
     }).trigger('change');
 
-
-    function getSelectSubject() {
-        var where = $("#form_save_dataGradeSubject .selectGradeList").val();
-        var where2 = $("#form_save_dataGradeSubject .selectProgStranList").val();
-        $.post("<?= base_url($uri . '/getdata/getGradeSubjectList') ?>", {
-                v: where,
-                v2: where2
-            },
-            function(data) {
-                var result = JSON.parse(data);
-                var data = [];
-                if (!result.length) {
-                    for (var i = 0; i < result['data'].length; i++) {
-                        data.push(result['data'][i]['subject_id']);
-                    }
-                    $("#form_save_dataGradeSubject .selectSubjectList").val(data);
-                    $("#form_save_dataGradeSubject .selectSubjectList").trigger('change');
-                }
-            }
-        ).then(function() {});
-    }
-
-    var invalidChars = [
-        "-",
-        "+",
-        "e",
-    ];
-
-    function viewRegionProvince() {
-        $(".region_province").toggle("slow", function() {
-            if ($(".region_province").is(":visible")) {
-                $(".address_details").removeClass("col-lg-12").addClass("col-lg-5");
-            } else {
-                $(".address_details").removeClass("col-lg-5").addClass("col-lg-12");
-            }
-        });
-    }
 
     function clean(a) {
         var str = a;
@@ -643,32 +398,61 @@ $uri = $this->session->agrishop_login_uri;
         })
     }
 
-    function printForm(a, b, c, d) {
-        var orientation = (b == 'p' ? 'portrait' : 'landscape');
-        var margin = (c == 'Legal' ? 'margin:5mm 5mm 5mm 5mm;' : 'margin:5mm 5mm 5mm 5mm;');
-        var windowUrl = 'Print Form';
-        var uniqueName = new Date();
-        var windowName = 'emailSection' + uniqueName.getTime();
-        var accompWindow = window.open('height=1500,width=2000');
-        accompWindow.document.write('<html>');
-        accompWindow.document.write('<head>');
-        accompWindow.document.title = d;
-        accompWindow.document.write('<link rel="stylesheet" href="<?= base_url() ?>plugins/fontawesome-free/css/all.min.css">' +
-            '<link rel="stylesheet" href="<?= base_url() ?>dist/css/adminlte.min.css">' +
-            // '<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">'+
-            // '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=League+Gothic&display=swap">'+
-            // '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;600;800&display=swap">'+
-            // '<link rel="preconnect" href="https://fonts.googleapis.com">'+
-            // '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'+
-            '<link rel="stylesheet" href="<?= base_url() ?>dist/css/fonts.css">' +
-            '<link rel="stylesheet" href="<?= base_url() ?>dist/css/adminlte.min.css">');
-        accompWindow.document.write('</head>');
-        accompWindow.document.write('<style> @page { size: ' + c + ' ' + orientation + ';' + margin + '} .square {height: 100px;width: 100px;border:1px solid black; } </style>');
-        accompWindow.document.write('<body>' + $("#print" + a).html() + '</body>');
-        accompWindow.document.write('</html>');
-        setTimeout(function() {
-            accompWindow.print();
-            accompWindow.close();
-        }, 1000);
-    }
+
+    //mapping
+    var esri_url = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
+    var esri_attribution = "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community";
+
+    var mapbox_url = "https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=YOUR_MAPBOX_ACCESS_TOKEN";
+    var mapbox_attribution = "Map data &copy; <a href='https://www.openstreetmap.org/'>OpenStreetMap</a> contributors, Imagery &copy; <a href='https://www.mapbox.com/'>Mapbox</a>";
+
+    var caragaBounds = [
+        [7.5, 124.5], // SW corner
+        [9.5, 126.5] // NE corner
+    ];
+
+    // Initialize map, centered in CARAGA
+    var map = L.map('map', {
+        maxBounds: caragaBounds, // restrict panning
+        maxBoundsViscosity: 1.0, // prevent dragging out of bounds
+        minZoom: 5,
+        maxZoom: 18,
+        zoomControl: true
+    }).setView([8.915726, 125.562744], 11);
+    // Coordinates: Lat = 8.992371, Lng = 125.538025
+    var satellite = L.tileLayer(esri_url, {
+        maxZoom: 20,
+        attribution: esri_attribution
+    });
+
+
+    // Street layer
+    var street = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+    });
+
+    // Add satellite by default
+    street.addTo(map);
+
+    // Layer control
+    var baseMaps = {
+        "Street": street,
+        "Satellite": satellite
+    };
+    L.control.layers(baseMaps).addTo(map);
+
+    var marker = null;
+
+    // Click event to drop marker & show coordinates
+    map.on('click', function(e) {
+        if (marker) map.removeLayer(marker);
+        marker = L.marker(e.latlng).addTo(map);
+        // document.getElementById('coords').innerText = 
+        //     "Coordinates: Lat = " + e.latlng.lat.toFixed(6) + ", Lng = " + e.latlng.lng.toFixed(6);
+        console.log("Coordinates: Lat = " + e.latlng.lat.toFixed(6) + ", Lng = " + e.latlng.lng.toFixed(6))
+        $('#farmCoordinates').val(e.latlng.lat.toFixed(6) + "," + e.latlng.lng.toFixed(6));
+        $('#farmLat').val(e.latlng.lat.toFixed(6));
+        $('#farmLon').val(e.latlng.lng.toFixed(6));
+    });
 </script>
