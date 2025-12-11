@@ -43,6 +43,118 @@ $uri = $this->session->agrishop_login_uri;
         // $(".main-sidebar").slideToggle();
     })
 
+    $(document).on('click', '.barangay-item', function() {
+        let id = $(this).data('id');
+        let name = $(this).data('name');
+
+        // Set selected value to input
+        $('.barangayInput').val(name);
+
+        // Store barangay id in hidden input (recommended)
+        $('#barangay_id').val(id);
+
+        // Hide dropdown
+        $('.barangayResults').hide();
+        $('[name=barangay]').val(id)
+    });
+
+    $('.barangayInput').on('keyup', function() {
+        let keyword = $(this).val();
+
+        if (keyword.length < 3) {
+            $('.barangayResults').hide();
+            return;
+        }
+
+        $.ajax({
+            url: "<?= base_url('search-barangay') ?>",
+            type: "POST",
+            data: {
+                keyword: keyword
+            },
+            success: function(res) {
+                let data = JSON.parse(res);
+
+                if (data.length === 0) {
+                    $('.barangayResults').hide();
+                    return;
+                }
+
+                let html = "";
+                data.forEach(row => {
+                    html += `<li class="list-group-item barangay-item" data-id="${row.id}" data-name="${row.text}">
+                    ${row.text}
+                </li>`;
+                });
+
+                $('.barangayResults').html(html).show();
+            }
+        });
+    });
+
+    // when clicking a suggestion
+    $(document).on("click", ".produce-item", function() {
+        let id = $(this).data("id");
+        let name = $(this).data("name");
+        let img = $(this).data("img");
+        let farm_id = $("#farmList").val();
+
+
+        $('[name=farmId]').val(farm_id);
+        $("#produce_id").val(id);
+        $(".produceInput").val(name);
+        $(".produceList").hide();
+        $("[name=produceSelectedId]").val(id);
+        $(".produceImg").html(`<img src="${img}" 
+                                 width="100" height="100" 
+                                 class="rounded mr-2">`);
+    });
+
+
+    $('.produceInput').on('keyup', function() {
+        let keyword = $(this).val();
+
+        if (keyword.length < 2) {
+            $(".produceList").hide();
+            return;
+        }
+
+        $.ajax({
+            url: "<?= base_url('userfarmer/FarmProduce/search_produce_list') ?>",
+            method: "POST",
+            data: {
+                keyword: keyword
+            },
+            success: function(response) {
+                let data = JSON.parse(response);
+
+                if (data.length === 0) {
+                    $(".produceList").hide();
+                    return;
+                }
+
+                let list = "";
+                data.forEach(item => {
+                    let img = item.image_url ? item.image_url : "default.png";
+
+                    list += `
+                        <li class="list-group-item produce-item"
+                            data-id="${item.id}"
+                            data-img="${img}"
+                            data-name="${item.name}">
+                            <img src="${img}" 
+                                 width="35" height="35" 
+                                 class="rounded mr-2">
+                            ${item.name}
+                        </li>
+                    `;
+                });
+
+                $(".produceList").html(list).show();
+            }
+        });
+    });
+
     var confirmP = "";
     var rmvP = "";
     var refrmvP = "";
@@ -249,8 +361,6 @@ $uri = $this->session->agrishop_login_uri;
     }
 
     function add_qty(data) {
-        $('#modalFarmProduceSupply').modal('show');
-
         // Hidden fields
         $('[name=fp_id]').val(data.id);
 

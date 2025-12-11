@@ -31,7 +31,7 @@ class FarmProduce extends MY_Controller
     function getFarmInfo()
     {
         $requestData = $_REQUEST;
-        $person_id  = $this->session->agrishop_login_id;
+        $person_id  = $this->session->agrishop_person_id;
         $searchValue = isset($requestData['search']['value']) ? $requestData['search']['value'] : '';
 
         // Calculate pagination parameters using the separate function
@@ -59,7 +59,7 @@ class FarmProduce extends MY_Controller
             $data[] = array(
                 $image_path,
                 $value->farm_name,
-                $value->barangay_id,
+                $this->getAddress($value->barangay_id),
                 $value->total_area_sqm . " sqm",
                 $is_active,
             );
@@ -76,29 +76,30 @@ class FarmProduce extends MY_Controller
     function getProduceInfo()
     {
         $requestData = $_REQUEST;
-        $person_id  = $this->session->agrishop_login_id;
+        $person_id  = $this->session->agrishop_person_id;
         $searchValue = isset($requestData['search']['value']) ? $requestData['search']['value'] : '';
 
         // Calculate pagination parameters using the separate function
         list($limit, $offset) = $this->calculatePagination($requestData);
 
         // Query to get total record count
-        $thisQuery = $this->db->query("SELECT count(1) AS total FROM public.produce p
-                                    LEFT JOIN public.produce_classification pc ON p.produce_classification_id = pc.id
-                                    WHERE p.created_by_person_id = $person_id AND CONCAT(p.name,pc.class_name,p.description,p.is_active,(CASE WHEN p.is_seasonal = true THEN 'SEASONAL' ELSE 'NON-SEASONAL' END),(CASE WHEN p.is_active = true THEN 'ACTIVE' ELSE 'INACTIVE' END)) 
-                                    ILIKE '%$searchValue%'");
+        $thisQuery = $this->db->query("SELECT COUNT(1) AS total
+                                            FROM public.produce p
+                                            LEFT JOIN public.produce_classification pc ON p.produce_classification_id = pc.id
+                                        WHERE (p.created_by_person_id = $person_id OR p.created_by_person_id IS NULL) AND 
+                                        CONCAT(p.name, pc.class_name, p.description, p.tags) ILIKE '%$searchValue%'");
 
         $totalRecords = $thisQuery->row()->total;
 
-        $query = $this->db->query("SELECT p.id,p.name as produce,pc.class_name,p.description,
-                                    p.is_seasonal,p.is_active,p.created_at, p.img_path 
-                                    FROM public.produce p
-                                    LEFT JOIN public.produce_classification pc ON p.produce_classification_id = pc.id
-                                    WHERE p.created_by_person_id = $person_id AND CONCAT(p.name,pc.class_name,p.description,(CASE WHEN p.is_seasonal = true THEN 'SEASONAL' ELSE 'NON-SEASONAL' END),(CASE WHEN p.is_active = true THEN 'ACTIVE' ELSE 'INACTIVE' END)) 
-                                    ILIKE '%$searchValue%'
-                                    ORDER BY p.created_at DESC
-                                    LIMIT $limit OFFSET $offset
-                                    ");
+        $query = $this->db->query("SELECT * FROM (
+                                        SELECT c.id, c.name AS produce, pc.class_name, c.description,
+                                            c.is_seasonal, c.is_active, c.created_at, c.created_by_person_id, c.img_path, c.tags, c.is_customized
+                                        FROM public.produce c
+                                        LEFT JOIN public.produce_classification pc ON c.produce_classification_id = pc.id
+                                        WHERE c.created_by_person_id = $person_id OR c.created_by_person_id IS NULL) AS x
+                                    WHERE CONCAT(x.produce, x.class_name, x.description, x.tags) ILIKE '%$searchValue%'
+                                    ORDER BY x.img_path
+                                    LIMIT $limit OFFSET $offset");
 
         $data = array();
         $cc = $offset + 1;
@@ -109,9 +110,10 @@ class FarmProduce extends MY_Controller
             $is_active = $is_a_v == 't' ? "<span class='badge bg-success'>ACTIVE</span>" : "<span class='badge bg-danger'>INACTIVE</span>";
             $is_seasonal = $value->is_seasonal == 't' ? "<span class='badge bg-blue'>SEASONAL</span>" : "<span class='badge bg-gray'>NON-SEASONAL</span>";
             $image_path = "<img src='$img' width='50' height='50' class='rounded' data-toggle='tooltip' data-placement='top' title=''>";
+            $produce = $value->created_by_person_id == $person_id ? "<span class='badge bg-orange text-white'>" . $value->produce . "</span>" : $value->produce;
             $data[] = array(
                 $image_path,
-                $value->produce,
+                $produce,
                 $value->class_name,
                 $is_seasonal,
                 $is_active,
@@ -126,10 +128,54 @@ class FarmProduce extends MY_Controller
         echo json_encode($response);
     }
 
+
+    public function search_produce_list()
+    {
+        $keyword = $this->input->post('keyword');
+        $person_id  = $this->session->agrishop_person_id;
+
+        if (strlen($keyword) < 3) {
+            echo json_encode([]);
+            return;
+        }
+
+
+        $query = $this->db->query("SELECT * FROM (
+                                        SELECT p.id, p.name AS produce, pc.class_name, p.description,
+                                            p.is_seasonal, p.is_active, p.created_at, p.created_by_person_id, p.img_path, p.tags 
+                                        FROM public.produce p
+                                        LEFT JOIN public.produce_classification pc ON p.produce_classification_id = pc.id
+
+                                        UNION ALL
+
+                                        SELECT c.id, c.name AS produce, pc.class_name, c.description,
+                                            c.is_seasonal, c.is_active, c.created_at, c.created_by_person_id, c.img_path, c.tags
+                                        FROM public.produce_customize c
+                                        LEFT JOIN public.produce_classification pc ON c.produce_classification_id = pc.id
+                                        WHERE c.created_by_person_id = $person_id
+                                    ) AS x
+                                    WHERE x.produce ILIKE '%$keyword%'
+                                    ORDER BY x.produce
+                                    LIMIT 20");
+
+        $results = [];
+        foreach ($query->result() as $row) {
+            $img = $row->img_path ? base_url($row->img_path) : base_url('dist/img/media/icons/1x1.png');
+            $results[] = [
+                'id'   => $row->id,
+                'name' => $row->produce,
+                'created_by' => $row->created_by_person_id,
+                'image_url' => $img,
+            ];
+        }
+
+        echo json_encode($results);
+    }
+
     function getFarmProduceInfo()
     {
         $requestData = $_REQUEST;
-        $person_id  = $this->session->agrishop_login_id;
+        $person_id  = $this->session->agrishop_person_id;
         $farm_id = $requestData['search']['farm_id'];
         $searchValue = isset($requestData['search']['value']) ? $requestData['search']['value'] : '';
 
@@ -175,7 +221,7 @@ class FarmProduce extends MY_Controller
                                     LEFT JOIN price_qty_left pql ON fp.farm_id = pql.farm_id AND fp.produce_id = pql.produce_id
                                     WHERE fp.farm_id = $farm_id AND CONCAT(p.name,pc.class_name,p.description,(CASE WHEN p.is_seasonal = true THEN 'SEASONAL' ELSE 'NON-SEASONAL' END),(CASE WHEN p.is_active = true THEN 'ACTIVE' ELSE 'INACTIVE' END)) 
                                     ILIKE '%$searchValue%'
-                                    ORDER BY p.created_at DESC
+                                    ORDER BY fp.id desc
                                     LIMIT $limit OFFSET $offset
                                     ");
 
@@ -190,7 +236,7 @@ class FarmProduce extends MY_Controller
             $image_path = "<img src='$img' width='50' height='50' class='rounded' data-toggle='t0
             .0.ooltip' data-placement='top' title=''>";
 
-            $add_produce = "<span class='badge bg-success' type='button' onclick='add_qty({
+            $add_produce = "<span class='badge bg-success' data-toggle='modal' data-target='#modalAddFarmProduceSupply' type='button' onclick='add_qty({
                                 id: \"$value->fp_id\",
                                 img_path: \"$img\",
                                 produce: \"$value->produce\",
@@ -229,13 +275,14 @@ class FarmProduce extends MY_Controller
         $this->db->trans_begin();
         $true = ["success"   => true];
         $false = ["success"   => false];
-        $farmName = $this->input->post("farmName");
+        $farmName = strtoupper($this->input->post("farmName"));
+        $barangay = $this->input->post("barangay");
         $totalAreaSqm = $this->input->post("totalAreaSqm");
         $lat = $this->input->post("lat");
         $lon = $this->input->post("lon");
-        $login_id = $this->session->agrishop_login_id;
+        $login_id = $this->session->agrishop_person_id;
 
-        $person_id = $this->session->agrishop_login_id;
+        $person_id = $this->session->agrishop_person_id;
         $exist = $this->db->query("SELECT * FROM public.farmer_farm WHERE farm_name = '$farmName' and created_by_person_id = $person_id")->num_rows();
         if ($exist > 0) {
             $false += ["message"   => "Farm already exists!", "exist"   => true];
@@ -248,6 +295,7 @@ class FarmProduce extends MY_Controller
         $data = [
             "farmer_id" => 3,
             "farm_name" => $farmName,
+            "barangay_id" => $barangay,
             "total_area_sqm" => $totalAreaSqm,
             "soil_type" => 1,
             "created_by_person_id" => $login_id,
@@ -285,8 +333,10 @@ class FarmProduce extends MY_Controller
         $true = ["success"   => true];
         $false = ["success"   => false];
         $data = [];
-        $person_id = $this->session->agrishop_login_id;
-        $produceName = $this->input->post("produceName");
+        $person_id = $this->session->agrishop_person_id;
+        $produceName =  strtoupper($this->input->post("produceName"));
+        $tags = strtoupper($this->input->post("tags"));
+
 
         $exist = $this->db->query("SELECT * FROM public.produce WHERE name = '$produceName' and created_by_person_id = $person_id")->num_rows();
         if ($exist > 0) {
@@ -304,7 +354,9 @@ class FarmProduce extends MY_Controller
             "produce_classification_id" => $classification,
             "description" => $description,
             "is_seasonal" => $seasonal,
-            "created_by_person_id" => $this->session->agrishop_login_id,
+            "created_by_person_id" => $this->session->agrishop_person_id,
+            "tags" => $tags,
+            "is_customized" => TRUE
         ];
 
         if (isset($_FILES['picProduce']) && $_FILES['picProduce']['error'] === UPLOAD_ERR_OK) {
@@ -315,7 +367,7 @@ class FarmProduce extends MY_Controller
             ];
         }
 
-        if ($this->db->insert("produce", $data)) {
+        if ($this->db->insert("produce_customize", $data)) {
             $true += ["message"   => "Successfully created!"];
             $ret = $true;
         } else {
@@ -332,19 +384,90 @@ class FarmProduce extends MY_Controller
         echo json_encode($ret);
     }
 
-    function saveFarmProduceSupply()
+    function saveFarmProduce()
+    {
+
+        $this->db->trans_begin();
+        $true = ["success"   => true];
+        $false = ["success"   => false];
+        $data = [];
+        $farm_produce_id = null;
+        $person_id = $this->session->agrishop_person_id;
+        $farmId = $this->input->post("farmId");
+        $produceSelectedId = $this->input->post("produceSelectedId");
+        $produceCreatedById = $this->input->post("produceCreatedById");
+        $qty_add = $this->input->post("qty_add");
+        $price = $this->input->post("price");
+        $uom = $this->input->post("uom");
+        $harvest_date = $this->input->post("harvest_date");
+
+        $exist = $this->db->query("SELECT * FROM public.farm_produce WHERE farm_id = $farmId 
+            AND  produce_id = $produceSelectedId  AND harvest_schedule = '$harvest_date' AND created_by_person_id = $person_id")->num_rows();
+        if ($exist > 0) {
+            $false += ["message"   => "Produce with $harvest_date has already exists!", "exist"   => true];
+            $ret = $false;
+            echo json_encode($ret);
+            return;
+        }
+
+
+        $data += [
+            "farm_id" => $farmId,
+            "produce_id" => $produceSelectedId,
+            "harvest_schedule" => $harvest_date,
+            "uom" => $uom,
+            "created_at" => Date("Y-m-d"),
+            "created_by_person_id" => $person_id,
+        ];
+
+        if ($this->db->insert("farm_produce", $data)) {
+            $farm_produce_id = $this->db->insert_id();
+            $data_price_monitor = [
+                "farm_produce_id" => $farm_produce_id,
+                "price" => $price,
+                "created_by_person_id" => $person_id,
+            ];
+            if ($this->db->insert("price_monitoring_farm_produce", $data_price_monitor)) {
+                $data_fp_supply = [
+                    "farm_produce_id" => $farm_produce_id,
+                    "qty" => $qty_add,
+                    "created_by_person_id" => $person_id,
+                ];
+                if ($this->db->insert("farm_produce_supply", $data_fp_supply)) {
+                    $true += ["message"   => "Successfully created!"];
+                    $ret = $true;
+                }
+            } else {
+                $false += ["message"   => "Something went wrong!"];
+                $ret = $false;
+            }
+        } else {
+            $false += ["message"   => "Something went wrong!"];
+            $ret = $false;
+        }
+
+        if ($this->db->trans_status() === false) {
+            $this->db->trans_rollback();
+        } else {
+            $this->db->trans_commit();
+        }
+
+        echo json_encode($ret);
+    }
+
+    function saveAddFarmProduceSupply()
     {
         $this->db->trans_begin();
         $true = ["success"   => true];
         $false = ["success"   => false];
         $data = [];
-        $person_id = $this->session->agrishop_login_id;
+        $person_id = $this->session->agrishop_person_id;
         $farm_produce_id = $this->input->post("fp_id");
 
         $data = [
             "farm_produce_id" => $farm_produce_id,
             "qty" => $this->input->post("qty_add"),
-            "created_by_person_id" => $this->session->agrishop_login_id,
+            "created_by_person_id" => $this->session->agrishop_person_id,
         ];
 
         if ($this->db->insert("farm_produce_supply", $data)) {

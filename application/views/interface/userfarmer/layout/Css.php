@@ -28,10 +28,21 @@
 <!-- Select2 -->
 <style type="text/css">
     /* @import url("https://code.highcharts.com/css/highcharts.css"); */
-    
-    #map { height: 600px; width: 100%; margin-bottom: 10px; }
-    .buttons { margin-bottom: 10px; }
-    .buttons button { margin-right: 5px; margin-bottom: 5px; }
+
+    #map {
+        height: 600px;
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .buttons {
+        margin-bottom: 10px;
+    }
+
+    .buttons button {
+        margin-right: 5px;
+        margin-bottom: 5px;
+    }
 
     #cameraStream.mirrored {
         transform: scaleX(-1);
@@ -227,5 +238,16 @@
         /* Light Green */
         border-color: #ffc107 !important;
         /* color: #fff !important; */
+    }
+
+    .produceList li {
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .produceList li:hover {
+        background: #f1f1f1;
     }
 </style>

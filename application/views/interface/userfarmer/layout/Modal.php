@@ -45,7 +45,7 @@ $uri = $this->session->agrishop_login_uri;
                             <div class="col-lg-8 col-md-7 col-sm-7 col-7">
                                 <div class="form-group">
                                     <label class="col-form-label"><i class="fas fa-tractor"></i> Farm Name</label>
-                                    <input type="text" class="form-control border-primary" name="farmName" placeholder="Farm Name">
+                                    <input type="text" class="form-control border-primary text-uppercase" name="farmName" placeholder="FARM NAME">
                                 </div>
                             </div>
                             <div class="col-lg-4 col-md-5 col-sm-5 col-5">
@@ -54,26 +54,42 @@ $uri = $this->session->agrishop_login_uri;
                                     <input type="text" class="form-control border-primary" name="totalAreaSqm" placeholder="AREA" autocomplete="off" nr="1">
                                 </div>
                             </div>
+
+
                             <div class="col-lg-8 col-md-6 col-sm-6 col-8">
                                 <div class="form-group">
                                     <label class="col-form-label"><i class="fas fa-house"></i> Location</label>
-                                    <select class="form-control border-primary" name="barangay">
-                                        <option value="">SEARCH LOCATION</option>
-                                        <option value="AGAO">AGAO</option>
-                                        <option value="AMPAYON">AMPAYON</option>
-                                    </select>
+                                    <input name="barangay" hidden>
+                                    <input type="text" class="form-control border-primary barangayInput" name="barangay_" placeholder="TYPE BARANGAY (min 3 chars)" autocomplete="off">
                                 </div>
+                                <ul class="list-group barangayResults" style="position:absolute; z-index:9999; width:100%; display:none; cursor:pointer"></ul>
+
                             </div>
                             <div class="col-lg-4 col-md-6 col-sm-6 col-4">
                                 <div class="form-group">
-                                    <label class="col-form-label">Organization</label>
-                                    <select style="width:80%" class="form-control form-control-sm text-uppercase select2" name="organization">
-                                        <option value="">ORGANIZATION MEMBER</option>
-                                        <option value="FFF">Federation of Free Farmers (FFF)</option>
-                                        <option value="RMP">Rural Missionaries of the Philippines</option>
-                                        <option value="AgriCOOPh">AgriCOOPh (Philippine Family Farmers’ Agriculture Fishery Forestry Cooperatives Federation)</option>
-                                        <option value="AA">Alyansa Agrikultura (AA)</option>
-                                        <option value="AMA">Aniban ng Manggagawa sa Agrikultura (AMA)</option>
+                                    <label class="col-form-label">Soil Type</label>
+                                    <select style="width:100%" class="form-control text-uppercase select2" name="soil_type">
+                                        <option value="">SOIL TYPE</option>
+                                        <option value="ALLUVIAL SOIL">ALLUVIAL SOIL</option>
+                                        <option value="CALICHE">CALICHE</option>
+                                        <option value="CHALK">CHALK</option>
+                                        <option value="CLAY">CLAY</option>
+                                        <option value="CLAY LOAM">CLAY LOAM</option>
+                                        <option value="GRAVEL">GRAVEL</option>
+                                        <option value="LATERITE">LATERITE</option>
+                                        <option value="LOAM">LOAM</option>
+                                        <option value="MARL">MARL</option>
+                                        <option value="ORGANIC SOIL">ORGANIC SOIL</option>
+                                        <option value="PEAT">PEAT</option>
+                                        <option value="SAND">SAND</option>
+                                        <option value="SANDY CLAY">SANDY CLAY</option>
+                                        <option value="SANDY LOAM">SANDY LOAM</option>
+                                        <option value="SANDY SILT">SANDY SILT</option>
+                                        <option value="SILT">SILT</option>
+                                        <option value="SILT LOAM">SILT LOAM</option>
+                                        <option value="SILTY CLAY">SILTY CLAY</option>
+                                        <option value="SILTY LOAM">SILTY LOAM</option>
+                                        <option value="VOLCANIC SOIL (ANDISOL)">VOLCANIC SOIL (ANDISOL)</option>
                                     </select>
                                 </div>
                             </div>
@@ -158,14 +174,14 @@ $uri = $this->session->agrishop_login_uri;
                         <div class="row">
                             <div class="col-lg-8 col-md-7 col-sm-7 col-7">
                                 <div class="form-group">
-                                    <label class="col-form-label"><i class="fas fa-carrot"></i> Produce Name</label>
-                                    <input type="text" class="form-control border-primary" name="produceName" placeholder="Produce Name">
+                                    <label class="col-form-label"><i class="fas fa-carrot"></i> PRODUCE NAME</label>
+                                    <input type="text" class="form-control border-primary text-uppercase" name="produceName" placeholder="Produce Name">
                                 </div>
                             </div>
                             <div class="col-lg-4 col-md-5 col-sm-5 col-5">
                                 <div class="form-group">
-                                    <label class="col-form-label">Classification</label>
-                                    <select class="form-control border-primary" name="classification">
+                                    <label class="col-form-label">CLASSIFICATION</label>
+                                    <select class="form-control border-primary text-uppercase" name="classification">
                                         <option value="">Select Classification</option>
                                         <option value="1">Vegetables</option>
                                         <option value="2">Fruits</option>
@@ -176,35 +192,19 @@ $uri = $this->session->agrishop_login_uri;
                                     </select>
                                 </div>
                             </div>
-                            <!-- <div class="col-lg-3 col-md-6 col-sm-6 col-4">
+                            <div class="col-lg-5 col-md-3 col-sm-3 col-4">
                                 <div class="form-group">
-                                    <label class="col-form-label"><i class="fas fa-scale-balanced"></i> UoM</label>
-                                    <select class="form-control border-primary" name="unit_of_measure">
-                                        <option value="">Select Unit of Measure</option>
-                                        <option value="pc">piece (pc)</option>
-                                        <option value="kg">kilogram (kg)</option>
-                                        <option value="g">gram (g)</option>
-                                        <option value="L">liter (L)</option>
-                                        <option value="mL">milliliter (mL)</option>
-                                        <option value="sack">sack</option>
-                                        <option value="bag">bag</option>
-                                        <option value="box">box</option>
-                                        <option value="tray">tray</option>
-                                        <option value="bunch">bunch</option>
-                                        <option value="bundle">bundle</option>
-                                        <option value="crate">crate</option>
-                                        <option value="dozen">dozen</option>
-                                        <option value="ton">ton</option>
-                                    </select>
-                                </div>
-                            </div> -->
-                            <div class="col-lg-8 col-md-6 col-sm-6 col-8">
-                                <div class="form-group">
-                                    <label class="col-form-label"><i class="fas fa-info"></i> Description</label>
-                                    <input type="text" class="form-control border-primary" name="description" placeholder="Description" nr="1">
+                                    <label class="col-form-label"><i class="fas fa-info"></i> DESCRIPTION</label>
+                                    <input type="text" class="form-control border-primary text-uppercase" name="description" placeholder="DESCRIPTION" nr="1">
                                 </div>
                             </div>
-                            <div class="col-lg-4 col-md-6 col-sm-6 col-4">
+                            <div class="col-lg-5 col-md-3 col-sm-3 col-4">
+                                <div class="form-group">
+                                    <label class="col-form-label"><i class="fas fa-tag"></i> TAGS</label>
+                                    <input type="text" class="form-control border-primary text-uppercase" name="tags" placeholder="TAGS TO BE SEARCHED EASILY" nr="1">
+                                </div>
+                            </div>
+                            <div class="col-lg-2 col-md-6 col-sm-6 col-4">
                                 <div class="form-group">
                                     <label class="col-form-label"> </label>
                                     <div class="custom-control custom-checkbox mt-3">
@@ -231,7 +231,7 @@ $uri = $this->session->agrishop_login_uri;
 </div>
 
 <!-- <div class="modal fade show" id="modalFarmProduceSupply" data-backdrop="static" style="padding-right: 15px; display: block;" aria-modal="true" role="dialog"> -->
-<div class="modal fade" id="modalFarmProduceSupply" data-backdrop="static" dism>
+<div class="modal fade" id="modalFarmProduceSupply" data-backdrop="static">
     <div class="modal-dialog modal-sm modal-dialog-centered">
         <div class="modal-content shadow rounded">
 
@@ -245,7 +245,108 @@ $uri = $this->session->agrishop_login_uri;
                 </button>
             </div>
 
-            <?= form_open(base_url($uri . '/FarmProduce/saveFarmProduceSupply'), 'id="form_save_dataFarmProduceSupply"'); ?>
+            <?= form_open(base_url($uri . '/FarmProduce/saveFarmProduce'), 'id="form_save_dataFarmProduceSupply"'); ?>
+
+            <input name="farmId" hidden>
+            <input name="produceSelectedId" hidden>
+
+            <!-- BODY -->
+            <div class="modal-body p-2">
+                <!-- IMAGE -->
+                <div class="text-center mb-2 produceImg">
+                </div>
+                <div class="input-group mb-3 position-relative">
+                    <input type="text" name="produceSelected" class="form-control form-control-sm produceInput text-uppercase border-primary" placeholder="TYPE PRODUCE NAME..." autocomplete="off">
+
+                    <!-- suggestion list -->
+                    <ul class="list-group position-absolute w-100 shadow-sm produceList mt-5" style="z-index: 9999; max-height: 250px; overflow-y: auto; display: none;">
+                    </ul>
+                </div>
+
+                <!-- hidden ID -->
+
+                <!-- Supply Add Section -->
+                <div class="bg-light rounded">
+                    <div class="small text-muted font-weight-bold mb-1">Add Supply</div>
+
+                    <div class="form-group mb-2">
+                        <input type="number" class="form-control form-control-sm border-success" name="qty_add" min="1" value="1" placeholder="Quantity to Add">
+                    </div>
+                </div>
+                <div class="bg-light rounded">
+                    <div class="small text-muted font-weight-bold mb-1">Price</div>
+
+                    <div class="form-group mb-2">
+                        <input type="number" class="form-control form-control-sm border-success" name="price" min="1" value="1" placeholder="Price">
+                    </div>
+                </div>
+                <div class="bg-light rounded pt-1">
+                    <div class="small text-muted font-weight-bold mb-1">UoM</div>
+
+                    <div class="form-group mb-2">
+                        <select class="form-control form-control-sm border-success select2" name="uom">
+                            <option value="KG">KG</option>
+                            <option value="G">G</option>
+                            <option value="LB">LB</option>
+                            <option value="SACK">SACK</option>
+                            <option value="BAG">BAG</option>
+                            <!-- Count -->
+                            <option value="PC">PC</option>
+                            <option value="PACK">PACK</option>
+                            <option value="BUNDLE">BUNDLE</option>
+                            <option value="BUNCH">BUNCH</option>
+                            <option value="CLUSTER">CLUSTER</option>
+                            <option value="DOZEN">DOZEN</option>
+                            <option value="TRAY">TRAY</option>
+                            <option value="HEAD">HEAD</option>
+                            <option value="STICK">STICK</option>
+                            <!-- Volume -->
+                            <option value="L">L</option>
+                            <option value="ML">ML</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="bg-light rounded pt-1">
+                    <div class="small text-muted font-weight-bold mb-1">Harvest Date</div>
+
+                    <div class="form-group mb-2">
+                        <input type="date" class="form-control form-control-sm border-success" name="harvest_date" value="<?= Date('Y-m-d'); ?>">
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- FOOTER -->
+            <div class="modal-footer py-1 px-2">
+                <button type="submit" class="btn btn-primary btn-sm px-3">
+                    <i class="fas fa-save"></i> Save
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">
+                    Close
+                </button>
+            </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- <div class="modal fade show" id="modalFarmProduceSupply" data-backdrop="static" style="padding-right: 15px; display: block;" aria-modal="true" role="dialog"> -->
+<div class="modal fade" id="modalAddFarmProduceSupply" data-backdrop="static">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content shadow rounded">
+
+            <!-- HEADER -->
+            <div class="modal-header bg-success text-white py-2">
+                <h6 class="modal-title mb-0">
+                    <i class="fas fa-boxes mr-1"></i> Add Supply
+                </h6>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+
+            <?= form_open(base_url($uri . '/FarmProduce/saveAddFarmProduceSupply'), 'id="form_save_dataAddFarmProduceSupply"'); ?>
 
             <input type="hidden" name="fp_id">
 

@@ -277,7 +277,8 @@ class MY_Controller extends CI_Controller
         return $data;
     }
 
-    public function cleanStringQ($input) {
+    public function cleanStringQ($input)
+    {
         if (is_string($input)) {
             // Remove single quotes and double quotes from the input string
             $cleanedString = str_replace(["'", '"'], "", $input);
@@ -301,16 +302,39 @@ class MY_Controller extends CI_Controller
         return $data;
     }
 
+    public function getAddress($filter)
+    {
+        $fltr = $filter ? $filter : 0;
+        $address = "";
+        $query = $this->db->query("SELECT 
+                                        t1.id,
+                                        UPPER(CONCAT(
+                                            t1.description, ' ',
+                                            t2.description, ', ',
+                                            t3.description, ', ',
+                                            t4.region
+                                        )) AS address
+                                    FROM tbl_barangay t1
+                                    LEFT JOIN tbl_citymun t2 ON t1.citymun_id = t2.id
+                                    LEFT JOIN tbl_province t3 ON t2.province_id = t3.id
+                                    LEFT JOIN tbl_region t4 ON t3.region_id = t4.id
+                                    WHERE t1.id=$fltr");
+        if ($query->num_rows() > 0) {
+            $address = $query->row()->address;
+        }
+        return $address;
+    }
+
     public function getBarangay_City($brgy, $city)
     {
-        $brgy_id = 160202038;#160202054;
+        $brgy_id = 160202038; #160202054;
         if (strtoUpper($city) == 'BUTUAN CITY (CAPITAL)') {
             $query = $this->db->query("SELECT t1.id FROM address.tbl_barangay t1 WHERE t1.citymun_id=160201
                                         AND orig_desc ILIKE '%$brgy%' LIMIT 1");
             if ($query->num_rows() > 0) {
                 $brgy_id = $query->row()->id;
             } else {
-                $brgy_id = 160202038;#160202054;
+                $brgy_id = 160202038; #160202054;
             }
         } else {
             $query = $this->db->query("SELECT t2.id FROM address.tbl_citymun t1 
@@ -319,7 +343,7 @@ class MY_Controller extends CI_Controller
             if ($query->num_rows() > 0) {
                 $brgy_id = $query->row()->id;
             } else {
-                $brgy_id = 160202038;#160202054;
+                $brgy_id = 160202038; #160202054;
             }
         }
         return $brgy_id;
@@ -551,7 +575,8 @@ class MY_Controller extends CI_Controller
         return $data;
     }
 
-    public function filterAndFormatDate($date) {
+    public function filterAndFormatDate($date)
+    {
         $dateFormats = [
             'm-d-Y',
             'm/d/Y',
@@ -562,7 +587,7 @@ class MY_Controller extends CI_Controller
             'Y/m/d',
             'Y.m.d',
         ];
-    
+
         if (is_numeric($date) && $date >= 1 && $date <= 99999) {
             // Convert $date to date format (assuming it's an Excel date serial)
             $excelDateOrigin = 25569; // Adjust for Excel's date origin (January 1, 1970, in Unix timestamp)
@@ -584,7 +609,7 @@ class MY_Controller extends CI_Controller
             // You can add your error handling logic here
             return null;
         }
-    
+
         // Return null if none of the formats matched
     }
 
@@ -746,71 +771,6 @@ class MY_Controller extends CI_Controller
         }
     }
 
-    public function basicInfoChecker($f, $m, $l, $b, $s)
-    {
-        $sex = $s == 1 ? 'true' : 'false';
-        $query = $this->db->query("SELECT t1.id FROM profile.tbl_basicinfo t1
-                                    WHERE t1.first_name='$f' AND t1.middle_name='$m' AND t1.last_name='$l' AND t1.birthdate='$b' AND t1.sex=$sex");
-        if ($query->num_rows() > 0) {
-            return $query->row()->id;
-        } else {
-            return false;
-        }
-    }
-
-    public function learnerChecker($lrn, $binfoId)
-    {
-        $where = !$binfoId && $lrn ? "WHERE t1.lrn='$lrn'" : ($binfoId && !$lrn ? "WHERE t1.basic_info_id=$binfoId" : "WHERE t1.lrn='$lrn' AND t1.basic_info_id=$binfoId");
-        $query = $this->db->query("SELECT t1.id FROM profile.tbl_learners t1 $where");
-        if ($query->num_rows() > 0) {
-            return $query->row()->id;
-        } else {
-            return false;
-        }
-    }
-
-    public function enrollmentChecker($a, $b)
-    {
-        $sy = $this->getOnLoad()["sy_id"];
-        echo ($a);
-        echo ('<br/>');
-        if (!$b) {
-            $query = $this->db->query("SELECT t1.id FROM sy$sy.bs_tbl_learner_enrollment t1 WHERE t1.learner_id=$a");
-        } else {
-            $query = $this->db->query("SELECT t2.basic_info_id AS id FROM sy$sy.bs_tbl_learner_enrollment t1 
-                                        LEFT JOIN profile.tbl_learners t2 ON t1.learner_id = t2.id 
-                                        WHERE t1.learner_id=$a");
-        }
-        if ($query->num_rows() > 0) {
-            return $query->row()->id;
-        } else {
-            return false;
-        }
-    }
-
-    public function hasSpecificCharacter($string, $character) {
-        return strpos($string, $character) !== false;
-    }
-    
-    public function gradeColor($a)
-    {
-
-        if ($a) {
-            $grade = (int) $a;
-            $color = "";
-            if ($grade >= 90) {
-                $color = "success";
-            } else if ($grade >= 80) {
-                $color = "orange";
-            } else if ($grade > 0) {
-                $color = "danger";
-            }
-            return "<b class='text-lg text-" . $color . "'>" . $a . "</b>";
-        } else {
-            return "--";
-        }
-    }
-
     public function uploadImg($pic, $picname, $path_, $dupload)
     {
         $newImageName = null;
@@ -839,7 +799,7 @@ class MY_Controller extends CI_Controller
                 $cleanName = preg_replace('/[^a-z0-9_-]/', '', strtolower($picname));
                 $newImageName = $cleanName . "_" . time() . "." . $extension;
                 $newImagePath = $config['upload_path'] . $newImageName;
-                
+
                 // Config for image_lib (to resize/copy)
                 $config['image_library'] = 'gd2';
                 $config['source_image'] = $myPic['full_path'];   // original uploaded file
@@ -857,64 +817,6 @@ class MY_Controller extends CI_Controller
             }
         }
     }
-
-    // public function uploadImg($pic, $id, $path_)
-    // {
-    //     $s = $this->getOnLoad()["sy"];
-    //     $newImageName = null;
-    //     // if (isset($_FILES['pic'])) {
-    //     // Add a flag to check if the upload process has already been executed
-    //     $isUploaded = false;
-    //     if (isset($pic) && !$isUploaded) {
-    //         //$thisPic=$this->do_blob($_FILES['pic']);
-    //         // dist/img/icons
-    //         // dist/img/media/learner/2022-2023
-    //         // Create the directory if it doesn't exist
-    //         $config['upload_path'] = "dist/img/media/$path_/" . $s . "/";
-
-    //         if (!is_dir($config['upload_path'])) {
-    //             mkdir($config['upload_path'], 0777, true);
-    //         }
-
-    //         $config['allowed_types'] = 'gif|jpg|jpeg|png';
-    //         $this->load->library('upload', $config);
-
-    //         if (!$this->upload->do_upload('pic')) {
-    //             $myPic = null;
-    //         } else {
-    //             $isUploaded = true;
-    //             $upData = $this->upload->data();
-    //             $myPic = $this->upload->data();
-    //             $config['image_library'] = 'gd2';
-    //             $config['encrypt_name'] = true;
-
-
-
-    //             $config['source_image'] = $config['upload_path'] . $myPic['file_name'];
-    //             // $config['create_thumb'] = false;
-    //             // $config['maintain_ratio'] = true;
-    //             // $config['quality'] = '60%';
-    //             // $config['width'] = 166;
-    //             // $config['height'] = 166;
-
-    //             // $config['new_image'] = "dist/img/media/learner/2022-2023/" . $myPic['file_name'];
-
-    //             // $this->load->library('image_lib', $config);
-    //             // $this->image_lib->resize();
-
-    //             // Determine the file extension
-    //             $extension = pathinfo($myPic['file_name'], PATHINFO_EXTENSION);
-
-    //             // Modify the image name here
-    //             $newImageName = $id . "." . $extension;
-    //             $config['new_image'] = "dist/img/media/$path_/$s/$newImageName";
-
-    //             $this->load->library('image_lib', $config);
-    //             $this->image_lib->resize();
-    //         }
-    //         return $config['upload_path'] . $newImageName;
-    //     }
-    // }
 
     public function getImg($a)
     {
@@ -940,16 +842,6 @@ class MY_Controller extends CI_Controller
         return base_url('dist/img/media/icons/1x1.png');
     }
 
-    public function avg4($a, $b, $c, $d)
-    {
-        if ($a && $b && $c && $d) {
-            $t = $a + $b + $c + $d;
-            return round($t / 4, 0);
-        } else {
-            return 0;
-        }
-    }
-
     public function dateFormat($a)
     {
         $b = "-";
@@ -958,87 +850,6 @@ class MY_Controller extends CI_Controller
             $b = date_format($c, "M d, Y");
         }
         return strtoUpper($b);
-    }
-
-    // public function font_id($a)
-    // {
-    //     $count = strlen($a);
-    //     if ($count >= 15) {
-    //         $s = 8;
-    //     } else if ($count >= 12) {
-    //         $s = 12;
-    //     }
-    //     return strtoUpper("<p style='font-size: " . $s . "px'>" . $a . "</p>");
-    // }
-
-    function font_idz($text, $minFontSize, $maxFontSize, $maxLength)
-    {
-        $textLength = strlen($text);
-        $fontSize = $minFontSize;
-
-        // Calculate the font size based on the text length
-        if ($textLength > 0) {
-            $fontSize = $minFontSize + (($maxFontSize - $minFontSize) * ($textLength / $maxLength));
-        }
-
-        // Return the font size
-        // return $fontSize;
-        // <u>&emsp;'+advisory+'&emsp;</u>
-        return strtoUpper("<u style='font-size: " . $fontSize . "px'>" . $text . "</u>");
-    }
-
-    function font_id2($text, $minFontSize, $maxFontSize, $maxWidth)
-    {
-        $fontSize = $maxFontSize;
-
-        // Create a temporary image to calculate text dimensions
-        $image = imagecreatetruecolor(1, 1);
-
-        // Calculate the width of the text at the maximum font size
-        $textWidth = imagefontwidth($fontSize) * strlen($text);
-
-        // Reduce the font size until it fits within the maximum width
-        while ($textWidth > $maxWidth && $fontSize > $minFontSize) {
-            $fontSize--;
-            $textWidth = imagefontwidth($fontSize) * strlen($text);
-        }
-
-        // Destroy the temporary image
-        imagedestroy($image);
-
-        return strtoUpper("<u style='font-size: " . $fontSize . "px'>" . $text . "</u>");
-    }
-
-    function font_id($text, $minFontSize, $maxFontSize)
-    {
-        $len = strlen($text);
-
-        if ($len <= 19) {
-            $fontSize = $maxFontSize;
-        } elseif ($len <= 25) {
-            $fontSize = $minFontSize;
-        } elseif ($len <= 28) {
-            $fontSize = $minFontSize;
-        } elseif ($len <= 32) {
-            $fontSize = $minFontSize;
-        } elseif ($len <= 36) {
-            $fontSize = $minFontSize;
-        } else {
-            $fontSize = $maxFontSize - ($len % $maxFontSize);
-        }
-
-        return "<u style='font-size: " . $fontSize . "px'>" . $text . "</u>";
-    }
-
-    public function grades_input($lrn, $q, $qrtr)
-    {
-        $id = $lrn . $qrtr;
-        return  "<center><input style='width:50px;text-align:center'
-                         onclick='maxInput(\"gradeLearner$id\")' onkeyup='maxInput(\"gradeLearner$id\");'
-                         style='text-align:center;' type='number' class='form-control' 
-                         name='gradeLearner" . $qrtr . "[]' value='$q' 
-                         placeholder='--' nr='1' 
-                         id='gradeLearner$id'/></center>";
     }
 }
 

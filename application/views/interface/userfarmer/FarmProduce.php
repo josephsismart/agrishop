@@ -40,15 +40,15 @@ $uri = $this->session->agrishop_login_uri;
 							<div class="col-lg-4 col-md-4 col-sm-6 col-8">
 								<div class="form-group">
 									<label class="col-form-label"><i class="fas fa-house"></i> My Farm with Produce</label>
-
 									<select class="form-control border-primary" name="farmList"  id="farmList" onchange="getTable('FarmProduceInfo', 0, 5);">
 
 										<?php
 										$person_id = $this->session->agrishop_person_id;
-										$query = $this->db->query("SELECT t2.id,t2.farm_name,count(1) as produce_c FROM farm_produce t1
-																	LEFT JOIN farmer_farm t2 ON t1.farm_id=t2.id
-																	WHERE t2.created_by_person_id=$person_id
-																	GROUP BY t2.id order by count(1) desc");
+
+										$query = $this->db->query("SELECT t1.id, t1.farm_name,
+																		(SELECT count(1) FROM farm_produce WHERE farm_id=t1.id) AS produce_c
+																	FROM farmer_farm t1
+																	WHERE created_by_person_id=$person_id");
 
 										foreach ($query->result() as $key => $value) {
 											echo "<option value='" . $value->id . "'>" . $value->farm_name . " - (".$value->produce_c.")</option>";
@@ -60,7 +60,7 @@ $uri = $this->session->agrishop_login_uri;
 							<div class="card-header pb-0 bg-success">
 								<h1 class="card-title"><i class="fa fa-list"></i> Farm & Produce</h1>
 								<div class="card-tools mt-n1">
-									<span class='badge bg-navy' data-toggle="modal" data-target="#modalFarmProduceInfo" role="button"><i class="fas fa-plus"></i> Create New Supply</span>
+									<span class='badge bg-navy' data-toggle="modal" data-target="#modalFarmProduceSupply" role="button"><i class="fas fa-plus"></i> Create New Supply</span>
 									<!-- <button type="button" class="btn btn-tool" data-card-widget="remove"><i class="fas fa-remove"></i></button> -->
 								</div>
 							</div>
@@ -91,7 +91,7 @@ $uri = $this->session->agrishop_login_uri;
 							<div class="card-header pb-0">
 								<h1 class="card-title"><i class="fa fa-list"></i> List of Produce</h1>
 								<div class="card-tools mt-n1">
-									<span class='badge bg-primary' data-toggle="modal" data-target="#modalProduceInfo" role="button"><i class="fas fa-plus"></i> Add Produce</span>
+									<span class='badge bg-orange text-white' data-toggle="modal" data-target="#modalProduceInfo" role="button"><i class="fas fa-plus"></i> Add Custom Produce</span>
 									<!-- <button type="button" class="btn btn-tool" data-card-widget="remove"><i class="fas fa-remove"></i></button> -->
 								</div>
 							</div>
@@ -165,5 +165,8 @@ $uri = $this->session->agrishop_login_uri;
 		// saveForm(f3, [f3], null, 0, 5);
 		
 		saveForm("FarmProduceSupply", ["FarmProduceInfo"], null, 0, 5);
+		saveForm("AddFarmProduceSupply", ["FarmProduceInfo"], null, 0, 5);
+
+		
 	});
 </script>

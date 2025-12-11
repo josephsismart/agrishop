@@ -91,7 +91,7 @@
                                         <div class="col-6">
                                             <div class="input-group mb-3">
                                                 <select name="sex" class="form-control form-select-sm">
-                                                    <option value="" selected disabled>SEX</option>
+                                                    <option value="" selected disabled>GENDER</option>
                                                     <option value="MALE">MALE</option>
                                                     <option value="FEMALE">FEMALE</option>
                                                 </select>
@@ -137,7 +137,7 @@
                                             <div class="input-group-text"><span class="fas fa-home"></span></div>
                                         </div>
                                     </div>
-                                    <ul class="list-group barangayResults" style="position:absolute; z-index:9999; width:100%; display:none;"></ul>
+                                    <ul class="list-group barangayResults" style="position:absolute; z-index:9999; width:100%; display:none;cursor:pointer;"></ul>
                                     <hr>
 
                                     <!-- Username -->
@@ -233,7 +233,7 @@
                                         <div class="col-6">
                                             <div class="input-group mb-3">
                                                 <select name="sex" class="form-control form-select-sm">
-                                                    <option value="" selected disabled>SEX</option>
+                                                    <option value="" selected disabled>GENDER</option>
                                                     <option value="MALE">MALE</option>
                                                     <option value="FEMALE">FEMALE</option>
                                                 </select>
@@ -280,7 +280,7 @@
                                     </div>
 
                                     <!-- dropdown container -->
-                                    <ul class="list-group barangayResults" style="position:absolute; z-index:9999; width:100%; display:none;"></ul>
+                                    <ul class="list-group barangayResults" style="position:absolute; z-index:9999; width:100%; display:none;cursor:pointer;"></ul>
 
                                     <hr>
 
