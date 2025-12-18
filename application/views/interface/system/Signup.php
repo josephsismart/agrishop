@@ -31,7 +31,7 @@
         </div>
         <!-- /.login-logo -->
 
-        <div class="card card-outline card-success">
+        <div class="card p-3">
             <div class="card-header text-center">
                 <a href="<?= base_url() ?>index" class="d-block">
                     <img src="<?php echo base_url(); ?>dist/layout_shop/images/logo.svg" width="240" height="70" alt="logo">
@@ -48,21 +48,20 @@
                     <p class="text-warning text-center text-sm"><i class="fa fa-exclamation-triangle"></i> User already exists. Please try again.</p>
                 <?php endif ?>
 
-
-                <div class="card card-danger card-tabs">
-                    <div class="card-header p-0">
+                <div class="card card-primary card-tabs">
+                    <div class="card-header p-0 pt-1">
                         <ul class="nav nav-tabs" id="custom-tabs-one-tab" role="tablist">
                             <li class="nav-item" style="width: 50%;">
-                                <a class="nav-link active" id="custom-tabs-one-customer-tab" data-toggle="pill" href="#custom-tabs-one-customer" role="tab" aria-controls="custom-tabs-one-customer" aria-selected="true">Customer</a>
+                                <a class="nav-link active" id="custom-tabs-one-home-tab" data-toggle="pill" href="#custom-tabs-one-home" role="tab" aria-controls="custom-tabs-one-home" aria-selected="true"><i class="fa fa-user"></i> Register as Customer</a>
                             </li>
                             <li class="nav-item" style="width: 50%;">
-                                <a class="nav-link" id="custom-tabs-one-farmer-tab" data-toggle="pill" href="#custom-tabs-one-farmer" role="tab" aria-controls="custom-tabs-one-farmer" aria-selected="false">Farmer</a>
+                                <a class="nav-link" id="custom-tabs-one-profile-tab" data-toggle="pill" href="#custom-tabs-one-profile" role="tab" aria-controls="custom-tabs-one-profile" aria-selected="false"><i class="fa fa-tractor"></i> Register as Farmer</a>
                             </li>
                         </ul>
                     </div>
                     <div class="card-body">
                         <div class="tab-content" id="custom-tabs-one-tabContent">
-                            <div class="tab-pane fade active show" id="custom-tabs-one-customer" role="tabpanel" aria-labelledby="custom-tabs-one-customer-tab">
+                            <div class="tab-pane fade active show" id="custom-tabs-one-home" role="tabpanel" aria-labelledby="custom-tabs-one-home-tab">
                                 <div>
                                     <?= form_open(base_url('/requestsignup'), 'id=form_save_dataRequestSignupCustomer'); ?>
 
@@ -202,9 +201,8 @@
 
                                     <?= form_close(); ?>
                                 </div>
-                                <!-- /.social-auth-links -->
                             </div>
-                            <div class="tab-pane fade" id="custom-tabs-one-farmer" role="tabpanel" aria-labelledby="custom-tabs-one-farmer-tab">
+                            <div class="tab-pane fade" id="custom-tabs-one-profile" role="tabpanel" aria-labelledby="custom-tabs-one-profile-tab">
                                 <div>
                                     <?= form_open(base_url('/requestsignup'), 'id=form_save_dataRequestSignupFarmer'); ?>
 
@@ -397,7 +395,6 @@
 
                                     <?= form_close(); ?>
                                 </div>
-                                <!-- /.social-auth-links -->
                             </div>
                         </div>
                     </div>

@@ -45,7 +45,7 @@ $uri = $this->session->agrishop_login_uri;
                             <div class="col-lg-8 col-md-7 col-sm-7 col-7">
                                 <div class="form-group">
                                     <label class="col-form-label"><i class="fas fa-tractor"></i> Farm Name</label>
-                                    <input type="text" class="form-control border-primary text-uppercase" name="farmName" placeholder="FARM NAME">
+                                    <input type="text" class="form-control border-primary text-uppercase" name="farmName" placeholder="FARM NAME" autocomplete="off">
                                 </div>
                             </div>
                             <div class="col-lg-4 col-md-5 col-sm-5 col-5">
@@ -99,8 +99,9 @@ $uri = $this->session->agrishop_login_uri;
 
                 <div class="card card-outline card-primary mt-3">
                     <div class="card-header">
-                        <h3 class="card-title">Location in map</h3>
-
+                        <h3 class="card-title">Location in map: </h3>
+                        <div class="col-12"> <h6 class="text-blue" id="farmCoordinates"></h6>
+                        </div>
                         <div class="card-tools">
                             <!-- <button type="button" class="btn btn-tool" data-card-widget="collapse">
                                 <i class="fas fa-minus"></i>
@@ -109,7 +110,7 @@ $uri = $this->session->agrishop_login_uri;
                         <!-- /.card-tools -->
                     </div>
                     <!-- /.card-header -->
-                    <input id="farmCoordinates" name="coordinates" hidden>
+                    <!-- <input id="farmCoordinates" name="coordinates" > -->
                     <input id="farmLat" name="lat" hidden>
                     <input id="farmLon" name="lon" hidden>
                     <div class="card-body" style="display: block; height: 250px;" id="map">
@@ -391,6 +392,94 @@ $uri = $this->session->agrishop_login_uri;
                 </button>
             </div>
 
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xs">
+        <div class="modal-content" style="border-radius:0;">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="profileModalLabel">My Profile</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <?= form_open(base_url('/updateprofile'), 'id=form_save_dataUpdateProfile'); ?>
+            <div class="modal-body">
+                <div class="card-body">
+                    <h6><i class="fas fa-camera-retro"></i> Photo</h6>
+                    <div class="col-12">
+                        <center class="p-0 border">
+                            <div class="form-group">
+                                <img name="previewPic" src="<?= $this->session->agrishop_login_img_path  ?>" onclick="$('[name=picProfile]').trigger('click')" width="120" height="120" class="border border-white border-2 rounded elevation-2" type="button" alt="User Image">
+                            </div>
+                            <div class="form-group">
+                                <input name="picProfile" type="file" accept="image/*" onchange="imageView('picProfile','previewPic','imgtargetLink')" nr="1" hidden="">
+                                <!-- <input name="personId" type="text" nr="1" > -->
+                                <input name="img_path" type="text" nr="1" hidden="">
+                            </div>
+                        </center>
+                    </div>
+                    <div class="row">
+                        <h6><i class="fas fa-user"></i> Name</h6>
+                        <div class="col-lg-4 col-md-4 col-sm-4 col-6">
+                            <input type="text" class="form-control form-control-sm text-uppercase border-primary" value="<?= $this->session->agrishop_login_first_name ?>" name="firstName" placeholder="FIRST NAME" autocomplete="off">
+                        </div>
+                        <div class="col-lg-4 col-md-4 col-sm-4 col-6 mb-2">
+                            <input type="text" class="form-control form-control-sm text-uppercase border-primary" value="<?= $this->session->agrishop_login_middle_name ?>" name="middleName" placeholder="MIDDLE NAME" autocomplete="off" nr="1">
+                        </div>
+                        <div class="col-lg-4 col-md-4 col-sm-4 col-6 mb-2">
+                            <input type="text" class="form-control form-control-sm text-uppercase border-primary" value="<?= $this->session->agrishop_login_last_name ?>" name="lastName" placeholder="LAST NAME" autocomplete="off">
+                        </div>
+                        <div class="col-6">
+                            <h6 class="mt-3"><i class="fas fa-birthday-cake"></i> Birthdate</h6>
+                            <div class="col-12">
+                                <input type="date" class="form-control form-control-sm border-primary" name="birthdate" nr="1" value="<?= $this->session->agrishop_login_birthdate ?>">
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <h6 class="mt-3"><i class="fas fa-venus-mars"></i> Gender</h6>
+                            <div class="col-12">
+                                <select class="form-control form-control-sm border-primary" name="sex">
+                                    <option value="t" <?= $this->session->agrishop_login_sex == 't' ? 'selected' : '' ?>>MALE</option>
+                                    <option value="f" <?= $this->session->agrishop_login_sex == 'f' ? 'selected' : '' ?>>FEMALE</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <h6 class="mt-3"><i class="fas fa-envelope"></i> Email</h6>
+                            <div class="col-12">
+                                <input type="email" class="form-control form-control-sm border-primary" placeholder="EMAIL" name="email" nr="1" value="<?= $this->session->agrishop_login_email_address ?>" autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <h6 class="mt-3"><i class="fas fa-phone"></i> Contact Number</h6>
+                            <div class="col-12">
+                                <input type="text" class="form-control form-control-sm border-primary text-uppercase" placeholder="Contact Number" name="contactNumber" nr="1" value="<?= $this->session->agrishop_login_contact_num ?>">
+                            </div>
+                        </div>
+
+                        <h6 class="mt-3"> <i class="fas fa-map-marker-alt"></i> Address</h6>
+                        <div class="col-12">
+                            <div class="input-group mb-3">
+                                <!-- 160202061 -->
+                                <input name="barangay" hidden value="<?= $this->session->agrishop_login_barangay_id ?>">
+                                <input type="text" class="form-control form-control-sm barangayInput border-primary text-uppercase" value="<?= $this->session->agrishop_login_address_text ?>" placeholder="TYPE BARANGAY (min 3 chars)" autocomplete="off" name="barangay_text">
+
+                            </div>
+                            <ul class="list-group barangayResults" style="position:absolute; z-index:9999; width:100%; display:none;cursor:pointer;"></ul>
+
+                        </div>
+
+                    </div>
+                </div>
+
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" class="btn bg-primary text-white update_profile"> <i class="fas fa-save"></i> Update Profile</button>
+            </div>
             </form>
         </div>
     </div>

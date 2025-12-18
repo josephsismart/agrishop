@@ -20,6 +20,70 @@
         // triggerSearch();
     }
 
+
+    $(document).on('click', '.barangay-item', function() {
+        let id = $(this).data('id');
+        let name = $(this).data('name');
+
+        // Set selected value to input
+        $('.barangayInput').val(name);
+
+        // Store barangay id in hidden input (recommended)
+        $('#barangay_id').val(id);
+
+        // Hide dropdown
+        $('.barangayResults').hide();
+        $('[name=barangay]').val(id)
+    });
+
+    $('.barangayInput').on('keyup', function() {
+        let keyword = $(this).val();
+
+        if (keyword.length < 3) {
+            $('.barangayResults').hide();
+            return;
+        }
+
+        $.ajax({
+            url: "<?= base_url('search-barangay') ?>",
+            type: "POST",
+            data: {
+                keyword: keyword,
+                limit: 3
+            },
+            success: function(res) {
+                let data = JSON.parse(res);
+
+                if (data.length === 0) {
+                    $('.barangayResults').hide();
+                    return;
+                }
+
+                let html = "";
+                data.forEach(row => {
+                    html += `<li class="list-group-item barangay-item" data-id="${row.id}" data-name="${row.text}">
+                    ${row.text}
+                </li>`;
+                });
+
+                $('.barangayResults').html(html).show();
+            }
+        });
+    });
+
+
+    // when clicked
+    $(document).on('click', '.barangay-item', function() {
+        let name = $(this).data('name');
+        let id = $(this).data('id');
+
+        $('.barangayInput').val(name); // show selected barangay
+        $('.barangayResults').hide(); // hide list
+
+        // optional: save to hidden field if needed
+        // $("#barangay_id").val(id);
+    });
+
     var valid = 0;
 
     function validate(form_id) {
@@ -102,13 +166,13 @@
             success: function(data) {
                 var d = JSON.parse(data);
                 if (d.success == true) {
-                    successAlert("Successfully Applied!");
+                    successAlert("Successfully Updated!");
                     // toastr.success("Successfully Applied!")
                     $(".sbmtbttn").hide();
                     $(".redirect").show();
-                    setTimeout(function() {
-                        location.reload();
-                    }, 2000)
+                    // setTimeout(function() {
+                    //     location.reload();
+                    // }, 2000)
                 } else if (d.exist == true) {
                     existAlert("Application already exist!");
                     // toastr.warning("Application already exist!")
@@ -123,6 +187,37 @@
     }
 
     saveForm("RegisterFarmer", [null], null);
+    saveForm("UpdateProfile", [null], null);
+
+    function imageView(a, b, c) {
+        var fileInput = $("[name=" + a + "]")[0]; // Get the file input element
+        var file = fileInput.files[0]; // Get the selected file
+
+        if (file.size > 25 * 1024 * 1024) {
+            // Picture size is above 2MB
+            alert("Picture must be less than 2MB");
+            return; // You can handle this case according to your requirements
+        }
+
+        var reader = new FileReader();
+
+        reader.onload = function(e) {
+            $("[name=" + b + "]").attr('src', e.target.result); // Set the source of the image element
+        };
+
+        reader.readAsDataURL(file);
+    }
+
+    function defaultImg(a, b, c, d) {
+        var reader = new FileReader();
+        $("[name=picProduce]").val("");
+        // img = (d == 'FEMALE' ? 'defaultf.png' : 'defaultm.png');
+        $("[name=previewPicProduce]").attr("src", "<?= $system_svg_1x1 ?>");
+        reader.onload = function(e) {
+            document.getElementById(b).src = e.target.result;
+        };
+    }
+
 
     function clean(a) {
         var str = a;

@@ -87,8 +87,8 @@ class MY_Controller extends CI_Controller
         // if (isset($this->session->agrishop_login_id) && $this->uri->segment(1) == "" || $this->uri->segment(1) == "login" || $this->uri->segment(1) == "map") {
         if (isset($this->session->agrishop_login_id) && $this->uri->segment(1) == "" || $this->uri->segment(1) == "login" || $this->uri->segment(1) == "map") {
             if ($level != "") {
-                if ($defaultPassword == 1) {
-                    redirect(base_url('userpassword/changepassword'));
+                if ($uri == "userconsumer") {
+                    redirect(base_url('index'));
                 } else {
                     redirect(base_url($uri . '/' . $landing));
                 }
@@ -318,6 +318,29 @@ class MY_Controller extends CI_Controller
                                     LEFT JOIN tbl_citymun t2 ON t1.citymun_id = t2.id
                                     LEFT JOIN tbl_province t3 ON t2.province_id = t3.id
                                     LEFT JOIN tbl_region t4 ON t3.region_id = t4.id
+                                    WHERE t1.id=$fltr");
+        if ($query->num_rows() > 0) {
+            $address = $query->row()->address;
+        }
+        return $address;
+    }
+
+    public function getAddress2($filter)
+    {
+        $fltr = $filter ? $filter : 0;
+        $address = "";
+        $query = $this->db->query("SELECT 
+                                        t1.id,
+                                        UPPER(CONCAT(
+                                            t1.description, ' ',
+                                            t2.description, ', ',
+                                            t3.description, ', ',
+                                            t4.region
+                                        )) AS address
+                                    FROM tbl_barangay_2 t1
+                                    JOIN tbl_citymun t2 ON t1.adm3_psgc = t2.ref_id
+                                    JOIN tbl_province t3 ON t2.province_id = t3.id
+                                    JOIN tbl_region t4 ON t3.region_id = t4.id AND t4.is_active = true
                                     WHERE t1.id=$fltr");
         if ($query->num_rows() > 0) {
             $address = $query->row()->address;

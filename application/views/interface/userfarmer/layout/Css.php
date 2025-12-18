@@ -250,4 +250,25 @@
     .produceList li:hover {
         background: #f1f1f1;
     }
+
+    .menu-list .nav-item {
+        transition: background-color 0.2s ease, transform 0.15s ease;
+        border-radius: 8px;
+    }
+
+    .menu-list .nav-item:hover {
+        background-color: #66be62ff;
+        /* light hover bg */
+        transform: translateY(-1px);
+        color: #fff;
+    }
+
+    .menu-list .nav-item:hover .nav-link {
+        color: #fff;
+        /* bootstrap primary */
+    }
+
+    .menu-list .nav-item.active {
+        background-color: #dff0ff;
+    }
 </style>

@@ -1,4 +1,3 @@
-<?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
 <!DOCTYPE html>
 <html lang="en">
 <?php $role_lvl = $this->session->agrishop_login_level; ?>
@@ -73,6 +72,48 @@
             top: calc(var(--nav-height) + 10px);
             left: 20px;
             z-index: 9999;
+        }
+
+        .barangayResults {
+            position: absolute;
+            z-index: 9999;
+            width: 100%;
+            display: none;
+            cursor: pointer;
+            max-height: 220px;
+            overflow-y: auto;
+        }
+
+        /* STRIPED */
+        .barangayResults li:nth-child(even) {
+            background-color: #efefefff;
+        }
+
+        /* HOVER */
+        .barangayResults li:hover {
+            background-color: #218037ff;
+            color: white;
+        }
+
+        .menu-list .nav-item {
+            transition: background-color 0.2s ease, transform 0.15s ease;
+            border-radius: 8px;
+        }
+
+        .menu-list .nav-item:hover {
+            background-color: #66be62ff;
+            /* light hover bg */
+            transform: translateY(-1px);
+            color: #fff;
+        }
+
+        .menu-list .nav-item:hover .nav-link {
+            color: #fff;
+            /* bootstrap primary */
+        }
+
+        .menu-list .nav-item.active {
+            background-color: #dff0ff;
         }
     </style>
 
@@ -269,6 +310,7 @@
     <!-- <div id="distanceInfo"></div> -->
 
 
+    <?php $this->load->view('interface/system/layout/modals') ?>
 
     <script src="<?php echo base_url(); ?>dist/layout_shop/js/jquery-1.11.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
@@ -293,7 +335,6 @@
     <?php $this->load->view('interface/system/layout/cart_script') ?>
 
 
-    <?php $this->load->view('interface/system/layout/modals') ?>
 
 </body>
 

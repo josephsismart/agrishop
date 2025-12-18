@@ -30,6 +30,7 @@ $uri = $this->session->agrishop_login_uri;
 <script src="<?= base_url() ?>plugins/sweetalert2/sweetalert2.min.js"></script>
 <!-- AdminLTE App -->
 <script src="<?= base_url() ?>dist/js/adminlte.min.js"></script>
+<script src="https://unpkg.com/topojson-client@3"></script>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <script type="text/javascript">
@@ -45,6 +46,7 @@ $uri = $this->session->agrishop_login_uri;
 
     $(document).on('click', '.barangay-item', function() {
         let id = $(this).data('id');
+        let gid = $(this).data('gid');
         let name = $(this).data('name');
 
         // Set selected value to input
@@ -56,6 +58,10 @@ $uri = $this->session->agrishop_login_uri;
         // Hide dropdown
         $('.barangayResults').hide();
         $('[name=barangay]').val(id)
+        // alert(gid)
+        // pinCentroidById(gid);
+
+        pinCentroidById(gid);
     });
 
     $('.barangayInput').on('keyup', function() {
@@ -67,7 +73,7 @@ $uri = $this->session->agrishop_login_uri;
         }
 
         $.ajax({
-            url: "<?= base_url('search-barangay') ?>",
+            url: "<?= base_url('search-barangay-caraga') ?>",
             type: "POST",
             data: {
                 keyword: keyword
@@ -82,7 +88,7 @@ $uri = $this->session->agrishop_login_uri;
 
                 let html = "";
                 data.forEach(row => {
-                    html += `<li class="list-group-item barangay-item" data-id="${row.id}" data-name="${row.text}">
+                    html += `<li class="list-group-item barangay-item" data-id="${row.id}" data-gid="${row.gid}" data-name="${row.text}">
                     ${row.text}
                 </li>`;
                 });
@@ -508,61 +514,87 @@ $uri = $this->session->agrishop_login_uri;
         })
     }
 
+    // -------------------
+    // 1️⃣ Initialize map
+    // -------------------
+    var map = L.map('map').setView([8.915726, 125.562744], 11);
 
-    //mapping
-    var esri_url = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
-    var esri_attribution = "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community";
-
-    var mapbox_url = "https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=YOUR_MAPBOX_ACCESS_TOKEN";
-    var mapbox_attribution = "Map data &copy; <a href='https://www.openstreetmap.org/'>OpenStreetMap</a> contributors, Imagery &copy; <a href='https://www.mapbox.com/'>Mapbox</a>";
-
-    var caragaBounds = [
-        [7.5, 124.5], // SW corner
-        [9.5, 126.5] // NE corner
-    ];
-
-    // Initialize map, centered in CARAGA
-    var map = L.map('map', {
-        maxBounds: caragaBounds, // restrict panning
-        maxBoundsViscosity: 1.0, // prevent dragging out of bounds
-        minZoom: 5,
-        maxZoom: 18,
-        zoomControl: true
-    }).setView([8.915726, 125.562744], 11);
-    // Coordinates: Lat = 8.992371, Lng = 125.538025
-    var satellite = L.tileLayer(esri_url, {
-        maxZoom: 20,
-        attribution: esri_attribution
-    });
-
-
-    // Street layer
     var street = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '&copy; OpenStreetMap contributors'
-    });
+    }).addTo(map);
 
-    // Add satellite by default
-    street.addTo(map);
-
-    // Layer control
-    var baseMaps = {
-        "Street": street,
-        "Satellite": satellite
-    };
-    L.control.layers(baseMaps).addTo(map);
-
+    // -------------------
+    // 2️⃣ Global marker variable
+    // -------------------
     var marker = null;
 
-    // Click event to drop marker & show coordinates
+    // -------------------
+    // 3️⃣ Function to pin centroid by ID
+    // -------------------
+    function pinCentroidById(brgyId) {
+        fetch("<?php echo base_url(); ?>dist/map/caraga_center.geojson")
+            .then(res => res.json())
+            .then(data => {
+                var feature = data.features.find(f => f.properties.id == brgyId);
+                if (!feature) {
+                    alert("Barangay not found!");
+                    return;
+                }
+
+                var center = feature.geometry.coordinates; // [lng, lat]
+                var latlng = [center[1], center[0]]; // Leaflet [lat, lng]
+
+                // Remove old marker if exists
+                if (marker) map.removeLayer(marker);
+
+                // Add new marker for centroid
+                marker = L.marker(latlng).addTo(map)
+                    .bindPopup(feature.properties.barangay || "Barangay")
+                    .openPopup();
+
+                // Zoom map to marker
+                map.setView(latlng, 15);
+
+                // Update form inputs
+                $('#farmCoordinates').val(latlng.join(','));
+                $('#farmCoordinates').text('Lat: ' + latlng[0] + ', Lng: ' + latlng[1]);
+                $('#farmLat').val(latlng[0]);
+                $('#farmLon').val(latlng[1]);
+            })
+            .catch(err => {
+                console.error(err);
+                alert("Failed to load GeoJSON");
+            });
+    }
+
+    // -------------------
+    // 4️⃣ Pin example barangay initially
+    // -------------------
+
+    // -------------------
+    // 5️⃣ Click anywhere to replace marker
+    // -------------------
     map.on('click', function(e) {
+        var latlng = e.latlng;
+
+        // Remove old marker (whether it was pinned or previous click)
         if (marker) map.removeLayer(marker);
-        marker = L.marker(e.latlng).addTo(map);
-        // document.getElementById('coords').innerText = 
-        //     "Coordinates: Lat = " + e.latlng.lat.toFixed(6) + ", Lng = " + e.latlng.lng.toFixed(6);
-        console.log("Coordinates: Lat = " + e.latlng.lat.toFixed(6) + ", Lng = " + e.latlng.lng.toFixed(6))
-        $('#farmCoordinates').val(e.latlng.lat.toFixed(6) + "," + e.latlng.lng.toFixed(6));
-        $('#farmLat').val(e.latlng.lat.toFixed(6));
-        $('#farmLon').val(e.latlng.lng.toFixed(6));
+
+        // Add new marker at click location
+        marker = L.marker(latlng).addTo(map)
+            // .bindPopup('Selected Location')
+            .openPopup();
+
+        map.panTo(latlng);
+
+        var lat = latlng.lat.toFixed(6);
+        var lng = latlng.lng.toFixed(6);
+
+
+        $('#farmCoordinates').val(`${lat},${lng}`);
+        $('#farmCoordinates').text(`Lat: ${lat}, Lng: ${lng}`);
+        $('#farmLat').val(lat);
+        $('#farmLon').val(lng);
     });
 </script>

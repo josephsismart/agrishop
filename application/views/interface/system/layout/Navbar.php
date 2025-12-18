@@ -13,7 +13,7 @@ $farm_produce = base_url() . $uri . '/FarmProduce';
 <div class="offcanvas-body">
     <?php if ($role_lvl != "") { ?>
         <ul class="navbar-nav justify-content-end menu-list list-unstyled d-flex gap-md-3 mb-0">
-            <li class="nav-item border-dashed active">
+            <li class="nav-item border-dashed">
                 <a href="<?php $dashboard; ?>" class="nav-link d-flex align-items-center gap-3 text-dark p-2">
                     <i class="fa fa-chart-line"></i>
                     <span>Dashboard</span>

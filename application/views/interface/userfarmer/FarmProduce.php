@@ -166,6 +166,7 @@ $uri = $this->session->agrishop_login_uri;
 		
 		saveForm("FarmProduceSupply", ["FarmProduceInfo"], null, 0, 5);
 		saveForm("AddFarmProduceSupply", ["FarmProduceInfo"], null, 0, 5);
+		saveForm("UpdateProfile", [null], null);
 
 		
 	});

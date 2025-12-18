@@ -61,6 +61,7 @@ $route['login'] = 'system/Login';
 $route['signup'] = 'system/Signup';
 $route['index'] = 'system/Index';
 $route['registration'] = 'system/Registration';
+$route['updateprofile'] = 'system/Login/updateprofile';
 
 $route['updatePassword'] = 'userpassword/Changepassword/updatePassword';
 $route['changepassword'] = 'userpassword/Changepassword';
@@ -72,6 +73,7 @@ $route['sendSMS'] = 'system/Signup/sendSMS';
 $route['sendEmail'] = 'system/Signup/email_verification';
 
 $route['search-barangay'] = 'userpublicmap/map/search_barangay';
+$route['search-barangay-caraga'] = 'userpublicmap/map/search_barangay_caraga';
 
 // $route['save_national'] = 'useradmin/Dataentry/savenational';
 // $route['save_local'] = 'uservalidator/Dataentry/savelocal';

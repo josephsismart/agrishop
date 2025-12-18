@@ -30,15 +30,50 @@ class Login extends MY_Controller
         $result = "";
         $data = [];
         // Use prepared statements to prevent SQL injection
-        $chck = $this->db->query(
-            "SELECT t1.id,t1.password, t1.person_id,t1.username,t2.level, t3.first_name, t3.last_name,
-                                    CASE WHEN t4.id IS NOT NULL AND t4.approved_at IS NULL THEN 1 ELSE 0 END as is_registered_farmer,
-                                    'f' AS change_pwd, t1.is_active
-                                    FROM public.user t1
-                                    LEFT JOIN public.role t2 ON t1.role_id = t2.id
-                                    LEFT JOIN public.person t3 ON t1.person_id = t3.id
-                                    LEFT JOIN public.farmer t4 ON t3.id = t4.person_id
-                                    WHERE t1.password = ? AND t1.username = ? AND t1.is_active = true LIMIT 1",
+        $chck = $this->db->query("SELECT 
+                                    t1.id,
+                                    t1.password,
+                                    t1.person_id,
+                                    t1.username,
+                                    t2.level,
+                                    'test' as first_name,
+                                    t3.middle_name,
+                                    t3.last_name,
+                                    t3.birthdate,
+                                    t3.sex,
+                                    t3.email_address,
+                                    t3.contact_num,
+                                    t3.barangay_id,
+
+                                    UPPER(CONCAT(
+                                        b.description, ' ',
+                                        c.description, ', ',
+                                        p.description, ', ',
+                                        r.region
+                                    )) AS address_text,
+
+                                    CASE 
+                                        WHEN t4.id IS NOT NULL AND t4.approved_at IS NULL THEN 1 
+                                        ELSE 0 
+                                    END AS is_registered_farmer,
+
+                                    'f' AS change_pwd,
+                                    t1.is_active
+
+                                FROM public.user t1
+                                LEFT JOIN public.role t2 ON t1.role_id = t2.id
+                                LEFT JOIN public.person t3 ON t1.person_id = t3.id
+                                LEFT JOIN public.farmer t4 ON t3.id = t4.person_id
+
+                                LEFT JOIN tbl_barangay b ON t3.barangay_id = b.id
+                                LEFT JOIN tbl_citymun c ON b.citymun_id = c.id
+                                LEFT JOIN tbl_province p ON c.province_id = p.id
+                                LEFT JOIN tbl_region r ON p.region_id = r.id
+
+                                WHERE t1.password = ? 
+                                AND t1.username = ? 
+                                AND t1.is_active = true
+                                LIMIT 1",
             array($password, $username)
         );
 
@@ -47,18 +82,22 @@ class Login extends MY_Controller
             $row1 = $chck->row();
             $person_id = $row1->person_id;
             $data += [
-                "agrishop_login_district"   => '',
-                "agrishop_login_schl_id"    => '',
-                "agrishop_login_school_id"  => '',
-                "agrishop_login_schl_name"  => '',
-                "agrishop_login_schl_type"  => '',
-                "agrishop_login_abbrv"      => '',
+                //profile
+                // "agrishop_login_middlename"     => $row1->middle_name,
+                // "agrishop_login_lastname"       => $row1->last_name,
+                // "agrishop_login_sex"            => $row1->sex,
+                // "agrishop_login_birthdate"      => $row1->brithdate,
+                // "agrishop_login_email"          => $row1->email_address,
+                // "agrishop_login_contact"        => $row1->contact_num,
+                // "agrishop_login_address_id"     => $row1->barangay_id,
+                // "agrishop_login_address_text"   => $row1->address_text,
 
                 "agrishop_request_registration" => $row1->is_registered_farmer,
                 "agrishop_person_id"        => $person_id, // $query->row('id'),
                 "agrishop_login_id"         => $row1->id, // $query->row('id'),
                 "agrishop_login_uname"      => $row1->username, // $query->row('username'),
-                "agrishop_login_level"      => $row1->level, // $value->level,
+                "agrishop_login_level"      => 12312, // $value->level,
+                "agrishop_login_firstname"      => 'test',
                 "agrishop_login_uri"        => ($row1->change_pwd == 't' ? "ud440aed189" : ($row1->level == 0 ? "useradmin" : ($row1->level == 1 ? "userconsumer" : ($row1->level == 2 ? "userfarmer" : "")))),
 
                 "agrishop_login_landing"    => $row1->change_pwd == 't' ? "changepassword" : ($row1->level == 6 ? "dataentry" : "dataentry"), //($value->level==2?"dataentry":"dashboard"),
@@ -105,6 +144,16 @@ class Login extends MY_Controller
             "agrishop_login_uri"            => '',
             "agrishop_login_landing"        => '',
             "agrishop_login_prsnnl_Id"      => '',
+
+            "agrishop_login_firstname"      => '',
+            "agrishop_login_middlename"     => '',
+            "agrishop_login_lastname"       => '',
+            "agrishop_login_sex"            => '',
+            "agrishop_login_birthdate"      => '',
+            "agrishop_login_email"          => '',
+            "agrishop_login_contact"        => '',
+            "agrishop_login_address_id"     => '',
+            "agrishop_login_address_text"   => '',
 
 
             //role_id != 8;

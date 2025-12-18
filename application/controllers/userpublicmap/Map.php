@@ -126,7 +126,7 @@ class Map extends MY_Controller
     public function search_barangay()
     {
         $keyword = $this->input->post('keyword');
-
+        $limit = $this->input->post('limit')?:10;
         if (strlen($keyword) < 3) {
             echo json_encode([]);
             return;
@@ -164,12 +164,68 @@ class Map extends MY_Controller
                                     WHERE 1=1 
                                     $conditions
                                     ORDER BY t1.description 
-                                    LIMIT 10");
+                                    LIMIT $limit");
 
         $results = [];
         foreach ($query->result() as $row) {
             $results[] = [
                 'id'   => $row->id,
+                'text' => $row->address
+            ];
+        }
+
+        echo json_encode($results);
+    }
+
+    public function search_barangay_caraga()
+    {
+        $keyword = $this->input->post('keyword');
+        $limit = $this->input->post('limit')?:10;
+        if (strlen($keyword) < 3) {
+            echo json_encode([]);
+            return;
+        }
+
+        // Split the keyword into individual words
+        $words = explode(' ', $keyword);
+
+        // Build dynamic "ILIKE" filters
+        $conditions = "";
+        foreach ($words as $w) {
+            $w = trim($w);
+            if ($w !== "") {
+                $conditions .= " AND CONCAT(
+                t1.description,' ',
+                t2.description,', ',
+                t3.description,', ',
+                t4.region
+            ) ILIKE '%" . $this->db->escape_like_str($w) . "%' ";
+            }
+        }
+
+        $query = $this->db->query("SELECT 
+                                        t1.id,
+                                        t1.gid,
+                                        UPPER(CONCAT(
+                                            t1.description, ' ',
+                                            t2.description, ', ',
+                                            t3.description, ', ',
+                                            t4.region
+                                        )) AS address
+                                    FROM tbl_barangay_2 t1
+                                    JOIN tbl_citymun t2 ON t1.adm3_psgc = t2.ref_id
+                                    JOIN tbl_province t3 ON t2.province_id = t3.id
+                                    JOIN tbl_region t4 ON t3.region_id = t4.id AND t4.is_active = true
+                                    WHERE 1=1 
+                                    $conditions
+                                    ORDER BY t1.description 
+                                    LIMIT $limit");
+
+        $results = [];
+        foreach ($query->result() as $row) {
+            $results[] = [
+                'id'   => $row->id,
+                'gid'   => $row->gid,
                 'text' => $row->address
             ];
         }

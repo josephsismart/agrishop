@@ -30,70 +30,86 @@ class Login extends MY_Controller
         $result = "";
         $data = [];
         // Use prepared statements to prevent SQL injection
-        $chck = $this->db->query("SELECT t1.id,t1.password, t1.person_id,t1.username,t2.level, t3.first_name, t3.last_name,
-                                    CASE WHEN t4.id IS NOT NULL AND t4.approved_at IS NULL THEN 1 ELSE 0 END as is_registered_farmer,
-                                    'f' AS change_pwd, t1.is_active
-                                    FROM public.user t1
-                                    LEFT JOIN public.role t2 ON t1.role_id = t2.id
-                                    LEFT JOIN public.person t3 ON t1.person_id = t3.id
-                                    LEFT JOIN public.farmer t4 ON t3.id = t4.person_id
-                                    WHERE t1.password = ? AND t1.username = ? AND t1.is_active = true LIMIT 1",
-                                    array($password, $username));
-        
+        $chck = $this->db->query(
+            "SELECT 
+                                    t1.id,
+                                    t1.password,
+                                    t1.person_id,
+                                    t1.username,
+                                    t2.level,
+                                    t3.first_name,
+                                    t3.middle_name,
+                                    t3.last_name,
+                                    t3.birthdate,
+                                    t3.sex,
+                                    t3.email_address,
+                                    t3.contact_num,
+                                    t3.barangay_id,
+                                    t3.img_path,
+
+                                    UPPER(CONCAT(
+                                        b.description, ' ',
+                                        c.description, ', ',
+                                        p.description, ', ',
+                                        r.region
+                                    )) AS address_text,
+
+                                    CASE 
+                                        WHEN t4.id IS NOT NULL AND t4.approved_at IS NULL THEN 1 
+                                        ELSE 0 
+                                    END AS is_registered_farmer,
+
+                                    'f' AS change_pwd,
+                                    t1.is_active
+
+                                FROM public.user t1
+                                LEFT JOIN public.role t2 ON t1.role_id = t2.id
+                                LEFT JOIN public.person t3 ON t1.person_id = t3.id
+                                LEFT JOIN public.farmer t4 ON t3.id = t4.person_id
+
+                                LEFT JOIN tbl_barangay b ON t3.barangay_id = b.id
+                                LEFT JOIN tbl_citymun c ON b.citymun_id = c.id
+                                LEFT JOIN tbl_province p ON c.province_id = p.id
+                                LEFT JOIN tbl_region r ON p.region_id = r.id
+
+                                WHERE t1.password = ? 
+                                AND t1.username = ? 
+                                AND t1.is_active = true
+                                LIMIT 1",
+            array($password, $username)
+        );
+
         if ($chck->num_rows() > 0) {
             $row1 = $chck->row();
             $person_id = $row1->person_id;
+            $img = $row1->img_path ? base_url($row1->img_path) : base_url('dist/img/media/icons/1x1.png');
             if ($row1->is_active == true) {
 
                 $data += [
-                    "agrishop_login_district"   => '',
-                    "agrishop_login_schl_id"    => '',
-                    "agrishop_login_school_id"  => '',
-                    "agrishop_login_schl_name"  => '',
-                    "agrishop_login_schl_type"  => '',
-                    "agrishop_login_abbrv"      => '',
-                    
+                    "agrishop_login_first_name" => $row1->first_name,
+                    "agrishop_login_middle_name" => $row1->middle_name,
+                    "agrishop_login_last_name" => $row1->last_name,
+                    "agrishop_login_birthdate" => $row1->birthdate,
+                    "agrishop_login_sex" => $row1->sex,
+                    "agrishop_login_email_address" => $row1->email_address,
+                    "agrishop_login_contact_num" => $row1->contact_num,
+                    "agrishop_login_barangay_id" => $row1->barangay_id,
+                    "agrishop_login_address_text" => $row1->barangay_id ? $row1->address_text : "",
+                    "agrishop_login_img_path" => $img,
                     "agrishop_request_registration" => $row1->is_registered_farmer,
                     "agrishop_person_id"        => $person_id, // $query->row('id'),
                     "agrishop_login_id"         => $row1->id, // $query->row('id'),
                     "agrishop_login_uname"      => $row1->username, // $query->row('username'),
                     "agrishop_login_level"      => $row1->level, // $value->level,
-                    "agrishop_login_uri"        => ($row1->change_pwd == 't' ? "ud440aed189" : 
-                        ($row1->level == 0 ? "useradmin" : 
-                        ($row1->level == 1 ? "userconsumer" : 
-                        ($row1->level == 2 ? "userfarmer" : "")))),
-                    
-                    "agrishop_login_landing"    => $row1->change_pwd == 't' ? "changepassword" : ($row1->level == 2 ? "farmproduce" : "dataentry"), //($value->level==2?"dataentry":"dashboard"),
-                    "agrishop_pass"             => $row1->password, // $query->row('password'),
-                    "agrishop_change_password"  => $row1->change_pwd, // $query->row('change_password'),
-                    "agrishop_login_name"       => 'AAAA',#$row2->full_name, // $this->personName($query->row('person_id'),'n'),
-                    "agrishop_login_img"        => '',#$this->getImg($row2->img_path), // $this->personName($query->row('person_id'),'n'),
-                    ];
+                    "agrishop_login_uri"        => ($row1->change_pwd == 't' ? "ud440aed189" : ($row1->level == 0 ? "useradmin" : ($row1->level == 1 ? "userconsumer" : ($row1->level == 2 ? "userfarmer" : "")))),
 
-                // if ($row1->role_id != 8) {
-                //     $data += [
-                //         "agrishop_login_prsnnl_Id"  => '',#$row2->schoolpersonnel_id, // $this->personName($query->row('person_id'),'n'),
-                //         "agrishop_login_title"      => '',#$row2->personal_title, // $this->personName($query->row('person_id'),'p'),
-                //         "agrishop_login_district"   => '',#$row2->district_name, // $query->row('district_id'),
-                //         "agrishop_login_schl_id"    => '',#$row2->school_id_num, // $query->row('district_id'),
-                //         "agrishop_login_school_id"  => '',#$row2->school_id, // $query->row('district_id'),
-                //         "agrishop_login_schl_name"  => '',#$row2->school_name, // $query->row('district_id'),
-                //         "agrishop_login_schl_type"  => '',#$row2->school_type, // $query->row('district_id'),
-                //         "agrishop_login_abbrv"      => '',#$row2->abbr, // $query->row('district_id'),
-                //         "agrishop_login_dept_id"    => '',#$row2->school_department_id, // $query->row('district_id'),
-                //         "agrishop_login_dept_name"  => '',#$row2->dept_name, // $query->row('district_id'),
-                //     ];
-                // }
+                    "agrishop_login_landing"    => $row1->change_pwd == 't' ? "changepassword" : ($row1->level == 2 ? "farmproduce" : "dataentry"),
+                    "agrishop_pass"             => $row1->password,
+                    "agrishop_change_password"  => $row1->change_pwd,
+                    "agrishop_login_name"       => 'AAAA', #$row2->full_name, // $this->personName($query->row('person_id'),'n'),
+                    "agrishop_login_img"        => '', #$this->getImg($row2->img_path), // $this->personName($query->row('person_id'),'n'),
+                ];
 
-                // if ($row1->role_id == 8) {
-                //     $data += [
-                //         "agrishop_login_learner_id" => '',#$row2->learner_id, // $this->personName($query->row('person_id'),'n'),
-                //         "agrishop_login_lrn"        => '',#$row2->lrn, // $this->personName($query->row('person_id'),'p'),
-                //         "agrishop_login_prsnnl_Id"  => '',#$row2->person_id, // $query->row('district_id'),
-                //         "agrishop_login_prsn_uuid"  => '',#$row2->person_uuid, // $query->row('district_id'),
-                //         "agrishop_login_rm_sec_id"  => '',#$row2->rm_sec_id, // $query->row('district_id'),
-                //     ];
-                // }
 
                 $this->session->set_userdata($data);
 
@@ -107,7 +123,7 @@ class Login extends MY_Controller
                         redirect(base_url('ud440aed189/changepassword'));
                     } else {
                         $row1->level == 2 ? redirect(base_url($uri . '/' . $landing)) : redirect(base_url('index'));
-                        
+
                         // ($query->row('level')==1?redirect(base_url($uri.'/dataentry')):redirect(base_url($uri.'/dashboard')));
                     }
                 }
@@ -127,12 +143,16 @@ class Login extends MY_Controller
         // }
 
         $array_logout = [
-            "agrishop_login_id"             => '',
-            "agrishop_login_uname"          => '',
-            "agrishop_login_level"          => '',
-            "agrishop_login_uri"            => '',
-            "agrishop_login_landing"        => '',
-            "agrishop_login_prsnnl_Id"      => '',
+            "agrishop_login_first_name"     => '',
+            "agrishop_login_middle_name" => '',
+            "agrishop_login_last_name" => '',
+            "agrishop_login_birthdate" => '',
+            "agrishop_login_sex" => '',
+            "agrishop_login_email_address" => '',
+            "agrishop_login_contact_num" => '',
+            "agrishop_login_barangay_id" => '',
+            "agrishop_login_address_text" => '',
+
 
 
             //role_id != 8;
@@ -155,6 +175,81 @@ class Login extends MY_Controller
         $this->session->unset_userdata($array_logout);
         $this->session->sess_destroy();
         redirect(base_url());
+    }
+
+    public function updateprofile()
+    {
+        $this->db->trans_begin();
+        $true = ["success"   => true];
+        $false = ["success"   => false];
+        $upload = "";
+
+        $person_id = $this->session->agrishop_person_id;
+        $pic = $this->input->post("picProfile");
+        // $personId = $this->input->post("personId");
+        // $img_path = $this->input->post("img_path");
+        $firstName = strtoupper($this->input->post("firstName"));
+        $middleName = strtoupper($this->input->post("middleName"));
+        $lastName = strtoupper($this->input->post("lastName"));
+        $birthdate = $this->input->post("birthdate");
+        $sex = $this->input->post("sex");
+        $email = $this->input->post("email");
+        $contactNumber = $this->input->post("contactNumber");
+        $barangay = $this->input->post("barangay");
+        $barangay_text = strtoupper($this->input->post("barangay_text"));
+
+
+        $data = [
+            "first_name" => $firstName,
+            "middle_name" => $middleName,
+            "last_name" => $lastName,
+            "birthdate" => $birthdate,
+            "sex" => $sex,
+            "barangay_id" => $barangay,
+            "email_address" => $email,
+            "contact_num" => $contactNumber,
+        ];
+
+        $data_session = [
+            "agrishop_login_first_name" => $firstName,
+            "agrishop_login_middle_name" => $middleName,
+            "agrishop_login_last_name" => $lastName,
+            "agrishop_login_birthdate" => $birthdate,
+            "agrishop_login_sex" => $sex,
+            "agrishop_login_email_address" => $email,
+            "agrishop_login_contact_num" => $contactNumber,
+            "agrishop_login_barangay_id" => $barangay,
+            "agrishop_login_address_text" => $barangay_text,
+        ];
+
+        if (isset($_FILES['picProfile']) && $_FILES['picProfile']['error'] === UPLOAD_ERR_OK) {
+            // Normal upload
+            $upload = $this->uploadImg($_FILES['picProfile'], $firstName . $middleName . $lastName, 'person', 'picProfile');
+            $data += [
+                "img_path" => $upload
+            ];
+            $data_session += [
+                "agrishop_login_img_path" => base_url($upload),
+            ];
+
+        }
+
+        if ($this->db->update("person", $data, "id = $person_id")) {
+            $this->session->set_userdata($data_session);
+            $true += ["message"   => "Successfully updated!"];
+            $ret = $true;
+        } else {
+            $false += ["message"   => "Something went wrong!"];
+            $ret = $false;
+        }
+
+        if ($this->db->trans_status() === false) {
+            $this->db->trans_rollback();
+        } else {
+            $this->db->trans_commit();
+        }
+
+        echo json_encode($ret);
     }
 }
 
