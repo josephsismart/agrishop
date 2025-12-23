@@ -296,6 +296,9 @@ $uri = $this->session->agrishop_login_uri;
                     }
                     tbl ? removeAllItemList("tbl" + tbl) : null;
                     tbl ? $("#btn" + tbl).trigger("click") : null;
+                    if (formId == "FarmInfo") {
+                        location.reload();
+                    }
                 } else if (d.success == false && d.exist == true) {
                     existAlert(d.message);
                 } else {

@@ -90,7 +90,7 @@
                                         <div class="col-6">
                                             <div class="input-group mb-3">
                                                 <select name="sex" class="form-control form-select-sm">
-                                                    <option value="" selected disabled>GENDER</option>
+                                                    <option selected disabled>GENDER</option>
                                                     <option value="MALE">MALE</option>
                                                     <option value="FEMALE">FEMALE</option>
                                                 </select>
@@ -131,7 +131,7 @@
 
                                     <div class="input-group mb-3">
                                         <input name="barangay" hidden>
-                                        <input type="text" class="form-control form-control-sm barangayInput" placeholder="TYPE BARANGAY (min 3 chars)" autocomplete="off">
+                                        <input type="text" name="type_barangay1" class="form-control form-control-sm barangayInput" placeholder="TYPE BARANGAY (min 3 chars)" autocomplete="off">
                                         <div class="input-group-append">
                                             <div class="input-group-text"><span class="fas fa-home"></span></div>
                                         </div>
@@ -231,7 +231,7 @@
                                         <div class="col-6">
                                             <div class="input-group mb-3">
                                                 <select name="sex" class="form-control form-select-sm">
-                                                    <option value="" selected disabled>GENDER</option>
+                                                    <option selected disabled>GENDER</option>
                                                     <option value="MALE">MALE</option>
                                                     <option value="FEMALE">FEMALE</option>
                                                 </select>
@@ -271,7 +271,7 @@
                                     </div>
                                     <div class="input-group mb-3">
                                         <input name="barangay" hidden>
-                                        <input type="text" class="form-control form-control-sm barangayInput" placeholder="TYPE BARANGAY (min 3 chars)" autocomplete="off">
+                                        <input type="text" name="type_barangay2" class="form-control form-control-sm barangayInput" placeholder="TYPE BARANGAY (min 3 chars)" autocomplete="off">
                                         <div class="input-group-append">
                                             <div class="input-group-text"><span class="fas fa-home"></span></div>
                                         </div>
@@ -283,7 +283,7 @@
                                     <hr>
 
                                     <div class="input-group mb-3">
-                                        <select name="valid_id" class="form-control form-select-sm select2" style="width:90%">
+                                        <select name="valid_id" class="form-control form-select-sm" style="width:90%">
                                             <option value="" selected disabled>VALID ID TO BE PRESENTED</option>
                                             <option value="PHILIPPINE NATIONAL ID (PHILSYS)">PHILIPPINE NATIONAL ID (PHILSYS)</option>
                                             <option value="SSS ID">SSS ID</option>
@@ -321,7 +321,7 @@
                                     </center>
 
                                     <div class="input-group mb-3">
-                                        <select name="organization" class="form-control form-select-sm select2" style="width:90%">
+                                        <select name="organization" class="form-control form-select-sm select2" style="width:90%" nr="1">
                                             <option value="" selected disabled>ORGANIZATION MEMBERSHIP (OPTIONAL)</option>
                                             <?php $this->load->view('interface/system/layout/options_select_for_organization') ?>
                                         </select>
@@ -506,6 +506,30 @@
                             $("#" + form_id + " ." + name).removeClass('border-danger');
                         }
                     }
+                }
+            });
+
+            $(
+                $("#" + form_id)
+                .find("input[type='text'], select")
+                .get()
+                .reverse()
+            ).each(function() {
+
+                let name = clean($(this).attr("name"));
+                let nr = $(this).attr("nr");
+
+                // skip if no name or nr == 1
+                if (!name || nr == 1) return;
+
+                // 🔴 check empty (works for input & select)
+                if (!$(this).val()) {
+                    $(this).focus().addClass("is-invalid");
+                    $("#" + form_id + " ." + name).addClass("border-danger");
+                    invalid++;
+                } else {
+                    $(this).removeClass("is-invalid");
+                    $("#" + form_id + " ." + name).removeClass("border-danger");
                 }
             });
             valid = invalid;

@@ -17,16 +17,53 @@ class Map extends MY_Controller
     {
         $data =  [];
         $value = $this->input->post("value");
-        foreach ($this->db->query("SELECT  fp.farm_id, ff.img_path, ff.farm_name, p.img_path as farmer_img_path,CONCAT(p.first_name,' ',p.last_name) as farmer_name
-                                        ,ff.lat,ff.lon,
-                                        json_agg(json_build_object('id',fp.produce_id, 'img_path',fp.produce_img_path , 'name',fp.produce_name,'harvest_at',fp.harvest_schedule,'price',fp.price,'uom',fp.uom,'qty_left',fp.qty_left)) AS produce 
-                                    FROM (SELECT t11.*,t22.img_path  AS produce_img_path,t22.name AS produce_name FROM price_qty_left t11
-                                        JOIN produce t22 ON t11.produce_id = t22.id 
-                                        WHERE t11.qty_left>0 AND t22.name ILIKE '%$value%' LIMIT 3) fp
+        foreach ($this->db->query("SELECT
+                                        fp.farm_id,
+                                        ff.img_path,
+                                        ff.farm_name,
+                                        p.img_path AS farmer_img_path,
+                                        CONCAT(p.first_name,' ',p.last_name) AS farmer_name,
+                                        ff.lat,
+                                        ff.lon,
+                                        json_agg(
+                                            json_build_object(
+                                                'id', fp.produce_id,
+                                                'img_path', fp.produce_img_path,
+                                                'name', fp.produce_name,
+                                                'harvest_at', fp.harvest_schedule,
+                                                'price', fp.price,
+                                                'uom', fp.uom,
+                                                'qty_left', fp.qty_left
+                                            )
+                                            ORDER BY fp.harvest_schedule
+                                        ) AS produce
+                                    FROM (
+                                        SELECT
+                                            t11.*,
+                                            t22.img_path AS produce_img_path,
+                                            t22.name AS produce_name,
+                                            ROW_NUMBER() OVER (
+                                                PARTITION BY t11.farm_id
+                                                ORDER BY t11.harvest_schedule DESC
+                                            ) AS rn
+                                        FROM price_qty_left t11
+                                        JOIN produce t22 ON t11.produce_id = t22.id
+                                        WHERE
+                                            t11.qty_left > 0
+                                            AND CONCAT(t22.name, t22.tags) ILIKE '%$value%'
+                                    ) fp
                                     LEFT JOIN farmer_farm ff ON fp.farm_id = ff.id
                                     LEFT JOIN farmer f ON ff.farmer_id = f.id
                                     LEFT JOIN person p ON f.person_id = p.id
-                                    GROUP BY fp.farm_id, ff.img_path,p.img_path, CONCAT(p.first_name,' ',p.last_name), ff.farm_name,ff.lat,ff.lon")->result() as $key => $value) {
+                                    WHERE fp.rn <= 3   -- 🔥 LIMIT PER FARM
+                                    GROUP BY
+                                        fp.farm_id,
+                                        ff.img_path,
+                                        ff.farm_name,
+                                        p.img_path,
+                                        CONCAT(p.first_name,' ',p.last_name),
+                                        ff.lat,
+                                        ff.lon")->result() as $key => $value) {
             $farm_image = $value->img_path ? base_url($value->img_path) : base_url('dist/img/media/icons/1x1.png');
             $farmer_image = $value->farmer_img_path ? base_url($value->farmer_img_path) : base_url('dist/img/media/icons/1x1.png');
             $farm_image_path = "<img src='$farm_image' width='50' height='50' class='rounded pr-2' data-toggle='tooltip' data-placement='top' title=''>";
@@ -126,7 +163,7 @@ class Map extends MY_Controller
     public function search_barangay()
     {
         $keyword = $this->input->post('keyword');
-        $limit = $this->input->post('limit')?:10;
+        $limit = $this->input->post('limit') ?: 10;
         if (strlen($keyword) < 3) {
             echo json_encode([]);
             return;
@@ -180,7 +217,7 @@ class Map extends MY_Controller
     public function search_barangay_caraga()
     {
         $keyword = $this->input->post('keyword');
-        $limit = $this->input->post('limit')?:10;
+        $limit = $this->input->post('limit') ?: 10;
         if (strlen($keyword) < 3) {
             echo json_encode([]);
             return;

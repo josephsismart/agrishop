@@ -106,10 +106,10 @@ class Signup extends MY_Controller
                 ];
 
                 if ($this->db->insert("public.user", $data_user)) {
+                    $user_id = $this->db->insert_id();
                     $data_session = [
                         "agrishop_request_registration" => 0,
-                        "agrishop_person_id" => $inid,
-                        "agrishop_login_id" => $this->db->insert_id(),
+                        "agrishop_login_id" => $user_id,
                         "agrishop_login_uname" => $username,
                         "agrishop_login_level" => $valid_id ? 2 : 1,
                         "agrishop_login_uri" =>   $valid_id ? "userfarmer" : "",
@@ -119,6 +119,76 @@ class Signup extends MY_Controller
                         "agrishop_login_name" => $first_name . ' ' . $last_name,
                         "agrishop_login_img" => 'dist/img/media/personnel/default.jpg',
                     ];
+
+                    $chck = $this->db->query(
+                        "SELECT 
+                                    t1.id,
+                                    t1.password,
+                                    t1.person_id,
+                                    t1.username,
+                                    t2.level,
+                                    t3.first_name,
+                                    t3.middle_name,
+                                    t3.last_name,
+                                    t3.birthdate,
+                                    t3.sex,
+                                    t3.email_address,
+                                    t3.contact_num,
+                                    t3.barangay_id,
+                                    t3.img_path,
+
+                                    UPPER(CONCAT(
+                                        b.description, ' ',
+                                        c.description, ', ',
+                                        p.description, ', ',
+                                        r.region
+                                    )) AS address_text,
+
+                                    CASE 
+                                        WHEN t4.id IS NOT NULL AND t4.approved_at IS NULL THEN 1 
+                                        ELSE 0 
+                                    END AS is_registered_farmer,
+
+                                    'f' AS change_pwd,
+                                    t1.is_active
+
+                                FROM public.user t1
+                                LEFT JOIN public.role t2 ON t1.role_id = t2.id
+                                LEFT JOIN public.person t3 ON t1.person_id = t3.id
+                                LEFT JOIN public.farmer t4 ON t3.id = t4.person_id
+
+                                LEFT JOIN tbl_barangay b ON t3.barangay_id = b.id
+                                LEFT JOIN tbl_citymun c ON b.citymun_id = c.id
+                                LEFT JOIN tbl_province p ON c.province_id = p.id
+                                LEFT JOIN tbl_region r ON p.region_id = r.id
+
+                                WHERE t1.id = ? 
+                                AND t1.is_active = true
+                                LIMIT 1",
+                        array($user_id)
+                    );
+
+                    $row1 = $chck->row();
+                    $person_id = $row1->person_id;
+                    $img = $row1->img_path ? base_url($row1->img_path) : base_url('dist/img/media/icons/1x1.png');
+
+
+                    $data_session += [
+                        "agrishop_login_first_name" => $row1->first_name,
+                        "agrishop_login_middle_name" => $row1->middle_name,
+                        "agrishop_login_last_name" => $row1->last_name,
+                        "agrishop_login_birthdate" => $row1->birthdate,
+                        "agrishop_login_sex" => $row1->sex,
+                        "agrishop_login_email_address" => $row1->email_address,
+                        "agrishop_login_contact_num" => $row1->contact_num,
+                        "agrishop_login_barangay_id" => $row1->barangay_id,
+                        "agrishop_login_address_text" => $row1->barangay_id ? $row1->address_text : "",
+                        "agrishop_login_img_path" => $img,
+                        "agrishop_person_id"        => $person_id, // $query->row('id'),
+
+                    ];
+
+
                     $this->session->set_userdata($data_session);
 
                     $level = $valid_id ? 2 : 1;

@@ -59,7 +59,7 @@ class FarmProduce extends MY_Controller
             $data[] = array(
                 $image_path,
                 $value->farm_name,
-                $this->getAddress($value->barangay_id),
+                $this->getAddress2($value->barangay_id),
                 $value->total_area_sqm . " sqm",
                 $is_active,
             );
@@ -367,7 +367,7 @@ class FarmProduce extends MY_Controller
             ];
         }
 
-        if ($this->db->insert("produce_customize", $data)) {
+        if ($this->db->insert("produce", $data)) {
             $true += ["message"   => "Successfully created!"];
             $ret = $true;
         } else {
