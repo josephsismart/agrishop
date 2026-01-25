@@ -325,6 +325,66 @@ class MY_Controller extends CI_Controller
         return $address;
     }
 
+    public function format_price($amount)
+    {
+        return number_format((float)$amount, 2, '.', ',');
+    }
+
+    public function generate_gcash_qr($amount = 0, $gcash_number = '', $merchant_name = '', $reference = '')
+    {
+        // Set defaults if empty
+        if (empty($gcash_number)) {
+            $gcash_number = '09171234567'; // Your default GCash number
+        }
+        if (empty($merchant_name)) {
+            $merchant_name = 'My Business';
+        }
+        if (empty($reference)) {
+            $reference = 'INV' . date('YmdHis') . rand(100, 999);
+        }
+
+        // Format amount to 2 decimal places
+        $formatted_amount = number_format((float)$amount, 2, '.', '');
+
+        /**
+         * Option 1: GCash Deep Link (EASIEST - opens GCash directly)
+         * Format: gcash://pay?pa=GCASH_NUMBER&pn=MERCHANT&am=AMOUNT
+         */
+        $qr_data = "gcash://pay?" . http_build_query([
+            'pa' => $gcash_number,
+            'pn' => $merchant_name,
+            'am' => $formatted_amount,
+            'tid' => $reference
+        ]);
+
+        /**
+         * Option 2: Simple amount only (User inputs recipient)
+         * $qr_data = "gcash://scan?amount=" . $formatted_amount;
+         */
+
+        // Generate QR code URL using api.qrserver.com
+        $qr_size = 300; // QR code size in pixels
+        $qr_url = "https://api.qrserver.com/v1/create-qr-code/";
+        $qr_url .= "?size=" . $qr_size . "x" . $qr_size;
+        $qr_url .= "&data=" . urlencode($qr_data);
+        $qr_url .= "&format=png";
+        $qr_url .= "&margin=10";
+        $qr_url .= "&color=000000";
+        $qr_url .= "&bgcolor=FFFFFF";
+        $qr_url .= "&qzone=1";
+
+        // Return everything you need
+        return [
+            'qr_url' => $qr_url,          // Direct URL to QR image
+            'qr_data' => $qr_data,        // The encoded data
+            'amount' => $formatted_amount,
+            'merchant_name' => $merchant_name,
+            'gcash_number' => $gcash_number,
+            'reference' => $reference,
+            'instructions' => "1. Open GCash app\n2. Tap 'Scan QR'\n3. Scan this code\n4. Confirm payment"
+        ];
+    }
+
     public function getAddress2($filter)
     {
         $fltr = $filter ? $filter : 0;

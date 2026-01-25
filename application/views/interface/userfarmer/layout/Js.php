@@ -64,6 +64,58 @@ $uri = $this->session->agrishop_login_uri;
         pinCentroidById(gid);
     });
 
+    $(document).on('click', '.barangay-itemAll', function() {
+        let id = $(this).data('id');
+        let gid = $(this).data('gid');
+        let name = $(this).data('name');
+
+        // Set selected value to input
+        $('.barangayInputAll').val(name);
+
+        // Store barangay id in hidden input (recommended)
+
+        // Hide dropdown
+        $('.barangayResultsAll').hide();
+        $('[name=barangayAll]').val(id)
+        // alert(gid)
+        // pinCentroidById(gid);
+
+    });
+
+    $('.barangayInputAll').on('keyup', function() {
+        let keyword = $(this).val();
+
+        if (keyword.length < 3) {
+            $('.barangayResultsAll').hide();
+            return;
+        }
+
+        $.ajax({
+            url: "<?= base_url('search-barangay') ?>",
+            type: "POST",
+            data: {
+                keyword: keyword
+            },
+            success: function(res) {
+                let data = JSON.parse(res);
+
+                if (data.length === 0) {
+                    $('.barangayResultsAll').hide();
+                    return;
+                }
+
+                let html = "";
+                data.forEach(row => {
+                    html += `<li class="list-group-item barangay-itemAll" data-id="${row.id}" data-gid="${row.gid}" data-name="${row.text}">
+                    ${row.text}
+                </li>`;
+                });
+
+                $('.barangayResultsAll').html(html).show();
+            }
+        });
+    });
+
     $('.barangayInput').on('keyup', function() {
         let keyword = $(this).val();
 
@@ -296,7 +348,7 @@ $uri = $this->session->agrishop_login_uri;
                     }
                     tbl ? removeAllItemList("tbl" + tbl) : null;
                     tbl ? $("#btn" + tbl).trigger("click") : null;
-                    if (formId == "FarmInfo") {
+                    if (formId == "FarmInfo" || formId == "UpdateProfile") {
                         location.reload();
                     }
                 } else if (d.success == false && d.exist == true) {

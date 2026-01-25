@@ -1,5 +1,6 @@
 <script type="text/javascript">
     let farm_id = null;
+    let transaction_id_ = null;
     const farmCache = {};
     document.addEventListener("DOMContentLoaded", function() {
         const nav = document.getElementById("topNav");
@@ -301,6 +302,7 @@
                     d.draw = drawCounter;
                     d.search.value = $('#tbl' + tableId + '_filter input').val();
                     d.search.farm_id = farm_id;
+                    d.search.transaction_id = transaction_id_;
                 }
             },
 
@@ -311,12 +313,12 @@
         $("#tbl" + tableId).on('draw.dt', function() {
             $(".searchBtn").attr("disabled", false);
             $(".searchBtn").html("<span class=\"fa fa-search\"></span>");
-            dtd == 1 ? $("#tbl" + tableId).DataTable().destroy() : "";
             $(".collapse" + tableId).trigger('click');
         });
         $("#tbl" + tableId + "_filter").addClass("row");
         $("#tbl" + tableId + "_filter label").css("width", "97%");
         $("#tbl" + tableId + "_filter .form-control-sm").css("width", "97%");
+        dtd == 1 ? $("#tbl" + tableId).DataTable().destroy() : "";
     }
 
 
@@ -420,15 +422,17 @@
         farmCache[farm.id] = farm;
         // Popup with image at the top
         marker.bindPopup(`
-            ${farmImgHtml}<br>
-            <b>${farm.farm_name}</b><br>
-            Location: ${lat}, ${lon}<br>
-            ${produceHtml}
-            <br>
+            ${farmImgHtml}
             <button class="btn btn-primary btn-sm reserve-btn" data-id="${farm.id}"
                 onclick='orderNow(${farm.id})'>
                 Order Now
             </button>
+            <br>
+            <i class="badge bg-warning text-black" style="font-size: 14px;">${farm.farm_name}</i><br>
+            <b style="font-size: 11px;">${farm.farm_location}</b><br>
+            <i class="text-muted">Location: ${lat}, ${lon}</i><br>
+            ${produceHtml}
+            <br>
         `);
 
         // --- hover / keep-open logic ---
@@ -449,16 +453,16 @@
 
 
         // marker hover opens popup and cancels any pending close
-        marker.on('mouseover', function() {
+        marker.on('click', function() { //mouseover
             isOverMarker = true;
             clearTimeout(closeTimer);
             marker.openPopup();
         });
 
-        marker.on('mouseout', function() {
-            isOverMarker = false;
-            scheduleClose();
-        });
+        // marker.on('mouseout', function() {
+        //     isOverMarker = false;
+        //     scheduleClose();
+        // });
 
         // When ANY popup opens on the map, attach popup hover handlers
         // We check e.popup._source === marker so we only attach for THIS marker's popup.

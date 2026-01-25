@@ -522,14 +522,30 @@
         <div class="modal-content shadow rounded">
 
             <!-- HEADER -->
-            <div class="modal-header bg-success text-white py-2">
-                <h5 class="modal-title mb-0">
+            <div class="modal-header bg-success py-2">
+                <h5 class="modal-title mb-0 text-white">
                     <i class="fas fa-shopping-basket mr-1"></i> Order Produce
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
             <div class="modal-body px-3 py-2">
+
+
+                <!-- FARM OWNER -->
+                <div class="d-flex mb-3 border rounded p-2 bg-light">
+                    <div name="farmerImage" class="rounded mr-3 border" style="width: 80px; height: 80px;"></div>
+
+                    <div>
+                        <h6 name="farmerName" class="font-weight-bold mb-1">Farmer Name</h6>
+                        <small class="text-muted d-block" name="farmerExperience">
+                            Farmer for X years • Reliable Supplier
+                        </small>
+                        <small class="text-muted d-block" name="farmerContact">
+                            Contact: 09xxxxxxx
+                        </small>
+                    </div>
+                </div>
 
                 <!-- FARM INFO -->
                 <div class="d-flex mb-3 border rounded p-2 bg-light">
@@ -547,22 +563,6 @@
                         </button>
                     </div>
                 </div>
-
-                <!-- FARM OWNER -->
-                <div class="d-flex mb-3 border rounded p-2 bg-light">
-                    <div name="farmerImage"></div>
-
-                    <div>
-                        <h6 name="farmerName" class="font-weight-bold mb-1">Farmer Name</h6>
-                        <small class="text-muted d-block" name="farmerExperience">
-                            Farmer for X years • Reliable Supplier
-                        </small>
-                        <small class="text-muted d-block" name="farmerContact">
-                            Contact: 09xxxxxxx
-                        </small>
-                    </div>
-                </div>
-
                 <!-- PRODUCE TABLE -->
                 <div class="table-responsive border rounded">
                     <table id="tblFarmProduceList" class="table table-sm table-hover mb-0" width="100%">
@@ -586,7 +586,7 @@
             </div>
 
             <div class="modal-footer py-2">
-                <button class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+                <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
             </div>
 
         </div>
@@ -594,7 +594,79 @@
 </div>
 
 
+<div class="modal fade" id="modalCartListing">
+    <!-- <div class="modal fade show" id="modalCheckout" tabindex="-1" aria-labelledby="modalCheckoutLabel" aria-hidden="true" style="display: block; padding-left: 0px;"> -->
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content rounded shadow">
+            <!-- HEADER -->
+            <div class="modal-header bg-success py-2">
+                <h5 class="modal-title mb-0 text-white">
+                    <i class="fas fa-shopping-basket mr-1"></i> Cart List
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body px-3 py-2">
+                <table id="tblCartListing" class="table table-sm table-hover table-striped table-bordered mb-0" width="100%">
+                    <thead class="small">
+                        <tr>
+                            <!-- <th width="1">Image</th> -->
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- dynamic rows -->
+                    </tbody>
+                </table>
+            </div>
+
+
+            <div class="modal-footer py-2">
+                <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="modalCartDetails">
+    <!-- <div class="modal fade show" id="modalCheckout" tabindex="-1" aria-labelledby="modalCheckoutLabel" aria-hidden="true" style="display: block; padding-left: 0px;"> -->
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content rounded shadow">
+            <!-- HEADER -->
+            <div class="modal-header bg-dark py-2">
+                <h5 class="modal-title mb-0 text-white">
+                    <i class="fas fa-shopping-basket mr-1"></i> Cart Details and Checkout
+                </h5>
+                <button type="button" class="btn-close" style="filter: invert(1);" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body px-3 py-2">
+                <table id="tblCartDetails" class="table table-sm table-hover table-striped table-bordered mb-0" width="100%">
+                    <thead class="small">
+                        <tr>
+                            <!-- <th width="1">Image</th> -->
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- dynamic rows -->
+                    </tbody>
+                </table>
+            </div>
+
+
+            <div class="modal-footer py-2">
+                <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <div class="modal fade" id="modalCheckout">
+    <!-- <div class="modal fade" id="modalCheckout" tabindex="-1" role="dialog"> -->
+    <!-- <div class="modal fade show" id="modalCheckout" tabindex="-1" aria-labelledby="modalCheckoutLabel" aria-hidden="true" style="display: block; padding-left: 0px;"> -->
     <div class="modal-dialog modal-md modal-dialog-centered">
         <div class="modal-content rounded shadow">
 
@@ -633,6 +705,50 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="modalCheckoutGcash">
+    <!-- <div class="modal fade" id="modalCheckout" tabindex="-1" role="dialog"> -->
+    <!-- <div class="modal fade show" id="modalCheckout" tabindex="-1" aria-labelledby="modalCheckoutLabel" aria-hidden="true" style="display: block; padding-left: 0px;"> -->
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content rounded shadow">
+
+            <div class="modal-header bg-success text-white py-2">
+                <h5 class="modal-title mb-0">Checkout</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+
+            <div class="modal-body p-3">
+                <h6 class="font-weight-bold mb-2">Order Summary</h6>
+                <div id="checkoutSummary"></div>
+
+                <hr>
+
+                <h6 class="font-weight-bold">Delivery Method</h6>
+                <select class="form-control form-control-sm" id="deliveryMethod">
+                    <option value="pickup">Pickup</option>
+                    <option value="delivery">Delivery</option>
+                </select>
+
+                <div class="mt-3">
+                    <h6 class="font-weight-bold">Remarks</h6>
+                    <textarea id="remarks" class="form-control form-control-sm" rows="2"></textarea>
+                </div>
+
+            </div>
+
+            <div class="modal-footer p-2">
+                <button class="btn btn-success btn-sm btn-block" onclick="submitCheckout()">
+                    <i class="fas fa-check"></i> Confirm Order
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
 
 <!-- <script type="text/javascript">
     getTable("FarmProduceList", 0, 5);

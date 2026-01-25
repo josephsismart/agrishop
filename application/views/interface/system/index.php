@@ -10,32 +10,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="format-detection" content="telephone=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="author" content="">
     <meta name="keywords" content="">
     <meta name="description" content="">
 
 
     <link rel="stylesheet" href="<?= base_url() ?>plugins/fontawesome-free/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ" crossorigin="anonymous">
-    <link rel="stylesheet" type="text/css" href="<?php echo base_url(); ?>dist/layout_shop/css/vendor.css">
-    <link rel="stylesheet" type="text/css" href="<?php echo base_url(); ?>dist/layout_shop/css/style.css">
+    <link rel="stylesheet" href="<?= base_url() ?>plugins/swiper/swiper-bundle.min.css">
+    <link rel="stylesheet" href="<?= base_url() ?>plugins/bootstrap-alpha3/bootstrap.min.css">
+    <!-- integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ" crossorigin="anonymous"> -->
+    <link rel="stylesheet" type="text/css" href="<?= base_url(); ?>dist/layout_shop/css/vendor.css">
+    <link rel="stylesheet" type="text/css" href="<?= base_url(); ?>dist/layout_shop/css/style.css">
     <link rel="stylesheet" href="<?= base_url() ?>plugins/sweetalert2-theme-bootstrap-4/bootstrap-4.min.css">
 
     <!-- DataTables -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&family=Open+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <!-- <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin> -->
+    <link href="<?= base_url() ?>plugins/google-fonts/fonts.css" rel="stylesheet">
     <script src="<?= base_url() ?>plugins/jquery/jquery.min.js"></script>
 
 
     <!-- Leaflet CSS & JS -->
+    <!-- <link rel="stylesheet" href="<?= base_url() ?>plugins/leaflet/css/leaflet.css" /> -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="<?= base_url() ?>plugins/leaflet/js/leaflet.js"></script>
+    <!-- <script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"></script> -->
 
     <!-- Routing Machine -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
-    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+    <link rel="stylesheet" href="<?= base_url() ?>plugins/leaflet/css/leaflet-routing-machine.css" />
+    <script src="<?= base_url() ?>plugins/leaflet/js/leaflet-routing-machine.js"></script>
+    <!-- <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script> -->
+
     <style>
         html,
         body {
@@ -114,6 +120,12 @@
 
         .menu-list .nav-item.active {
             background-color: #dff0ff;
+        }
+
+
+        .swal-mini {
+            font-size: 13px !important;
+            border-radius: 10px !important;
         }
     </style>
 
@@ -204,6 +216,11 @@
                                                                                 echo base_url(); ?>user_consumer<?php } elseif ($role_lvl == 2) {
                                                                                                                 echo base_url(); ?>user_farmer<?php } ?>" class="p-2 mx-1" style="text-decoration: none;font-weight: bold">
                                     <i class="fa fa-user"></i> <?php echo $this->session->agrishop_login_uname; ?>
+                                </a>
+
+                                <!-- <a href="#" class="p-2 mx-1" style="text-decoration: none;"> -->
+                                <a href="#" data-bs-toggle="modal" data-bs-target="#modalCartListing" class="p-2 mx-1" style="text-decoration: none;" onclick="getTable('CartListing', 0, 5);">
+                                    <i class="fa fa-shopping-basket"></i> Cart
                                 </a>
                             <?php } else { ?>
                                 <a href="<?php echo base_url(); ?>login" class="p-2 mx-1" style="text-decoration: none;">
@@ -333,6 +350,11 @@
 
     <?php $this->load->view('interface/system/layout/script') ?>
     <?php $this->load->view('interface/system/layout/cart_script') ?>
+
+    <script>
+        getTable('CartListing', 0, 1000);
+        console.log($("#tblCartListing tr").length);
+    </script>
 
 
 

@@ -449,13 +449,13 @@ $uri = $this->session->agrishop_login_uri;
                         <div class="col-6">
                             <h6 class="mt-3"><i class="fas fa-envelope"></i> Email</h6>
                             <div class="col-12">
-                                <input type="email" class="form-control form-control-sm border-primary" placeholder="EMAIL" name="email" nr="1" value="<?= $this->session->agrishop_login_email_address ?>" autocomplete="off">
+                                <input type="email" class="form-control form-control-sm border-primary" placeholder="EMAIL" name="email" value="<?= $this->session->agrishop_login_email_address ?>" autocomplete="off">
                             </div>
                         </div>
                         <div class="col-6">
                             <h6 class="mt-3"><i class="fas fa-phone"></i> Contact Number</h6>
                             <div class="col-12">
-                                <input type="text" class="form-control form-control-sm border-primary text-uppercase" placeholder="Contact Number" name="contactNumber" nr="1" value="<?= $this->session->agrishop_login_contact_num ?>">
+                                <input type="text" class="form-control form-control-sm border-primary text-uppercase" placeholder="Contact Number" name="contactNumber" value="<?= $this->session->agrishop_login_contact_num ?>">
                             </div>
                         </div>
 
@@ -463,11 +463,11 @@ $uri = $this->session->agrishop_login_uri;
                         <div class="col-12">
                             <div class="input-group mb-3">
                                 <!-- 160202061 -->
-                                <input name="barangay" hidden value="<?= $this->session->agrishop_login_barangay_id ?>">
-                                <input type="text" class="form-control form-control-sm barangayInput border-primary text-uppercase" value="<?= $this->session->agrishop_login_address_text ?>" placeholder="TYPE BARANGAY (min 3 chars)" autocomplete="off" name="barangay_text">
+                                <input name="barangayAll" hidden value="<?= $this->session->agrishop_login_barangay_id ?>">
+                                <input type="text" class="form-control form-control-sm barangayInputAll border-primary text-uppercase" value="<?= $this->session->agrishop_login_address_text ?>" placeholder="TYPE BARANGAY (min 3 chars)" autocomplete="off" name="barangay_text">
 
                             </div>
-                            <ul class="list-group barangayResults" style="position:absolute; z-index:9999; width:100%; display:none;cursor:pointer;"></ul>
+                            <ul class="list-group barangayResultsAll" style="position:absolute; z-index:9999; width:100%; display:none;cursor:pointer;"></ul>
 
                         </div>
 

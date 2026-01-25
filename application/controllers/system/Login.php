@@ -195,7 +195,7 @@ class Login extends MY_Controller
         $sex = $this->input->post("sex");
         $email = $this->input->post("email");
         $contactNumber = $this->input->post("contactNumber");
-        $barangay = $this->input->post("barangay");
+        $barangay = $this->input->post("barangayAll");
         $barangay_text = strtoupper($this->input->post("barangay_text"));
 
 
