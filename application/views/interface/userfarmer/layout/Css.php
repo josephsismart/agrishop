@@ -242,7 +242,7 @@
 
     .produceList li {
         cursor: pointer;
-        display: flex;
+        display: flex;                                                                                  
         align-items: center;
         gap: 10px;
     }
@@ -257,7 +257,7 @@
     }
 
     .menu-list .nav-item:hover {
-        background-color: #66be62ff;
+        background-color: #a0d49dff;
         /* light hover bg */
         transform: translateY(-1px);
         color: #fff;

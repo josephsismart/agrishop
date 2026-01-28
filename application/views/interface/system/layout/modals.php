@@ -8,7 +8,7 @@
 ?>
 <!-- Modal -->
 
-<!-- <div class="modal fade show" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true" style="display: block; padding-left: 0px;"> -->
+
 <div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xs">
         <div class="modal-content" style="border-radius:0;">
@@ -61,13 +61,13 @@
                         <div class="col-6">
                             <h6 class="mt-3"><i class="fas fa-envelope"></i> Email</h6>
                             <div class="col-12">
-                                <input type="email" class="form-control form-control-sm border-primary" placeholder="EMAIL" name="email" nr="1" value="<?= $this->session->agrishop_login_email_address ?>" autocomplete="off">
+                                <input type="email" class="form-control form-control-sm border-primary" placeholder="EMAIL" name="email" value="<?= $this->session->agrishop_login_email_address ?>" autocomplete="off">
                             </div>
                         </div>
                         <div class="col-6">
                             <h6 class="mt-3"><i class="fas fa-phone"></i> Contact Number</h6>
                             <div class="col-12">
-                                <input type="text" class="form-control form-control-sm border-primary text-uppercase" placeholder="Contact Number" name="contactNumber" nr="1" value="<?= $this->session->agrishop_login_contact_num ?>">
+                                <input type="text" class="form-control form-control-sm border-primary text-uppercase" placeholder="Contact Number" name="contactNumber" value="<?= $this->session->agrishop_login_contact_num ?>">
                             </div>
                         </div>
 
@@ -75,7 +75,7 @@
                         <div class="col-12">
                             <div class="input-group mb-3">
                                 <!-- 160202061 -->
-                                <input name="barangay" hidden value="<?= $this->session->agrishop_login_barangay_id ?>">
+                                <input name="barangayAll" hidden value="<?= $this->session->agrishop_login_barangay_id ?>">
                                 <input type="text" class="form-control form-control-sm barangayInput border-primary text-uppercase" value="<?= $this->session->agrishop_login_address_text ?>" placeholder="TYPE BARANGAY (min 3 chars)" autocomplete="off" name="barangay_text">
 
                             </div>
@@ -96,7 +96,6 @@
         </div>
     </div>
 </div>
-
 <!-- <div class="modal fade show" id="registerFarmerModal" tabindex="-1" aria-labelledby="registerFarmerModalLabel" aria-hidden="true" style="display: block; padding-left: 0px;"> -->
 <div class="modal fade" id="registerFarmerModal" tabindex="-1" aria-labelledby="registerFarmerModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -642,7 +641,7 @@
             </div>
 
             <div class="modal-body px-3 py-2">
-                <table id="tblCartDetails" class="table table-sm table-hover table-striped table-bordered mb-0" width="100%">
+                <table id="tblCartDetails" class="table table-sm table-bordered mb-0" width="100%">
                     <thead class="small">
                         <tr>
                             <!-- <th width="1">Image</th> -->

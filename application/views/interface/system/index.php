@@ -22,6 +22,7 @@
     <!-- integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ" crossorigin="anonymous"> -->
     <link rel="stylesheet" type="text/css" href="<?= base_url(); ?>dist/layout_shop/css/vendor.css">
     <link rel="stylesheet" type="text/css" href="<?= base_url(); ?>dist/layout_shop/css/style.css">
+    <link rel="stylesheet" href="<?= base_url() ?>dist/css/adminlte.min.css">
     <link rel="stylesheet" href="<?= base_url() ?>plugins/sweetalert2-theme-bootstrap-4/bootstrap-4.min.css">
 
     <!-- DataTables -->
@@ -107,7 +108,7 @@
         }
 
         .menu-list .nav-item:hover {
-            background-color: #66be62ff;
+            background-color: #a0d49dff;
             /* light hover bg */
             transform: translateY(-1px);
             color: #fff;
@@ -125,7 +126,40 @@
 
         .swal-mini {
             font-size: 13px !important;
-            border-radius: 10px !important;
+            border-radius: 1px !important;
+        }
+
+        /* .swal2-popup {
+            width: 19rem !important;
+            height: 14rem !important;
+        }
+
+        .swal2-header,
+        .swal2-title{
+            margin-top: -20px;
+        }
+        .swal2-content{
+            margin-top: -5px;
+        }
+
+        .swal2-actions {
+            margin-top: 10px;
+        } */
+
+        .swal2-show {
+            animation: swalZoomIn .2s ease-out;
+        }
+
+        @keyframes swalZoomIn {
+            0% {
+                transform: scale(0.85);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
     </style>
 
@@ -149,8 +183,8 @@
         <div class="offcanvas-body">
             <div class="order-md-last">
                 <h4 class="d-flex justify-content-between align-items-center mb-3">
-                    <span class="text-primary">Your cart</span>
-                    <span class="badge bg-primary rounded-pill">3</span>
+                    <span class="text-success">Your cart</span>
+                    <span class="badge bg-success rounded-pill">3</span>
                 </h4>
                 <ul class="list-group mb-3">
                     <li class="list-group-item d-flex justify-content-between lh-sm">
@@ -180,7 +214,7 @@
                     </li>
                 </ul>
 
-                <button class="w-100 btn btn-primary btn-lg" type="submit">Continue to checkout</button>
+                <button class="w-100 btn btn-success btn-lg" type="submit">Continue to checkout</button>
             </div>
         </div>
     </div>
@@ -213,30 +247,31 @@
                             <?php if ($role_lvl != "") { ?>
                                 <a href="<?php if ($role_lvl == 0) {
                                                 echo base_url(); ?>user_admin<?php } elseif ($role_lvl == 1) {
-                                                                                echo base_url(); ?>user_consumer<?php } elseif ($role_lvl == 2) {
-                                                                                                                echo base_url(); ?>user_farmer<?php } ?>" class="p-2 mx-1" style="text-decoration: none;font-weight: bold">
+                                                                                echo '#'; } elseif ($role_lvl == 2) {
+                                                                                                                echo base_url(); ?>user_farmer<?php } ?>" class="p-2 mx-1 text-dark" style="text-decoration: none;font-weight: bold">
                                     <i class="fa fa-user"></i> <?php echo $this->session->agrishop_login_uname; ?>
                                 </a>
 
-                                <!-- <a href="#" class="p-2 mx-1" style="text-decoration: none;"> -->
-                                <a href="#" data-bs-toggle="modal" data-bs-target="#modalCartListing" class="p-2 mx-1" style="text-decoration: none;" onclick="getTable('CartListing', 0, 5);">
-                                    <i class="fa fa-shopping-basket"></i> Cart
+                                <!-- <a href="#" class="p-2 mx-1 text-dark" style="text-decoration: none;"> -->
+                                <a href="#" data-bs-toggle="modal" data-bs-target="#modalCartListing" class="p-2 mx-1 text-dark" style="text-decoration: none;" onclick="getTable('CartListing', 0, 5);">
+                                    <i class="fa fa-shopping-basket"></i> Cart<span class="badge bg-warning pending-order" title="pending orders"><?= $this->session->agrishop_pending_trans_count; ?></span>
                                 </a>
+
                             <?php } else { ?>
-                                <a href="<?php echo base_url(); ?>login" class="p-2 mx-1" style="text-decoration: none;">
+                                <a href="<?php echo base_url(); ?>login" class="p-2 mx-1 text-dark" style="text-decoration: none;">
                                     <i class="fa fa-user"></i> Login
                                 </a>
                             <?php } ?>
                         </li>
                         <?php if ($role_lvl == "") { ?>
-                            <li><a href="<?php echo base_url(); ?>signup" class="p-2 mx-1" style="text-decoration: none;">
+                            <li><a href="<?php echo base_url(); ?>signup" class="p-2 mx-1 text-dark" style="text-decoration: none;">
                                     <i class="fa fa-user"></i> Sign Up
                                 </a>
                             </li>
                         <?php } ?>
                         <?php if ($role_lvl != "") { ?>
                             <li>
-                                <a href="#" class="p-2 mx-1" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar">
+                                <a href="#" class="p-2 mx-1 text-dark" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar">
                                     <i class="fa fa-bars"></i>
                                 </a>
                             </li>
@@ -329,11 +364,11 @@
 
     <?php $this->load->view('interface/system/layout/modals') ?>
 
-    <script src="<?php echo base_url(); ?>dist/layout_shop/js/jquery-1.11.0.min.js"></script>
+    <script src="<?= base_url(); ?>dist/layout_shop/js/jquery-1.11.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe" crossorigin="anonymous"></script>
-    <script src="<?php echo base_url(); ?>dist/layout_shop/js/plugins.js"></script>
-    <script src="<?php echo base_url(); ?>dist/layout_shop/js/script.js"></script>
+    <script src="<?= base_url(); ?>dist/layout_shop/js/plugins.js"></script>
+    <script src="<?= base_url(); ?>dist/layout_shop/js/script.js"></script>
     <script src="<?= base_url() ?>plugins/sweetalert2/sweetalert2.min.js"></script>
     <script src="<?= base_url() ?>plugins/jquery/jquery.form.min.js"></script>
     <!-- DataTables -->
@@ -350,11 +385,6 @@
 
     <?php $this->load->view('interface/system/layout/script') ?>
     <?php $this->load->view('interface/system/layout/cart_script') ?>
-
-    <script>
-        getTable('CartListing', 0, 1000);
-        console.log($("#tblCartListing tr").length);
-    </script>
 
 
 

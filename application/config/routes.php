@@ -62,6 +62,7 @@ $route['signup'] = 'system/Signup';
 $route['index'] = 'system/Index';
 $route['registration'] = 'system/Registration';
 $route['updateprofile'] = 'system/Login/updateprofile';
+$route['updategcash'] = 'system/Login/updategcash';
 
 $route['updatePassword'] = 'userpassword/Changepassword/updatePassword';
 $route['changepassword'] = 'userpassword/Changepassword';
@@ -74,6 +75,11 @@ $route['sendEmail'] = 'system/Signup/email_verification';
 
 $route['search-barangay'] = 'userpublicmap/map/search_barangay';
 $route['search-barangay-caraga'] = 'userpublicmap/map/search_barangay_caraga';
+
+// User Farmer Routes
+$route['userfarmer/orders'] = 'userfarmer/Orders';
+$route['userfarmer/accept_order'] = 'userfarmer/Orders/accept_order';
+$route['userfarmer/getIncomingOrders'] = 'userfarmer/Orders/getIncomingOrders';
 
 // $route['save_national'] = 'useradmin/Dataentry/savenational';
 // $route['save_local'] = 'uservalidator/Dataentry/savelocal';

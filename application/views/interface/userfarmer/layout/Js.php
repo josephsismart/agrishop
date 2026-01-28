@@ -348,8 +348,10 @@ $uri = $this->session->agrishop_login_uri;
                     }
                     tbl ? removeAllItemList("tbl" + tbl) : null;
                     tbl ? $("#btn" + tbl).trigger("click") : null;
-                    if (formId == "FarmInfo" || formId == "UpdateProfile") {
-                        location.reload();
+                    if (formId == "FarmInfo" || formId == "UpdateProfile" || formId == "UpdateGcash") {
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1000);
                     }
                 } else if (d.success == false && d.exist == true) {
                     existAlert(d.message);

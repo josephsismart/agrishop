@@ -34,7 +34,7 @@
 
         // Hide dropdown
         $('.barangayResults').hide();
-        $('[name=barangay]').val(id)
+        $('[name=barangayAll]').val(id)
     });
 
     $('.barangayInput').on('keyup', function() {
@@ -171,9 +171,11 @@
                     // toastr.success("Successfully Applied!")
                     $(".sbmtbttn").hide();
                     $(".redirect").show();
-                    // setTimeout(function() {
-                    //     location.reload();
-                    // }, 2000)
+                    if (formId == "UpdateProfile") {
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1000)
+                    }
                 } else if (d.exist == true) {
                     existAlert("Application already exist!");
                     // toastr.warning("Application already exist!")

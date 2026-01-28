@@ -12,6 +12,7 @@
             let j = JSON.parse(res);
             if (j.success == true) {
                 successAlert(j.message);
+                $(".pending-order").text(j.cart_pending);
             } else {
                 errorAlert(j.message);
             }
@@ -32,13 +33,16 @@
             showCancelButton: true,
             confirmButtonText: 'Remove',
             cancelButtonText: 'Cancel',
+            confirmButtonColor: '#dc3545', // red
+            cancelButtonColor: '#28a745', // green
             width: '300px',
             padding: '1em',
-            buttonsStyling: false,
+            allowOutsideClick: false,
+            allowEscapeKey: false,
             customClass: {
                 popup: 'swal-mini',
-                confirmButton: 'btn btn-sm btn-danger mx-1',
-                cancelButton: 'btn btn-sm btn-secondary mx-1'
+                // confirmButton: 'btn btn-sm btn-danger mx-1',
+                // cancelButton: 'btn btn-sm btn-secondary mx-1'
             }
         }).then((result) => {
 
@@ -54,6 +58,8 @@
                         successAlert(j.message);
                         getTable("CartDetails", 1, 1000);
                         getTable('CartListing', 0, 5);
+                        $(".pending-order").text(j.cart_pending);
+
                     } else {
                         errorAlert(j.message);
                     }
@@ -127,7 +133,178 @@
         // $('[name=order_method]').val('');
     }
 
-    $(".checkout-btn").click(function(){
+    $(".checkout-btn").click(function() {
         alert('a')
     });
+
+
+
+    $(document).on('change', 'input[name="payment_method"]', function() {
+
+        let method = $(this).val();
+
+        if (method === 'gcash') {
+            let label = $('label.pay_gcash');
+
+            $('#gcashName').text(label.data('name'));
+            $('#gcashNumber').text(label.data('number'));
+            $('#gcashQR').attr('src', label.data('qr'));
+
+            $('#gcashDetailsBox').slideDown();
+        } else {
+            $('#gcashDetailsBox').slideUp();
+        }
+    });
+
+
+    function checkout() {
+
+        let pay = $('input[name="payment_method"]:checked').val();
+        let total = $("#pay_cash").data('total');
+        let trans_id = $("#pay_cash").data('trans_id');
+        let subtotal = $("#pay_cash").data('subtotal');
+        let percentage = $("#pay_cash").data('percentage');
+        let name = $(".pay_gcash").data('name');
+        let number = $(".pay_gcash").data('number');
+        let proof = $('input[name="proof_of_payment"]').val();
+        let delivery = $('input[name="delivery_option"]:checked').val();
+
+        if (pay === 'gcash' && proof === '') {
+            Swal.fire({
+                title: 'Required',
+                text: 'Upload proof of payment',
+                icon: 'warning',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                customClass: {
+                    popup: 'swal-mini',
+                    icon: 'no-border'
+                }
+            });
+            return;
+        }
+
+        Swal.fire({
+            title: '<label style="font-size: 18px;">' + (pay === 'gcash' ? 'Confirm GCash Payment' : 'Confirm Cash Payment') + '</label>',
+            html: '<b style="font-size: 20px;margin-top: -20px;">Amount: ₱ ' + total + '</b>',
+            iconHtml: pay === 'gcash' ?
+                '<img src="<?= base_url('dist/img/credit/gcash_50x50.png') ?>" width="70">' : '<i class="fa fa-money-bill-wave text-primary"></i>',
+            showCancelButton: true,
+            confirmButtonText: 'Confirm',
+            cancelButtonText: 'Cancel',
+            confirmButtonColor: '#28a745', // green
+            cancelButtonColor: '#dc3545', // red
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            customClass: {
+                popup: 'swal-mini',
+                icon: 'no-border'
+            }
+
+        }).then(r => {
+            if (!r.isConfirmed) return;
+
+            let fd = new FormData();
+
+            fd.append('pay', pay === 'gcash' ? 'gcash' : 'cash');
+            fd.append('total', total);
+            fd.append('trans_id', trans_id);
+            fd.append('subtotal', subtotal);
+            fd.append('percentage', percentage);
+            fd.append('number', number);
+            fd.append('name', name);
+            fd.append('proof', proof);
+            fd.append('delivery', delivery);
+
+
+            // only append proof if gcash
+            if (pay === 'gcash') {
+                fd.append('proof_of_payment', $('input[name="proof_of_payment"]')[0].files[0]);
+            }
+
+            $.ajax({
+                url: "<?= base_url('userpublicmap/Map/submit_order') ?>",
+                type: "POST",
+                data: fd,
+                processData: false,
+                contentType: false,
+                success: res => {
+                    let j = JSON.parse(res);
+                    successAlert(j.message);
+                    $('#modalCartDetails').modal('hide');
+                    getTable('CartListing', 0, 5);
+                    $(".pending-order").text(j.cart_pending);
+
+                    // setTimeout(function() {
+                    //     location.reload();
+                    // }, 1500)
+                    // Swal.fire(j.success ? 'Success' : 'Error', j.message, j.success ? 'success' : 'error');
+                }
+            });
+        });
+    }
+
+
+    function cancelOrder() {
+        $('#modalCartDetails').modal('hide');
+        let pay = $('input[name="payment_method"]:checked').val();
+        let trans_id = $("#pay_cash").data('trans_id');
+
+        Swal.fire({
+            title: '<label style="font-size:24px;">Confirm Cancel Order</label>',
+            html: `
+            <div style="font-size:13px; margin-bottom:6px;">
+                <b>Important Note:</b><br>
+                <i>Orders that are cancelled are <b style="color:red;">non-refundable</b>.</i>
+            </div>
+
+            <textarea id="cancel_reason"
+                class="swal2-textarea"
+                placeholder="Please tell us your reason for cancelling..."
+                style="font-size:13px;"></textarea>
+        `,
+            showCancelButton: true,
+            confirmButtonText: 'Confirm',
+            cancelButtonText: 'Cancel',
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#dc3545',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            customClass: {
+                popup: 'swal-mini',
+                icon: 'no-border'
+            },
+            preConfirm: () => {
+                let reason = document.getElementById('cancel_reason').value.trim();
+                if (!reason) {
+                    Swal.showValidationMessage('Cancellation reason is required');
+                    return false;
+                }
+                return reason;
+            }
+        }).then(r => {
+
+            if (!r.isConfirmed) return;
+
+            let reason = r.value; // 👈 from textarea
+
+            let fd = new FormData();
+            fd.append('trans_id', trans_id);
+            fd.append('cancel_reason', reason); // 👈 PASS TO CONTROLLER
+
+            $.ajax({
+                url: "<?= base_url('userpublicmap/Map/cancel_order') ?>",
+                type: "POST",
+                data: fd,
+                processData: false,
+                contentType: false,
+                success: res => {
+                    let j = JSON.parse(res);
+                    successAlert(j.message);
+                    getTable('CartListing', 0, 5);
+                    $(".pending-order").text(j.cart_pending);
+                }
+            });
+        });
+    }
 </script>

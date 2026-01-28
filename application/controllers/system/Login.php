@@ -46,6 +46,13 @@ class Login extends MY_Controller
                                     t3.contact_num,
                                     t3.barangay_id,
                                     t3.img_path,
+                                    t4.id as farmer_id,
+
+                                    t5.id as gcash_id,
+                                    t5.type as gcash_type,
+                                    t5.account_name as gcash_account_name,
+                                    t5.number as gcash_account_num,
+                                    t5.qr as gcash_qr,
 
                                     UPPER(CONCAT(
                                         b.description, ' ',
@@ -66,6 +73,7 @@ class Login extends MY_Controller
                                 LEFT JOIN public.role t2 ON t1.role_id = t2.id
                                 LEFT JOIN public.person t3 ON t1.person_id = t3.id
                                 LEFT JOIN public.farmer t4 ON t3.id = t4.person_id
+                                LEFT JOIN (SELECT * FROM public.farmer_payment_method WHERE is_active = true and type='gcash') t5 ON t3.id = t5.person_id
 
                                 LEFT JOIN tbl_barangay b ON t3.barangay_id = b.id
                                 LEFT JOIN tbl_citymun c ON b.citymun_id = c.id
@@ -83,6 +91,7 @@ class Login extends MY_Controller
             $row1 = $chck->row();
             $person_id = $row1->person_id;
             $img = $row1->img_path ? base_url($row1->img_path) : base_url('dist/img/media/icons/1x1.png');
+            $qr = $row1->gcash_qr ? base_url($row1->gcash_qr) : base_url('dist/img/credit/gcash.png');
             if ($row1->is_active == true) {
 
                 $data += [
@@ -108,6 +117,13 @@ class Login extends MY_Controller
                     "agrishop_change_password"  => $row1->change_pwd,
                     "agrishop_login_name"       => 'AAAA', #$row2->full_name, // $this->personName($query->row('person_id'),'n'),
                     "agrishop_login_img"        => '', #$this->getImg($row2->img_path), // $this->personName($query->row('person_id'),'n'),
+                    "agrishop_pending_trans_count" => $this->getTransactionPeding($person_id),
+
+                    "agrishop_login_gcash_id" => $row1->gcash_id,
+                    "agrishop_login_gcash_type" => $row1->gcash_type,
+                    "agrishop_login_gcash_account_name" => $row1->gcash_account_name,
+                    "agrishop_login_gcash_account_num" => $row1->gcash_account_num,
+                    "agrishop_login_gcash_qr" => $qr,
                 ];
 
 
@@ -231,10 +247,72 @@ class Login extends MY_Controller
             $data_session += [
                 "agrishop_login_img_path" => base_url($upload),
             ];
-
         }
 
         if ($this->db->update("person", $data, "id = $person_id")) {
+            $this->session->set_userdata($data_session);
+            $true += ["message"   => "Successfully updated!"];
+            $ret = $true;
+        } else {
+            $false += ["message"   => "Something went wrong!"];
+            $ret = $false;
+        }
+
+        if ($this->db->trans_status() === false) {
+            $this->db->trans_rollback();
+        } else {
+            $this->db->trans_commit();
+        }
+
+        echo json_encode($ret);
+    }
+
+    public function updategcash()
+    {
+        $this->db->trans_begin();
+        $true = ["success"   => true];
+        $false = ["success"   => false];
+        $upload = "";
+
+        $person_id = $this->session->agrishop_person_id;
+        $gcash_id = $this->session->agrishop_login_gcash_id;
+        $pic = $this->input->post("picGcash");
+        $accountNumber = strtoupper($this->input->post("accountNumber"));
+        $accountName = strtoupper($this->input->post("accountName"));
+
+
+        $data = [
+            "number" => $accountNumber,
+            "account_name" => $accountName,
+        ];
+
+        $data_session = [
+            "agrishop_login_gcash_account_name" => $accountName,
+            "agrishop_login_gcash_account_num" => $accountNumber,
+        ];
+
+        if (isset($_FILES['picGcash']) && $_FILES['picGcash']['error'] === UPLOAD_ERR_OK) {
+            // Normal upload
+            $upload = $this->uploadImg($_FILES['picGcash'], $accountNumber . $accountName, 'gcash', 'picGcash');
+            $data += [
+                "qr" => $upload
+            ];
+            $data_session += [
+                "agrishop_login_gcash_qr" => base_url($upload),
+            ];
+        }
+
+        if (!$gcash_id) {
+            $data += [
+                "person_id" => $person_id,
+                "type" => "gcash",
+            ];
+        }
+
+        $result = $gcash_id
+            ? $this->db->update("farmer_payment_method", $data, ["id" => $gcash_id])
+            : $this->db->insert("farmer_payment_method", $data);
+        if ($result) {
             $this->session->set_userdata($data_session);
             $true += ["message"   => "Successfully updated!"];
             $ret = $true;

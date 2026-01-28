@@ -3,10 +3,10 @@
         <div class="container-lg">
             <div class="row">
                 <div class="col-lg-6 pt-5 mt-5">
-                    <h2 class="display-1 ls-1"><span class="fw-bold text-primary">Farm-Fresh</span> Goodness Delivered <span class="fw-bold">Today</span></h2>
+                    <h2 class="display-3 ls-4"><span class="fw-bold" style="color: #6aad51ff;">Farm-Fresh</span> Goodness Delivered <span class="fw-bold" style="color: #6bb252;">Today</span></h2>
                     <p class="fs-4">Order now to lock in peak freshness before it’s gone.</p>
                     <div class="d-flex gap-3">
-                        <a href="#" class="btn bg-danger text-uppercase fs-6 rounded-pill px-4 py-3 mt-3 text-white">Start Shopping</a>
+                        <a href="#" class="btn bg-orange text-uppercase fs-6 rounded-pill px-4 py-3 mt-3" style="color: #fff !important;">Start Shopping</a>
                         <?php if (!$this->session->agrishop_login_id) { ?>
                             <a href="<?= base_url() ?>signup" class="btn btn-dark text-uppercase fs-6 rounded-pill px-4 py-3 mt-3">Sign Up Now</a>
                         <?php } ?>
@@ -48,7 +48,7 @@
 
             <div class="row row-cols-1 row-cols-sm-3 row-cols-lg-3 g-0 justify-content-center">
                 <div class="col">
-                    <div class="card border-0 bg-primary rounded-0 p-4 text-light">
+                    <div class="card border-0 bg-success rounded-0 p-4 text-light">
                         <div class="row">
                             <div class="col-md-3 text-center">
                                 <svg width="60" height="60">
@@ -82,7 +82,7 @@
                     </div>
                 </div>
                 <div class="col">
-                    <div class="card border-0 bg-danger rounded-0 p-4 text-light">
+                    <div class="card border-0 bg-orange rounded-0 p-4 text-light">
                         <div class="row">
                             <div class="col-md-3 text-center">
                                 <svg width="60" height="60">
@@ -114,7 +114,7 @@
                         <h2 class="section-title">Farmer Performance Leaderboard</h2>
 
                         <div class="d-flex align-items-center">
-                            <a href="#" class="btn btn-primary me-2">View All</a>
+                            <a href="#" class="btn btn-success me-2">View All</a>
                             <div class="swiper-buttons">
                                 <button class="swiper-prev category-carousel-prev btn btn-yellow">❮</button>
                                 <button class="swiper-next category-carousel-next btn btn-yellow">❯</button>

@@ -100,7 +100,8 @@ $uri = $this->session->agrishop_login_uri;
                 <div class="card card-outline card-primary mt-3">
                     <div class="card-header">
                         <h3 class="card-title">Location in map: </h3>
-                        <div class="col-12"> <h6 class="text-blue" id="farmCoordinates"></h6>
+                        <div class="col-12">
+                            <h6 class="text-blue" id="farmCoordinates"></h6>
                         </div>
                         <div class="card-tools">
                             <!-- <button type="button" class="btn btn-tool" data-card-widget="collapse">
@@ -479,6 +480,59 @@ $uri = $this->session->agrishop_login_uri;
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 <button type="submit" class="btn bg-primary text-white update_profile"> <i class="fas fa-save"></i> Update Profile</button>
+            </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<!-- <div class="modal fade show" id="gcashModal" tabindex="-1" aria-labelledby="gcashModalLabel" aria-hidden="true" style="display: block; padding-left: 0px;"> -->
+<div class="modal fade" id="gcashModal" tabindex="-1" aria-labelledby="gcashModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xs">
+        <div class="modal-content" style="border-radius:0;">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="gcashModalLabel">My Gcash</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <?= form_open(base_url('/updategcash'), 'id=form_save_dataUpdateGcash'); ?>
+            <div class="modal-body">
+                <div class="card-body">
+                    <h6><i class="fas fa-qrcode"></i> Upload QR Code</h6>
+                    <div class="col-12">
+                        <center class="p-0 border">
+                            <div class="form-group">
+                                <img name="previewPic" src="<?= $this->session->agrishop_login_gcash_qr  ?>" onclick="$('[name=picGcash]').trigger('click')" autocomplete="off" width="140" height="140" class="border border-white border-2 rounded elevation-2" type="button" alt="User Image">
+                            </div>
+                            <div class="form-group">
+                                <input name="picGcash" type="file" accept="image/*" onchange="imageView('picGcash','previewPic','imgtargetLink')" nr="1" hidden="">
+                                <!-- <input name="personId" type="text" nr="1" > -->
+                                <input name="img_path" type="text" nr="1" hidden="">
+                            </div>
+                        </center>
+                    </div>
+                    <div class="row">
+
+                        <div class="col-12 text-center">
+                            <h6 class="mt-3 text-gray"><i class="fas fa-phone"></i> Number</h6>
+                            <div class="col-12">
+                                <input type="text" class="form-control form-control-sm border-primary text-uppercase  text-center fs-5 text-black" style="font-weight: bold;" autocomplete="off" placeholder="ACCOUNT NUMBER" name="accountNumber" nr="1" value="<?= $this->session->agrishop_login_gcash_account_num ?>">
+                            </div>
+                        </div>
+
+                        <div class="col-lg-12 text-center">
+                            <h6 class="mt-3 text-gray"><i class="fas fa-user"></i> Name</h6>
+                            <div class="col-12">
+                                <input type="text" class="form-control form-control-sm text-uppercase  text-center fs-5 text-black border-primary" style="font-weight: bold;" value="<?= $this->session->agrishop_login_gcash_account_name ?>" name="accountName" placeholder="ACCOUNT NAME" autocomplete="off">
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" class="btn bg-primary text-white update_gcash"> <i class="fas fa-save"></i> Update Gcash</button>
             </div>
             </form>
         </div>

@@ -325,6 +325,21 @@ class MY_Controller extends CI_Controller
         return $address;
     }
 
+    public function getTransactionPeding($person_id)
+    {
+        $thisQuery = $this->db->query("SELECT count(1) AS total FROM transaction t1 
+                                    JOIN (SELECT * FROM transaction_status WHERE is_latest IS TRUE) t2 ON t1.id = t2.transaction_id
+                                    LEFT JOIN (SELECT transaction_id, sum(sub_total) AS payable FROM my_cart_farm_produce mcfp
+                                                GROUP BY transaction_id) t3 ON t1.id = t3.transaction_id
+                                    LEFT JOIN farmer_farm t4 ON t1.farm_id = t4.id
+                                    WHERE t1.person_id = $person_id AND t2.status = 'PENDING'");
+        $c = $thisQuery->row()->total;
+        $cc = $c > 0 ? $c : '';
+        $this->session->agrishop_pending_trans_count = $cc;
+
+        return $cc;
+    }
+
     public function format_price($amount)
     {
         return number_format((float)$amount, 2, '.', ',');
@@ -776,6 +791,41 @@ class MY_Controller extends CI_Controller
         $limit = isset($requestData['length']) ? intval($requestData['length']) : 10;
         $offset = isset($requestData['start']) ? intval($requestData['start']) : 0;
         return array($limit, $offset);
+    }
+
+    public function checkTransactionStatus($transaction_id){
+        $query = $this->db->query("SELECT t2.status FROM public.transaction t1
+                                    LEFT JOIN (SELECT * FROM public.transaction_status WHERE transaction_id=$transaction_id AND is_latest=TRUE) t2 ON t1.id=t2.id
+                                    WHERE t1.id=$transaction_id LIMIT 1");
+        return $query->row("status");
+    }
+
+    public function statusBadge($status)
+    {
+        $map = [
+            // 🧾 TRANSACTION
+            'PENDING'    => 'bg-warning text-dark',
+            'RESERVED'   => 'bg-info text-dark',
+            'PREPARING'  => 'bg-primary text-dark',
+            'COMPLETED'  => 'bg-success',
+            'CANCELLED'  => 'bg-danger',
+
+            // 💳 PAYMENT
+            'UNPAID'     => 'bg-secondary',
+            'VERIFYING'  => 'bg-info text-dark',
+            'PAID'       => 'bg-success',
+            'FAILED'     => 'bg-danger',
+
+            // 🚚 DELIVERY
+            'TO_PICKUP'  => 'bg-warning text-dark',
+            'TO_DELIVER' => 'bg-info',
+            'ON_THE_WAY' => 'bg-info text-dark',
+            'DELIVERED'  => 'bg-success',
+        ];
+
+        $color = $map[$status] ?? 'bg-dark';
+
+        return '<span class="badge ' . $color . '">' . $status . '</span>';
     }
 
     public function scanlog($x, $type, $scanned_id, $io, $g_name, $g_id)
