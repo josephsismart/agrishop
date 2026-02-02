@@ -117,13 +117,15 @@ class Login extends MY_Controller
                     "agrishop_change_password"  => $row1->change_pwd,
                     "agrishop_login_name"       => 'AAAA', #$row2->full_name, // $this->personName($query->row('person_id'),'n'),
                     "agrishop_login_img"        => '', #$this->getImg($row2->img_path), // $this->personName($query->row('person_id'),'n'),
-                    "agrishop_pending_trans_count" => $this->getTransactionPeding($person_id),
+                    "agrishop_pending_trans_count" => $row1->farmer_id ? $this->getTransactionPeding($person_id,'PENDING','client') : "",
 
+                    "agrishop_login_farmer_id" => $row1->farmer_id,
                     "agrishop_login_gcash_id" => $row1->gcash_id,
                     "agrishop_login_gcash_type" => $row1->gcash_type,
                     "agrishop_login_gcash_account_name" => $row1->gcash_account_name,
                     "agrishop_login_gcash_account_num" => $row1->gcash_account_num,
                     "agrishop_login_gcash_qr" => $qr,
+                    "agrishop_reserved_trans_count" => $row1->farmer_id ? $this->getTransactionPeding($row1->farmer_id,'RESERVED','farmer') : 0,
                 ];
 
 
@@ -159,7 +161,7 @@ class Login extends MY_Controller
         // }
 
         $array_logout = [
-            "agrishop_login_first_name"     => '',
+            "agrishop_login_first_name" => '',
             "agrishop_login_middle_name" => '',
             "agrishop_login_last_name" => '',
             "agrishop_login_birthdate" => '',
@@ -168,25 +170,26 @@ class Login extends MY_Controller
             "agrishop_login_contact_num" => '',
             "agrishop_login_barangay_id" => '',
             "agrishop_login_address_text" => '',
+            "agrishop_login_img_path" => '',
+            "agrishop_request_registration" => '',
+            "agrishop_person_id" => '',
+            "agrishop_login_id" => '',
+            "agrishop_login_uname" => '',
+            "agrishop_login_level" => '',
+            "agrishop_login_uri" => '',
+            "agrishop_login_landing" => '',
+            "agrishop_pass" => '',
+            "agrishop_change_password" => '',
+            "agrishop_login_name" => '',
+            "agrishop_login_img" => '',
+            "agrishop_pending_trans_count" => '',
+            "agrishop_login_farmer_id" => '',
+            "agrishop_login_gcash_id" => '',
+            "agrishop_login_gcash_type" => '',
+            "agrishop_login_gcash_account_name" => '',
+            "agrishop_login_gcash_account_num" => '',
+            "agrishop_login_gcash_qr" => '',
 
-
-
-            //role_id != 8;
-            "agrishop_login_name"           => '',
-            "agrishop_login_title"          => '',
-            "agrishop_login_district"       => '',
-            "agrishop_login_schl_id"        => '',
-            "agrishop_login_schl_name"      => '',
-            "agrishop_login_schl_type"      => '',
-            "agrishop_login_abbrv"          => '',
-            //role_id = 8;
-            "agrishop_login_learner_id"     => '',
-            "agrishop_login_lrn"            => '',
-            "agrishop_login_prsn_uuid"      => '',
-            "agrishop_login_rm_sec_id"      => '',
-
-            "agrishop_pass"                 => '',
-            "agrishop_change_password"      => '',
         ];
         $this->session->unset_userdata($array_logout);
         $this->session->sess_destroy();

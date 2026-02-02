@@ -32,6 +32,8 @@ class FarmProduce extends MY_Controller
     {
         $requestData = $_REQUEST;
         $person_id  = $this->session->agrishop_person_id;
+        $farmer_id = $this->session->agrishop_login_farmer_id;
+
         $searchValue = isset($requestData['search']['value']) ? $requestData['search']['value'] : '';
 
         // Calculate pagination parameters using the separate function
@@ -39,11 +41,11 @@ class FarmProduce extends MY_Controller
 
         // Query to get total record count
         $thisQuery = $this->db->query("SELECT COUNT(1) AS total FROM public.farmer_farm 
-                                    WHERE created_by_person_id = $person_id AND CONCAT(farm_name,(CASE WHEN is_active = true THEN 'ACTIVE' ELSE 'INACTIVE' END)) ILIKE '%$searchValue%'");
+                                    WHERE farmer_id = $farmer_id AND CONCAT(farm_name,(CASE WHEN is_active = true THEN 'ACTIVE' ELSE 'INACTIVE' END)) ILIKE '%$searchValue%'");
         $totalRecords = $thisQuery->row()->total;
 
         $query = $this->db->query("SELECT * FROM public.farmer_farm 
-                                    WHERE created_by_person_id = $person_id AND CONCAT(farm_name,(CASE WHEN is_active = true THEN 'ACTIVE' ELSE 'INACTIVE' END)) ILIKE '%$searchValue%'
+                                    WHERE farmer_id = $farmer_id AND CONCAT(farm_name,(CASE WHEN is_active = true THEN 'ACTIVE' ELSE 'INACTIVE' END)) ILIKE '%$searchValue%'
                                     ORDER BY created_at DESC
                                     LIMIT $limit OFFSET $offset
                                     ");
@@ -53,8 +55,10 @@ class FarmProduce extends MY_Controller
         foreach ($query->result() as $key => $value) {
             $poi = null;
             $is_a_v = $value->is_active;
-            $img = $value->img_path ? base_url($value->img_path) : base_url('dist/img/media/icons/1x1.png');
-            $image_path = "<img src='$img' width='50' height='50' class='rounded' data-toggle='tooltip' data-placement='top' title=''>";
+            $default = '<i class="fas fa-user fa-3x"></i>';
+            $img_path = $value->img_path ? base_url($value->img_path) : $default;
+            $img = $value->img_path ? "<img src='$img_path' width='50' height='50' class='rounded' data-toggle='tooltip' data-placement='top' title=''>" : $default; //base_url('dist/img/media/icons/1x1.png');
+            $image_path = $img;
             $is_active = $is_a_v < 1 ? "<span class='badge bg-danger'>INACTIVE</span>" : "<span class='badge bg-success'>ACTIVE</span>";
             $data[] = array(
                 $image_path,
@@ -93,7 +97,7 @@ class FarmProduce extends MY_Controller
 
         $query = $this->db->query("SELECT * FROM (
                                         SELECT c.id, c.name AS produce, pc.class_name, c.description,
-                                            c.is_seasonal, c.is_active, c.created_at, c.created_by_person_id, c.img_path, c.tags, c.is_customized
+                                            c.is_seasonal, c.is_active, c.created_at, c.created_by_person_id, c.img_path,pc.img_path as default_img_path, c.tags, c.is_customized
                                         FROM public.produce c
                                         LEFT JOIN public.produce_classification pc ON c.produce_classification_id = pc.id
                                         WHERE c.created_by_person_id = $person_id OR c.created_by_person_id IS NULL) AS x
@@ -106,7 +110,9 @@ class FarmProduce extends MY_Controller
         foreach ($query->result() as $key => $value) {
             $poi = null;
             $is_a_v = $value->is_active;
-            $img = $value->img_path ? base_url($value->img_path) : base_url('dist/img/media/icons/1x1.png');
+            $img = (!empty($value->img_path) && file_exists(FCPATH . $value->img_path))
+                ? base_url($value->img_path)
+                : base_url($value->default_img_path);
             $is_active = $is_a_v == 't' ? "<span class='badge bg-success'>ACTIVE</span>" : "<span class='badge bg-danger'>INACTIVE</span>";
             $is_seasonal = $value->is_seasonal == 't' ? "<span class='badge bg-blue'>SEASONAL</span>" : "<span class='badge bg-gray'>NON-SEASONAL</span>";
             $image_path = "<img src='$img' width='50' height='50' class='rounded' data-toggle='tooltip' data-placement='top' title=''>";
@@ -142,14 +148,14 @@ class FarmProduce extends MY_Controller
 
         $query = $this->db->query("SELECT * FROM (
                                         SELECT p.id, p.name AS produce, pc.class_name, p.description,
-                                            p.is_seasonal, p.is_active, p.created_at, p.created_by_person_id, p.img_path, p.tags 
+                                            p.is_seasonal, p.is_active, p.created_at, p.created_by_person_id, p.img_path, p.tags, pc.img_path as default_img_path
                                         FROM public.produce p
                                         LEFT JOIN public.produce_classification pc ON p.produce_classification_id = pc.id
 
                                         UNION ALL
 
                                         SELECT c.id, c.name AS produce, pc.class_name, c.description,
-                                            c.is_seasonal, c.is_active, c.created_at, c.created_by_person_id, c.img_path, c.tags
+                                            c.is_seasonal, c.is_active, c.created_at, c.created_by_person_id, c.img_path, c.tags, pc.img_path as default_img_path
                                         FROM public.produce_customize c
                                         LEFT JOIN public.produce_classification pc ON c.produce_classification_id = pc.id
                                         WHERE c.created_by_person_id = $person_id
@@ -160,7 +166,10 @@ class FarmProduce extends MY_Controller
 
         $results = [];
         foreach ($query->result() as $row) {
-            $img = $row->img_path ? base_url($row->img_path) : base_url('dist/img/media/icons/1x1.png');
+            // $img = $row->img_path ? base_url($row->img_path) : base_url('dist/img/media/icons/1x1.png');//update this
+            $img = (!empty($row->img_path) && file_exists(FCPATH . $row->img_path))
+                ? base_url($row->img_path)
+                : base_url($row->default_img_path);
             $results[] = [
                 'id'   => $row->id,
                 'name' => $row->produce,
@@ -171,6 +180,66 @@ class FarmProduce extends MY_Controller
 
         echo json_encode($results);
     }
+
+    function getReservedCount()
+    {
+        $farmer_id  = (int) $this->session->agrishop_login_farmer_id;
+        echo $this->getTransactionPeding($farmer_id,'RESERVED','farmer');
+    }   
+
+    function getPrice()
+    {
+        $produce_id = (int) $this->input->post("produce_id");
+        $person_id  = (int) $this->session->agrishop_person_id;
+
+        $query = $this->db->query("
+        SELECT
+            harvest_schedule,
+            price,
+            COALESCE(qty_sold, 0) AS qty_sold,
+            qty_left,
+            produce_id
+        FROM price_qty_left
+        WHERE farmer_person_id = $person_id
+          AND produce_id = $produce_id
+        LIMIT 1
+    ");
+
+        if ($query->num_rows() == 0) {
+            echo json_encode([]);
+            return;
+        }
+
+        $row = $query->row();
+
+        $current_price = (float) $row->price;
+        $qty_sold      = (int) $row->qty_sold;
+        $qty_left      = (int) $row->qty_left;
+
+        // -----------------------------
+        // SMART PRICE RULES
+        // -----------------------------
+        $suggested_price = $current_price;
+        $reason = "Stable demand and supply.";
+
+        if ($qty_sold > $qty_left && $qty_left <= 10) {
+            $suggested_price = round($current_price * 1.10, 2);
+            $reason = "High demand and low remaining stock.";
+        } elseif ($qty_sold < ($qty_left / 2)) {
+            $suggested_price = round($current_price * 0.90, 2);
+            $reason = "Low demand and high remaining stock.";
+        }
+
+        echo json_encode([
+            "produce_id"       => $row->produce_id,
+            "current_price"    => $current_price,
+            "suggested_price"  => $suggested_price,
+            "qty_sold"         => $qty_sold,
+            "qty_left"         => $qty_left,
+            "reason"           => $reason
+        ]);
+    }
+
 
     function getFarmProduceInfo()
     {
@@ -214,7 +283,7 @@ class FarmProduce extends MY_Controller
         }
 
         $query = $this->db->query("SELECT fp.id as fp_id,p.id,p.name as produce,pql.harvest_schedule,pql.uom,pql.price,pql.qty_left ,pc.class_name,p.description,
-                                    p.is_seasonal,p.is_active,p.created_at, p.img_path 
+                                    p.is_seasonal,p.is_active,p.created_at, p.img_path, pc.img_path as default_img_path 
                                     FROM public.farm_produce fp
                                     LEFT JOIN public.produce p ON fp.produce_id = p.id
                                     LEFT JOIN public.produce_classification pc ON p.produce_classification_id = pc.id
@@ -228,39 +297,167 @@ class FarmProduce extends MY_Controller
         $data = array();
         $cc = $offset + 1;
         foreach ($query->result() as $key => $value) {
-            $poi = null;
             $is_a_v = $value->is_active;
-            $img = $value->img_path ? base_url($value->img_path) : base_url('dist/img/media/icons/1x1.png');
-            $is_active = $is_a_v == 't' ? "<span class='badge bg-success'>ACTIVE</span>" : "<span class='badge bg-danger'>INACTIVE</span>";
-            $is_seasonal = $value->is_seasonal == 't' ? "<span class='badge bg-blue'>SEASONAL</span>" : "<span class='badge bg-gray'>NON-SEASONAL</span>";
-            $image_path = "<img src='$img' width='50' height='50' class='rounded' data-toggle='t0
-            .0.ooltip' data-placement='top' title=''>";
 
-            $add_produce = "<span class='badge bg-success' data-toggle='modal' data-target='#modalAddFarmProduceSupply' type='button' onclick='add_qty({
-                                id: \"$value->fp_id\",
-                                img_path: \"$img\",
-                                produce: \"$value->produce\",
-                                harvest_schedule: \"$value->harvest_schedule\",
-                                qty_left: \"$value->qty_left\",
-                                price: \"$value->price\",
-                                uom: \"$value->uom\",
-                                class_name: \"$value->class_name\",
-                                is_seasonal: \"$value->is_seasonal\",
-                                is_active: \"$value->is_active\"
-                            })'>+ QTY</span>";
+            // Image handling
+            $img = (!empty($value->img_path) && file_exists(FCPATH . $value->img_path))
+                ? base_url($value->img_path)
+                : base_url($value->default_img_path);
+
+            // Beautified Status Badges
+            $is_active = $is_a_v == 't'
+                ? "<div class='text-center'>
+            <span class='badge badge-pill bg-success p-2' style='font-size: 0.95rem; min-width: 100px;'>
+                <i class='fas fa-check-circle mr-1'></i> ACTIVE
+            </span>
+           </div>"
+                : "<div class='text-center'>
+            <span class='badge badge-pill bg-danger p-2' style='font-size: 0.95rem; min-width: 100px;'>
+                <i class='fas fa-times-circle mr-1'></i> INACTIVE
+            </span>
+           </div>";
+
+            $is_seasonal = $value->is_seasonal == 't'
+                ? "<div class='text-center'>
+            <span class='badge badge-pill bg-info p-2' style='font-size: 0.95rem; min-width: 120px;'>
+                <i class='fas fa-sun mr-1'></i> SEASONAL
+            </span>
+           </div>"
+                : "<div class='text-center'>
+            <span class='badge badge-pill bg-secondary p-2' style='font-size: 0.95rem; min-width: 120px;'>
+                <i class='fas fa-calendar mr-1'></i> NON-SEASONAL
+            </span>
+           </div>";
+
+            // Beautified Image with card effect
+            $image_path = "<div class='text-center'>
+                      <div class='card shadow-sm border-0' style='width: 70px; margin: 0 auto;'>
+                          <img src='$img' class='card-img-top rounded-circle' 
+                               style='width: 65px; height: 65px; object-fit: cover; border: 2px solid #dee2e6;'
+                               data-toggle='tooltip' data-placement='top' 
+                               title='" . htmlspecialchars($value->produce, ENT_QUOTES) . "'>
+                      </div>
+                   </div>";
+
+            // Beautified Action Button
+            $add_produce = "<div class='text-center'>
+                        <button class='btn btn-success btn-sm px-3 py-2 shadow-sm' 
+                                data-toggle='modal' 
+                                data-target='#modalAddFarmProduceSupply' 
+                                type='button' 
+                                onclick='add_qty({
+                                    id: \"" . htmlspecialchars($value->fp_id, ENT_QUOTES) . "\",
+                                    img_path: \"$img\",
+                                    produce: \"" . htmlspecialchars($value->produce, ENT_QUOTES) . "\",
+                                    harvest_schedule: \"$value->harvest_schedule\",
+                                    qty_left: \"$value->qty_left\",
+                                    price: \"$value->price\",
+                                    uom: \"" . htmlspecialchars($value->uom, ENT_QUOTES) . "\",
+                                    class_name: \"" . htmlspecialchars($value->class_name, ENT_QUOTES) . "\",
+                                    is_seasonal: \"$value->is_seasonal\",
+                                    is_active: \"$value->is_active\"
+                                })'>
+                            <i class='fas fa-plus mr-1'></i> ADD MORE
+                        </button>
+                    </div>";
+
+            // Format numbers with better readability
+            $formatted_qty = number_format($value->qty_left, 2);
+            $formatted_price = "₱ " . number_format($value->price, 2);
+
+            // Format date for better display
+            $formatted_date = date('M d, Y', strtotime($value->harvest_schedule));
+
+            // Beautified Produce Name with category
+            $produce_display = "<div>
+                            <div class='font-weight-bold text-dark' style='font-size: 1.1rem;'>
+                                " . htmlspecialchars($value->produce, ENT_QUOTES) . "
+                            </div>
+                            <div class='text-muted small mt-1'>
+                                <i class='fas fa-tag mr-1'></i>
+                                " . htmlspecialchars($value->class_name, ENT_QUOTES) . "
+                            </div>
+                        </div>";
+
+            // Beautified Quantity Display
+            $quantity_display = "<div class='text-center'>
+                            <div class='font-weight-bold text-success' style='font-size: 1.2rem;'>
+                                $value->qty_left
+                            </div>
+                            <div class='text-muted small'>
+                                <i class='fas fa-weight-hanging mr-1'></i>
+                                " . htmlspecialchars($value->uom, ENT_QUOTES) . "
+                            </div>
+                        </div>";
+
+            // Beautified Price Display
+            $price_display = "<div class='text-center'>
+                         <div class='font-weight-bold text-primary' style='font-size: 1.2rem;'>
+                             $formatted_price
+                         </div>
+                         <div class='text-muted small'>
+                             per " . htmlspecialchars($value->uom, ENT_QUOTES) . "
+                         </div>
+                      </div>";
+
+            // Beautified Harvest Date
+            $date_display = "<div class='text-center'>
+                        <div class='font-weight-bold' style='font-size: 1rem; color: #6c757d;'>
+                            <i class='fas fa-calendar-alt mr-1 text-warning'></i>
+                            $formatted_date
+                        </div>
+                        <div class='text-muted small'>
+                            Harvest Date
+                        </div>
+                     </div>";
+
             $data[] = array(
-                $add_produce,
-                $image_path,
-                $value->produce,
-                $value->harvest_schedule,
-                $value->qty_left,
-                $value->price,
-                $value->uom,
-                $value->class_name,
-                $is_seasonal,
-                $is_active,
+                $add_produce,           // Action button
+                $image_path,           // Product image
+                $produce_display,      // Product name + category
+                $date_display,         // Harvest date
+                $quantity_display,     // Quantity left
+                $price_display,        // Price
+                $is_seasonal,          // Seasonal status
+                $is_active,            // Active status
             );
-        } // Prepare the response data in the required format
+        }
+        // foreach ($query->result() as $key => $value) {
+        //     $poi = null;
+        //     $is_a_v = $value->is_active;
+        //     $img = (!empty($value->img_path) && file_exists(FCPATH . $value->img_path))
+        //         ? base_url($value->img_path)
+        //         : base_url($value->default_img_path);
+        //     $is_active = $is_a_v == 't' ? "<span class='badge bg-success'>ACTIVE</span>" : "<span class='badge bg-danger'>INACTIVE</span>";
+        //     $is_seasonal = $value->is_seasonal == 't' ? "<span class='badge bg-blue'>SEASONAL</span>" : "<span class='badge bg-gray'>NON-SEASONAL</span>";
+        //     $image_path = "<img src='$img' width='50' height='50' class='rounded' data-toggle='t0
+        //     .0.ooltip' data-placement='top' title=''>";
+
+        //     $add_produce = "<span class='badge bg-success' data-toggle='modal' data-target='#modalAddFarmProduceSupply' type='button' onclick='add_qty({
+        //                         id: \"$value->fp_id\",
+        //                         img_path: \"$img\",
+        //                         produce: \"$value->produce\",
+        //                         harvest_schedule: \"$value->harvest_schedule\",
+        //                         qty_left: \"$value->qty_left\",
+        //                         price: \"$value->price\",
+        //                         uom: \"$value->uom\",
+        //                         class_name: \"$value->class_name\",
+        //                         is_seasonal: \"$value->is_seasonal\",
+        //                         is_active: \"$value->is_active\"
+        //                     })'>+ QTY</span>";
+        //     $data[] = array(
+        //         $add_produce,
+        //         $image_path,
+        //         $value->produce,
+        //         $value->harvest_schedule,
+        //         $value->qty_left,
+        //         $value->price,
+        //         $value->uom,
+        //         $value->class_name,
+        //         $is_seasonal,
+        //         $is_active,
+        //     );
+        // } // Prepare the response data in the required format
         $response = array(
             'draw' => intval($requestData['draw']),
             'recordsTotal' => intval($totalRecords),

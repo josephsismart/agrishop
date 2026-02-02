@@ -185,12 +185,14 @@ $uri = $this->session->agrishop_login_uri;
                                     <label class="col-form-label">CLASSIFICATION</label>
                                     <select class="form-control border-primary text-uppercase" name="classification">
                                         <option value="">Select Classification</option>
-                                        <option value="1">Vegetables</option>
-                                        <option value="2">Fruits</option>
-                                        <option value="3">Cereals/Grains</option>
-                                        <option value="4">Root Crops/Tubers</option>
-                                        <option value="5">Spices/Herbs</option>
-                                        <option value="6">Legumes</option>
+                                        <?php
+                                        $query = $this->db->query("SELECT id, class_name FROM public.produce_classification ORDER BY id ASC");
+                                        $classifications = $query->result();
+                                        foreach ($classifications as $classification) {
+                                            echo '<option value="' . $classification->id . '"> ' . $classification->class_name . '</option>';
+                                        }
+                                        ?>
+
                                     </select>
                                 </div>
                             </div>
@@ -234,16 +236,16 @@ $uri = $this->session->agrishop_login_uri;
 
 <!-- <div class="modal fade show" id="modalFarmProduceSupply" data-backdrop="static" style="padding-right: 15px; display: block;" aria-modal="true" role="dialog"> -->
 <div class="modal fade" id="modalFarmProduceSupply" data-backdrop="static">
-    <div class="modal-dialog modal-sm modal-dialog-centered">
-        <div class="modal-content shadow rounded">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content shadow-lg rounded-lg" style="border: 2px solid #28a745;">
 
             <!-- HEADER -->
-            <div class="modal-header bg-success text-white py-2">
-                <h6 class="modal-title mb-0">
-                    <i class="fas fa-boxes mr-1"></i> Add Supply
-                </h6>
-                <button type="button" class="close text-white" data-dismiss="modal">
-                    <span>&times;</span>
+            <div class="modal-header bg-success text-white py-3">
+                <h5 class="modal-title mb-0">
+                    <i class="fas fa-tractor mr-2"></i> ADD FARM PRODUCE SUPPLY
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" style="font-size: 1.5rem;">
+                    <span aria-hidden="true">&times;</span>
                 </button>
             </div>
 
@@ -253,78 +255,168 @@ $uri = $this->session->agrishop_login_uri;
             <input name="produceSelectedId" hidden>
 
             <!-- BODY -->
-            <div class="modal-body p-2">
-                <!-- IMAGE -->
-                <div class="text-center mb-2 produceImg">
+            <div class="modal-body p-4">
+                <!-- Step 1: Select Produce -->
+                <div class="card mb-4 border-success">
+                    <div class="card-header bg-light-success py-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0 text-dark font-weight-bold">
+                                <i class="fas fa-seedling mr-2"></i> STEP 1: SELECT PRODUCE
+                            </h6>
+                            <span class="badge badge-success badge-pill" style="font-size: 1rem; padding: 0.5rem 1rem;">1</span>
+                        </div>
+                    </div>
+                    <div class="card-body p-3">
+                        <label class="form-label text-dark font-weight-bold mb-2 d-block" style="font-size: 1.1rem;">
+                            <i class="fas fa-search mr-2"></i>Search Your Produce
+                        </label>
+                        <div class="input-group input-group-lg mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text bg-white border-success">
+                                    <i class="fas fa-search text-success"></i>
+                                </span>
+                            </div>
+                            <input type="text" name="produceSelected" class="form-control form-control-lg produceInput text-uppercase border-success" placeholder="Type crop or vegetable name here..." autocomplete="off" style="font-size: 1.1rem;">
+                        </div>
+
+                        <!-- suggestion list -->
+                        <ul class="list-group position-absolute w-100 shadow-lg produceList mt-2" style="z-index: 9999; max-height: 300px; overflow-y: auto; display: none; font-size: 1.1rem;">
+                        </ul>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3 mb-md-0">
+                                <label class="form-label text-dark font-weight-bold mb-2 d-block" style="font-size: 1.1rem;">
+                                    <i class="fas fa-calendar-day mr-2"></i>When did you harvest?
+                                </label>
+                                <div class="form-group mb-0">
+                                    <div class="input-group input-group-lg">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text bg-white border-success" style="font-size: 1.2rem;">
+                                                <i class="fas fa-calendar-check text-success"></i>
+                                            </span>
+                                        </div>
+                                        <input type="date" class="form-control form-control-lg border-success" name="harvest_date" value="<?= Date('Y-m-d'); ?>" style="font-size: 1.1rem;">
+                                    </div>
+                                    <!-- <small class="form-text text-muted mt-2" style="font-size: 1rem;">
+                                <i class="fas fa-info-circle mr-1"></i> Select the date when you harvested this produce
+                            </small> -->
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3 mb-md-0">
+                                <label class="form-label text-dark mb-2" style="font-size: 1.1rem;">
+                                    <i class="fas fa-hashtag mr-2"></i>Quantity
+                                </label>
+                                <div class="input-group input-group-lg">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text bg-white border-success" style="font-size: 1.2rem;">
+                                            <i class="fas fa-weight text-success"></i>
+                                        </span>
+                                    </div>
+                                    <input type="number" class="form-control form-control-lg border-success" name="qty_add" min="1" value="1" placeholder="Amount" style="font-size: 1.1rem;">
+                                </div>
+                                <!-- <small class="form-text text-muted mt-2" style="font-size: 1rem;">
+                                    <i class="fas fa-info-circle mr-1"></i> Enter the total amount you have
+                                </small> -->
+                            </div>
+
+                        </div>
+                    </div>
+
                 </div>
-                <div class="input-group mb-3 position-relative">
-                    <input type="text" name="produceSelected" class="form-control form-control-sm produceInput text-uppercase border-primary" placeholder="TYPE PRODUCE NAME..." autocomplete="off">
 
-                    <!-- suggestion list -->
-                    <ul class="list-group position-absolute w-100 shadow-sm produceList mt-5" style="z-index: 9999; max-height: 250px; overflow-y: auto; display: none;">
-                    </ul>
-                </div>
 
-                <!-- hidden ID -->
+                <!-- Step 4: Pricing -->
+                <div class="card mb-2 border-success">
+                    <div class="card-header bg-light-success py-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0 text-dark font-weight-bold">
+                                <i class="fas fa-tag mr-2"></i> STEP 2: SET YOUR PRICE, QUANTITY AND UoM
+                            </h6>
+                            <span class="badge badge-success badge-pill" style="font-size: 1rem; padding: 0.5rem 1rem;">2</span>
+                        </div>
+                    </div>
+                    <div class="card-body p-3">
+                        <label class="form-label text-dark font-weight-bold mb-3 d-block" style="font-size: 1.1rem;">
+                            <i class="fas fa-money-bill-wave mr-2"></i>What's your selling price?
+                        </label>
 
-                <!-- Supply Add Section -->
-                <div class="bg-light rounded">
-                    <div class="small text-muted font-weight-bold mb-1">Add Supply</div>
 
-                    <div class="form-group mb-2">
-                        <input type="number" class="form-control form-control-sm border-success" name="qty_add" min="1" value="1" placeholder="Quantity to Add">
+                        <div class="form-group mb-0">
+                            <div class="input-group input-group-lg">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text bg-white border-success" style="font-size: 1.3rem;">
+                                        <i class="fas fa-tag text-success"></i>
+                                    </span>
+                                </div>
+
+                                <input type="number" class="form-control form-control-lg border-success font-weight-bold" name="price" min="1" placeholder="Enter your price" style="font-size: 1.2rem;">
+
+                                <div class="input-group-append">
+                                    <span class="input-group-text bg-white border-success font-weight-bold" style="font-size: 1.1rem;">
+                                        per
+                                    </span>
+                                </div>
+
+
+                                <select class="form-control form-control-lg border-success" name="uom" style="font-size: 1.1rem;">
+                                    <option value="KG">Kilograms (KG)</option>
+                                    <option value="G">Grams (G)</option>
+                                    <option value="LB">Pounds (LB)</option>
+                                    <option value="SACK">Sack</option>
+                                    <option value="BAG">Bag</option>
+                                    <!-- Count -->
+                                    <option value="PC">Piece (PC)</option>
+                                    <option value="PACK">Pack</option>
+                                    <option value="BUNDLE">Bundle</option>
+                                    <option value="BUNCH">Bunch</option>
+                                    <option value="CLUSTER">Cluster</option>
+                                    <option value="DOZEN">Dozen</option>
+                                    <option value="TRAY">Tray</option>
+                                    <option value="HEAD">Head</option>
+                                    <option value="STICK">Stick</option>
+                                    <!-- Volume -->
+                                    <option value="L">Liters (L)</option>
+                                    <option value="ML">Milliliters (ML)</option>
+                                </select>
+                            </div>
+
+                            <small class="form-text text-muted mt-2" style="font-size: 1rem;">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                You may follow the suggested price or set your own.
+                            </small>
+
+                            <!-- AI PRICE SUGGESTION -->
+                            <div class="bg-navy text-white rounded p-3 mb-3">
+                                <div class="font-weight-bold mb-1" style="font-size: 1.1rem;">
+                                    🤖 Suggested Market Price
+                                </div>
+
+                                <div class="h3 mb-1">
+                                    ₱ <span id="aiSuggestedPrice">--</span>
+                                    <small style="font-size: 1.1rem;"></small>
+                                </div>
+
+                                <div class="text-light mb-2" style="font-size: 1rem;" id="aiPriceReason">
+                                    Based on recent market prices, demand, and your past sales.
+                                </div>
+
+                                <button type="button" class="btn btn-light btn-lg btn-block font-weight-bold" id="btnUseAiPrice">
+                                    Use Suggested Price
+                                </button>
+                            </div>
+
+                        </div>
                     </div>
                 </div>
-                <div class="bg-light rounded">
-                    <div class="small text-muted font-weight-bold mb-1">Price</div>
-
-                    <div class="form-group mb-2">
-                        <input type="number" class="form-control form-control-sm border-success" name="price" min="1" value="1" placeholder="Price">
-                    </div>
-                </div>
-                <div class="bg-light rounded pt-1">
-                    <div class="small text-muted font-weight-bold mb-1">UoM</div>
-
-                    <div class="form-group mb-2">
-                        <select class="form-control form-control-sm border-success select2" name="uom">
-                            <option value="KG">KG</option>
-                            <option value="G">G</option>
-                            <option value="LB">LB</option>
-                            <option value="SACK">SACK</option>
-                            <option value="BAG">BAG</option>
-                            <!-- Count -->
-                            <option value="PC">PC</option>
-                            <option value="PACK">PACK</option>
-                            <option value="BUNDLE">BUNDLE</option>
-                            <option value="BUNCH">BUNCH</option>
-                            <option value="CLUSTER">CLUSTER</option>
-                            <option value="DOZEN">DOZEN</option>
-                            <option value="TRAY">TRAY</option>
-                            <option value="HEAD">HEAD</option>
-                            <option value="STICK">STICK</option>
-                            <!-- Volume -->
-                            <option value="L">L</option>
-                            <option value="ML">ML</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="bg-light rounded pt-1">
-                    <div class="small text-muted font-weight-bold mb-1">Harvest Date</div>
-
-                    <div class="form-group mb-2">
-                        <input type="date" class="form-control form-control-sm border-success" name="harvest_date" value="<?= Date('Y-m-d'); ?>">
-                    </div>
-                </div>
-
             </div>
 
             <!-- FOOTER -->
-            <div class="modal-footer py-1 px-2">
-                <button type="submit" class="btn btn-primary btn-sm px-3">
-                    <i class="fas fa-save"></i> Save
-                </button>
-                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">
-                    Close
+            <div class="modal-footer p-1 bg-light" style="border-top: 2px solid #dee2e6;">
+                <!-- <button type="button" class="btn btn-outline-secondary btn-lg mr-3 px-4" data-dismiss="modal">
+                    <i class="fas fa-times mr-2"></i> CANCEL
+                </button> -->
+                <button type="submit" class="btn btn-success btn-lg px-5 w-100">
+                    <i class="fas fa-cloud-upload-alt mr-2 fs-5"></i> ADD SUPPLY
                 </button>
             </div>
 
@@ -333,62 +425,89 @@ $uri = $this->session->agrishop_login_uri;
     </div>
 </div>
 
+
 <!-- <div class="modal fade show" id="modalFarmProduceSupply" data-backdrop="static" style="padding-right: 15px; display: block;" aria-modal="true" role="dialog"> -->
 <div class="modal fade" id="modalAddFarmProduceSupply" data-backdrop="static">
-    <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-dialog modal-md modal-dialog-centered">
         <div class="modal-content shadow rounded">
 
             <!-- HEADER -->
-            <div class="modal-header bg-success text-white py-2">
-                <h6 class="modal-title mb-0">
-                    <i class="fas fa-boxes mr-1"></i> Add Supply
-                </h6>
+            <div class="modal-header bg-success text-white py-3">
+                <h5 class="modal-title mb-0">
+                    <i class="fas fa-seedling mr-2"></i> Add Farm Supply
+                </h5>
                 <button type="button" class="close text-white" data-dismiss="modal">
                     <span>&times;</span>
                 </button>
             </div>
 
             <?= form_open(base_url($uri . '/FarmProduce/saveAddFarmProduceSupply'), 'id="form_save_dataAddFarmProduceSupply"'); ?>
-
             <input type="hidden" name="fp_id">
 
             <!-- BODY -->
-            <div class="modal-body p-2">
+            <div class="modal-body p-4">
 
-                <!-- IMAGE -->
+                <!-- IMAGE + NAME -->
                 <div class="text-center mb-2">
-                    <img name="previewPicProduce" src="<?= base_url('dist/img/media/icons/1x1.png') ?>" class="rounded border shadow-sm" width="100" height="100">
+                    <img name="previewPicProduce" src="<?= base_url('dist/img/media/icons/1x1.png') ?>" class="rounded border shadow-sm mb-2" width="120" height="120">
+
+                    <div class="h5 font-weight-bold mb-1" name="show_produceName"></div>
+                    <div class="text-muted" style="font-size:1rem;" name="show_classification"></div>
                 </div>
 
-
-                <!-- Supply Add Section -->
-                <div class="p-2 bg-light rounded">
-                    <div class="small text-muted font-weight-bold mb-1">Add Supply</div>
-
-                    <div class="form-group mb-2">
-                        <input type="number" class="form-control form-control-sm border-success" name="qty_add" min="1" placeholder="Quantity to Add">
+                <!-- ADD QUANTITY -->
+                <div class="bg-light rounded p-2 mb-2">
+                    <div class="font-weight-bold mb-2" style="font-size:1.1rem;">
+                        👉 Quantity to Add
                     </div>
-                </div>
-                <!-- Produce Details -->
-                <div class="p-2 bg-light rounded mb-2">
-                    <div class="small"><b>Name:</b> <span name="show_produceName"></span></div>
-                    <div class="small"><b>Classification:</b> <span name="show_classification"></span></div>
-                    <div class="small"><b>UoM:</b> <span name="show_uom"></span></div>
-                    <div class="small"><b>Seasonal:</b> <span name="show_seasonal"></span></div>
-                    <div class="small"><b>Stock Left:</b> <span name="show_qty_left"></span></div>
-                    <div class="small"><b>Price:</b> <span name="price"></span></div>
 
-                    <!-- hidden input counterparts -->
+                    <input type="number" class="form-control form-control-lg border-success" name="qty_add" min="1" placeholder="Sample: 10">
+                </div>
+
+
+                <!-- PRODUCE INFORMATION (RE-ARRANGED) -->
+                <div class="bg-light rounded p-2" style="font-size:1.2rem !important;">
+                    <div class="font-weight-bold mb-3" style="font-size:1.1rem;">
+                        ℹ️ Produce Information
+                    </div>
+
+                    <div class="row mb-1">
+                        <div class="col-6 text-muted">Unit</div>
+                        <div class="col-6 font-weight-bold">
+                            <span name="show_uom"></span>
+                        </div>
+                    </div>
+
+                    <div class="row mb-1">
+                        <div class="col-6 text-muted">Seasonal</div>
+                        <div class="col-6 font-weight-bold">
+                            <span name="show_seasonal"></span>
+                        </div>
+                    </div>
+
+                    <div class="row mb-1">
+                        <div class="col-6 text-muted">Stock Left</div>
+                        <div class="col-6 font-weight-bold text-success" style="font-size:1.2rem;">
+                            <span name="show_qty_left"></span>
+                        </div>
+                    </div>
+
+                    <div class="row mb-n4">
+                        <div class="col-6 text-muted">Current Price</div>
+                        <div class="col-6 font-weight-bold text-primary" style="font-size:1.2rem;">
+                            ₱ <span name="price"></span>
+                        </div>
+                    </div>
                 </div>
 
             </div>
 
             <!-- FOOTER -->
-            <div class="modal-footer py-1 px-2">
-                <button type="submit" class="btn btn-primary btn-sm px-3">
-                    <i class="fas fa-save"></i> Save
+            <div class="modal-footer px-4 py-3">
+                <button type="submit" class="btn btn-success btn-lg btn-block">
+                    <i class="fas fa-plus"></i> Add Supply
                 </button>
-                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">
+                <button type="button" class="btn btn-secondary btn-sm btn-block" data-dismiss="modal">
                     Close
                 </button>
             </div>
@@ -535,6 +654,167 @@ $uri = $this->session->agrishop_login_uri;
                 <button type="submit" class="btn bg-primary text-white update_gcash"> <i class="fas fa-save"></i> Update Gcash</button>
             </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalFarmerSubscription" tabindex="-1" data-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content shadow-lg rounded">
+
+            <!-- HEADER -->
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    🌾 Grow Your Farm Sales
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+
+            <!-- BODY -->
+            <div class="modal-body">
+
+                <p class="text-center mb-4">
+                    Reach more buyers, list more produce, and sell faster.<br>
+                    Choose the plan that fits your farm business.
+                </p>
+
+                <!-- FREE TIER -->
+                <div class="border rounded p-3 mb-3">
+                    <h6 class="text-success mb-2">
+                        🌱 Tier 1 – Free Plan
+                    </h6>
+                    <ul class="small mb-3">
+                        <li>✅ Register up to <strong>2 farms only</strong></li>
+                        <li>✅ <strong>2 produce</strong> per farm</li>
+                        <li>❌ Lower priority in customer search results</li>
+                        <li>❌ Limited visibility to buyers</li>
+                    </ul>
+                    <span class="badge badge-secondary">Good for beginners</span>
+                </div>
+
+                <!-- PREMIUM TIER -->
+                <div class="border rounded p-3 bg-light">
+                    <h6 class="text-warning mb-2">
+                        🚜 Tier 2 – Premium Plan
+                    </h6>
+                    <h4 class="text-success mb-2">
+                        ₱99 <small class="text-muted">/ month</small>
+                    </h4>
+                    <ul class="small mb-3">
+                        <li>✅ <strong>Unlimited farm registration</strong></li>
+                        <li>✅ <strong>Unlimited produce per farm</strong></li>
+                        <li>🔥 <strong>Priority listing</strong> in customer searches</li>
+                        <li>📈 Higher chance of getting orders</li>
+                        <li>⚡ Faster exposure to buyers</li>
+                    </ul>
+
+                    <div class="alert alert-success small mb-0">
+                        💡 <strong>Tip:</strong> Farmers on Premium get noticed first by customers.
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- FOOTER -->
+            <div class="modal-footer">
+                <button class="btn btn-outline-secondary" data-dismiss="modal">
+                    Maybe Later
+                </button>
+                <button class="btn btn-success">
+                    🚀 Upgrade to Premium
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalCartDetails">
+    <!-- <div class="modal fade show" id="modalCheckout" tabindex="-1" aria-labelledby="modalCheckoutLabel" aria-hidden="true" style="display: block; padding-left: 0px;"> -->
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content rounded shadow">
+            <!-- HEADER -->
+            <div class="modal-header bg-dark py-2">
+                <h5 class="modal-title mb-0 text-white">
+                    <i class="fas fa-shopping-basket mr-1"></i> Cart Details and Checkout
+                </h5>
+                <button type="button" class="btn-close" style="filter: invert(1);" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body px-3 py-2">
+                <table id="tblCartDetails" class="table table-sm table-bordered mb-0" width="100%">
+                    <thead class="small">
+                        <tr>
+                            <!-- <th width="1">Image</th> -->
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- dynamic rows -->
+                    </tbody>
+                </table>
+            </div>
+
+
+            <div class="modal-footer py-2">
+                <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalDeliveryStatus">
+    <!-- <div class="modal fade show" id="modalDeliveryStatus" tabindex="-1" aria-labelledby="modalCheckoutLabel" aria-hidden="true" style="display: block; padding-left: 0px;"> -->
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content rounded shadow">
+            <!-- HEADER -->
+            <div class="modal-header py-2">
+                <h5 class="modal-title mb-0">
+                    <i class="fas fa-truck mr-1"></i> Delivery Status
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body px-3 py-2">
+                <i>Please select the delivery status</i>
+                <select id="deliveryStatus" class="form-control form-control-sm fs-5 text-uppercase status-select text-center" data-type="delivery">
+                    <option value="TO_PICKUP">TO PICKUP</option>
+                    <option value="TO_DELIVER">TO DELIVER</option>
+                    <option value="ON_THE_WAY">ON THE WAY</option>
+                    <option value="DELIVERED">DELIVERED</option>
+                </select>
+                <button type="button" class="btn btn-primary btn-sm w-100 mt-3" onclick="updateStatus('delivery',$('#deliveryStatus').val())"><i class="fas fa-check"></i> Update Status</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalPaymentStatus">
+    <!-- <div class="modal fade show" id="modalPaymentStatus" tabindex="-1" aria-labelledby="modalCheckoutLabel" aria-hidden="true" style="display: block; padding-left: 0px;"> -->
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content rounded shadow">
+            <!-- HEADER -->
+            <div class="modal-header py-2">
+                <h5 class="modal-title mb-0">
+                    <i class="fas fa-money-bill-wave mr-1"></i> Payment Status
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body px-3 py-2">
+                <i>Please select the payment status</i>
+                <select id="paymentStatus" class="form-control form-control-sm fs-5 text-uppercase status-select text-center" data-type="payment">
+                    <option value="UNPAID">UNPAID</option>
+                    <option value="VERIFYING">VERIFYING</option>
+                    <option value="PAID">PAID</option>
+                    <option value="FAILED">FAILED</option>
+                </select>
+                <button type="button" class="btn btn-success btn-sm w-100 mt-3" onclick="updateStatus('payment',$('#paymentStatus').val())"><i class="fas fa-check"></i> Update Status</button>
+            </div>
+
         </div>
     </div>
 </div>

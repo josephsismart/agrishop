@@ -44,11 +44,12 @@ $uri = $this->session->agrishop_login_uri;
 
 										<?php
 										$person_id = $this->session->agrishop_person_id;
+										$farmer_id = $this->session->agrishop_login_farmer_id;
 
 										$query = $this->db->query("SELECT t1.id, t1.farm_name,
 																		(SELECT count(1) FROM farm_produce WHERE farm_id=t1.id) AS produce_c
 																	FROM farmer_farm t1
-																	WHERE created_by_person_id=$person_id");
+																	WHERE farmer_id=$farmer_id");
 
 										foreach ($query->result() as $key => $value) {
 											echo "<option value='" . $value->id . "'>" . $value->farm_name . " - (".$value->produce_c.")</option>";
@@ -57,10 +58,10 @@ $uri = $this->session->agrishop_login_uri;
 									</select>
 								</div>
 							</div>
-							<div class="card-header pb-0 bg-success">
+							<div class="card-header bg-success">
 								<h1 class="card-title"><i class="fa fa-list"></i> Farm & Produce</h1>
 								<div class="card-tools mt-n1">
-									<span class='badge bg-navy' data-toggle="modal" data-target="#modalFarmProduceSupply" role="button"><i class="fas fa-plus"></i> Create New Supply</span>
+									<span class='btn bg-navy' data-toggle="modal" data-target="#modalFarmProduceSupply" role="button"><i class="fas fa-plus"></i> Create New Supply</span>
 									<!-- <button type="button" class="btn btn-tool" data-card-widget="remove"><i class="fas fa-remove"></i></button> -->
 								</div>
 							</div>
@@ -70,13 +71,13 @@ $uri = $this->session->agrishop_login_uri;
 										<tr>
 											<th width="1"></th>
 											<th width="50">Image</th>
-											<th width="50">Produce</th>
-											<th width="30">Harvested</th>
+											<th width="90">Produce</th>
+											<th width="70">Harvested</th>
 											<th width="1">Qty</th>
 											<th width="1">price</th>
-											<th width="1">uom</th>
+											<!-- <th width="1">uom</th> -->
 											<th width="1">Class</th>
-											<th width="1">Action</th>
+											<th width="1"></th>
 										</tr>
 									</thead>
 									<tbody>
@@ -88,10 +89,10 @@ $uri = $this->session->agrishop_login_uri;
 
 					<div class="col-lg-6 col-12 mt-5">
 						<div class="card">
-							<div class="card-header pb-0">
+							<div class="card-header">
 								<h1 class="card-title"><i class="fa fa-list"></i> List of Produce</h1>
 								<div class="card-tools mt-n1">
-									<span class='badge bg-orange text-white' data-toggle="modal" data-target="#modalProduceInfo" role="button"><i class="fas fa-plus"></i> Add Custom Produce</span>
+									<span class='btn bg-orange' style="color:#fff !important;" data-toggle="modal" data-target="#modalProduceInfo" role="button"><i class="fas fa-plus"></i> Add Custom Produce</span>
 									<!-- <button type="button" class="btn btn-tool" data-card-widget="remove"><i class="fas fa-remove"></i></button> -->
 								</div>
 							</div>
@@ -116,10 +117,10 @@ $uri = $this->session->agrishop_login_uri;
 
 					<div class="col-lg-6 col-12 mt-5">
 						<div class="card">
-							<div class="card-header pb-0">
+							<div class="card-header">
 								<h1 class="card-title"><i class="fa fa-list"></i> List of Farms</h1>
 								<div class="card-tools mt-n1">
-									<span class='badge bg-primary' data-toggle="modal" data-target="#modalFarmInfo" role="button"><i class="fas fa-plus"></i> Add Farm</span>
+									<span class='btn bg-primary' data-toggle="modal" data-target="#modalFarmInfo" role="button"><i class="fas fa-plus"></i> Add Farm</span>
 									<!-- <button type="button" class="btn btn-tool" data-card-widget="remove"><i class="fas fa-remove"></i></button> -->
 								</div>
 							</div>
@@ -167,7 +168,6 @@ $uri = $this->session->agrishop_login_uri;
 		saveForm("FarmProduceSupply", ["FarmProduceInfo"], null, 0, 5);
 		saveForm("AddFarmProduceSupply", ["FarmProduceInfo"], null, 0, 5);
 		saveForm("UpdateProfile", [null], null);
-		saveForm("UpdateGcash", [null], null);
 
 		
 	});

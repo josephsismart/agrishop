@@ -49,6 +49,10 @@ $uri2 = $current_location=='learner'?'userteacher':$uri;
         <?php $this->load->view('interface/'.$uri.'/layout/Modal')?>
     </div>
     <?php $this->load->view('interface/' . $uri . '/layout/Js'); ?>
+    <?php $this->load->view('interface/' . $uri . '/layout/cart_script') ?>
+    <?php $this->load->view('interface/' . $uri . '/layout/subscription') ?>
+
+
     <a id="back-to-top" href="#" class="btn btn-primary btn-lg back-to-top" role="button"><i class="fas fa-chevron-up"></i></a>
 
     <script type="text/javascript">

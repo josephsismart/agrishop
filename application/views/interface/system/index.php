@@ -247,8 +247,9 @@
                             <?php if ($role_lvl != "") { ?>
                                 <a href="<?php if ($role_lvl == 0) {
                                                 echo base_url(); ?>user_admin<?php } elseif ($role_lvl == 1) {
-                                                                                echo '#'; } elseif ($role_lvl == 2) {
-                                                                                                                echo base_url(); ?>user_farmer<?php } ?>" class="p-2 mx-1 text-dark" style="text-decoration: none;font-weight: bold">
+                                                                                echo '#';
+                                                                            } elseif ($role_lvl == 2) {
+                                                                                echo base_url(); ?>user_farmer<?php } ?>" class="p-2 mx-1 text-dark" style="text-decoration: none;font-weight: bold">
                                     <i class="fa fa-user"></i> <?php echo $this->session->agrishop_login_uname; ?>
                                 </a>
 
@@ -365,9 +366,9 @@
     <?php $this->load->view('interface/system/layout/modals') ?>
 
     <script src="<?= base_url(); ?>dist/layout_shop/js/jquery-1.11.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe" crossorigin="anonymous"></script>
-    <script src="<?= base_url(); ?>dist/layout_shop/js/plugins.js"></script>
+    <script src="<?php echo base_url(); ?>dist/layout_shop/js/swiper-bundle.min.js"></script>
+    <script src="<?php echo base_url(); ?>dist/layout_shop/js/bootstrap.bundle.min.js"></script>
+    <script src="<?php echo base_url(); ?>dist/layout_shop/js/plugins.js"></script>
     <script src="<?= base_url(); ?>dist/layout_shop/js/script.js"></script>
     <script src="<?= base_url() ?>plugins/sweetalert2/sweetalert2.min.js"></script>
     <script src="<?= base_url() ?>plugins/jquery/jquery.form.min.js"></script>

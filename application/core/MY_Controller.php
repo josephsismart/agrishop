@@ -325,17 +325,41 @@ class MY_Controller extends CI_Controller
         return $address;
     }
 
-    public function getTransactionPeding($person_id)
+    public function getPersonName($filter)
     {
+        $fltr = $filter ? $filter : 0;
+        $name = "";
+        $query = $this->db->query("SELECT * FROM person t1 WHERE t1.id=$fltr");
+        if ($query->num_rows() > 0) {
+            $mname = $query->row()->middle_name != "" ? " " . substr($query->row()->middle_name, 0, 1) . ". " : " ";
+            $name = $query->row()->first_name . $mname . $query->row()->last_name;
+        }
+        return $name;
+    }
+
+    public function getTransactionPeding($id, $status, $type)
+    {
+        if ($type == 'farmer') {
+            $FILTR = "t4.farmer_id=$id";
+        }
+        // else ($type == 'client') {
+        else {
+            $FILTR = "t1.person_id=$id";
+        }
+
         $thisQuery = $this->db->query("SELECT count(1) AS total FROM transaction t1 
                                     JOIN (SELECT * FROM transaction_status WHERE is_latest IS TRUE) t2 ON t1.id = t2.transaction_id
                                     LEFT JOIN (SELECT transaction_id, sum(sub_total) AS payable FROM my_cart_farm_produce mcfp
                                                 GROUP BY transaction_id) t3 ON t1.id = t3.transaction_id
                                     LEFT JOIN farmer_farm t4 ON t1.farm_id = t4.id
-                                    WHERE t1.person_id = $person_id AND t2.status = 'PENDING'");
+                                    WHERE $FILTR AND t2.status = '$status'");
         $c = $thisQuery->row()->total;
         $cc = $c > 0 ? $c : '';
-        $this->session->agrishop_pending_trans_count = $cc;
+        if ($type == 'farmer') {
+            $this->session->agrishop_reserved_trans_count = $cc;
+        } else {
+            $this->session->agrishop_pending_trans_count = $cc;
+        }
 
         return $cc;
     }
@@ -793,9 +817,26 @@ class MY_Controller extends CI_Controller
         return array($limit, $offset);
     }
 
-    public function checkTransactionStatus($transaction_id){
+    public function checkTransactionStatus($transaction_id)
+    {
         $query = $this->db->query("SELECT t2.status FROM public.transaction t1
-                                    LEFT JOIN (SELECT * FROM public.transaction_status WHERE transaction_id=$transaction_id AND is_latest=TRUE) t2 ON t1.id=t2.id
+                                    JOIN (SELECT * FROM public.transaction_status WHERE transaction_id=$transaction_id AND is_latest=TRUE) t2 ON t1.id=t2.transaction_id
+                                    WHERE t1.id=$transaction_id LIMIT 1");
+        return $query->row("status");
+    }
+
+    public function checkTransactionDeliveryStatus($transaction_id)
+    {
+        $query = $this->db->query("SELECT t2.status FROM public.transaction t1
+                                    JOIN (SELECT * FROM public.transaction_delivery_status WHERE transaction_id=$transaction_id AND is_latest=TRUE) t2 ON t1.id=t2.transaction_id
+                                    WHERE t1.id=$transaction_id LIMIT 1");
+        return $query->row("status");
+    }
+
+    public function checkTransactionPaymentStatus($transaction_id)
+    {
+        $query = $this->db->query("SELECT t2.status FROM public.transaction t1
+                                    JOIN (SELECT * FROM public.transaction_payment_status WHERE transaction_id=$transaction_id AND is_latest=TRUE) t2 ON t1.id=t2.transaction_id
                                     WHERE t1.id=$transaction_id LIMIT 1");
         return $query->row("status");
     }
@@ -806,7 +847,8 @@ class MY_Controller extends CI_Controller
             // 🧾 TRANSACTION
             'PENDING'    => 'bg-warning text-dark',
             'RESERVED'   => 'bg-info text-dark',
-            'PREPARING'  => 'bg-primary text-dark',
+            'PREPARING'  => 'bg-orange',
+            'ORDER_IS_READY'  => 'bg-info',
             'COMPLETED'  => 'bg-success',
             'CANCELLED'  => 'bg-danger',
 
@@ -825,7 +867,7 @@ class MY_Controller extends CI_Controller
 
         $color = $map[$status] ?? 'bg-dark';
 
-        return '<span class="badge ' . $color . '">' . $status . '</span>';
+        return '<span style="font-size:12px; color:#fff !important;" class="badge ' . $color . '">' . $status . '</span>';
     }
 
     public function scanlog($x, $type, $scanned_id, $io, $g_name, $g_id)

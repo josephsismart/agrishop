@@ -8,13 +8,17 @@ $uri = $this->session->agrishop_login_uri;
 ?>
 <!-- Bootstrap 4 -->
 
-<script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe" crossorigin="anonymous"></script>
+<!-- <script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe" crossorigin="anonymous"></script> -->
+<script src="<?php echo base_url(); ?>dist/layout_shop/js/swiper-bundle.min.js"></script>
+<script src="<?php echo base_url(); ?>dist/layout_shop/js/bootstrap.bundle.min.js"></script>
 <script src="<?php echo base_url(); ?>dist/layout_shop/js/plugins.js"></script>
-<script src="<?php echo base_url(); ?>dist/layout_shop/js/script.js"></script>
+<!-- <script src="<?php echo base_url(); ?>dist/layout_shop/js/script.js"></script> -->
 <script src="<?= base_url() ?>plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
 <!-- Select2 -->
 <script src="<?= base_url() ?>plugins/select2/js/select2.full.min.js"></script>
+<!-- Toastr -->
+<script src="<?= base_url() ?>plugins/toastr/toastr.min.js"></script>
 <!-- DataTables -->
 <script src="<?= base_url() ?>plugins/datatables/jquery.dataTables.js"></script>
 <script src="<?= base_url() ?>plugins/datatables-bs4/js/dataTables.bootstrap4.js"></script>
@@ -29,11 +33,17 @@ $uri = $this->session->agrishop_login_uri;
 <!-- SweetAlert2 -->
 <script src="<?= base_url() ?>plugins/sweetalert2/sweetalert2.min.js"></script>
 <!-- AdminLTE App -->
-<script src="<?= base_url() ?>dist/js/adminlte.min.js"></script>
-<script src="https://unpkg.com/topojson-client@3"></script>
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="<?php echo base_url(); ?>dist/map/topojson-client.min.js"></script>
+<script src="<?php echo base_url(); ?>dist/map/leaflet.js"></script>
+<script src="<?php echo base_url(); ?>dist/js/confetti.browser.min.js"></script>
+
+<!-- <script src="https://unpkg.com/topojson-client@3"></script>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script> -->
 
 <script type="text/javascript">
+    let transaction_id_ = null;
+    let status_ = null;
+    
     $('#modalFarmInfo').on('shown.bs.modal', function() {
         map.invalidateSize(); // <-- this tells Leaflet to recalc the map size
         map.setView([8.7, 125.6], 9); // optional: recenter map if needed
@@ -168,6 +178,128 @@ $uri = $this->session->agrishop_login_uri;
                                  class="rounded mr-2">`);
     });
 
+    // initial count from PHP session
+    let lastReservedCount = <?= (int) $this->session->agrishop_reserved_trans_count ?>;
+
+    // start polling
+    setInterval(function() {
+        getReservedCount();
+    }, 3000);
+
+    function getReservedCount() {
+        $.post("<?= base_url('userfarmer/FarmProduce/getReservedCount') ?>", function(res) {
+
+            // convert safely → default to 0
+            let currentCount = parseInt(res, 10);
+            currentCount = isNaN(currentCount) ? 0 : currentCount;
+
+            // console.log("Current:", currentCount, "Last:", lastReservedCount);
+
+            // notify only if INCREASED
+            if (currentCount > lastReservedCount) {
+                let newCount = currentCount - lastReservedCount;
+                notifyNewReservation(newCount);
+            }
+
+            // update last count
+            lastReservedCount = currentCount;
+
+            b = currentCount == 0 ? '' : currentCount;
+
+            $('.countOrders').text(b);
+        });
+    }
+
+    /* -------------------------------
+   GLOBAL AUDIO SETUP
+--------------------------------*/
+    window.notifAudio = window.notifAudio || new Audio("<?= base_url('dist/notification/notify.wav') ?>");
+    notifAudio.volume = 1.0;
+    window.audioUnlocked = false;
+
+    // unlock audio on first user gesture (click anywhere)
+    document.addEventListener('click', function unlockAudio() {
+        notifAudio.play()
+            .then(() => {
+                notifAudio.pause();
+                notifAudio.currentTime = 0;
+                window.audioUnlocked = true;
+                console.log('🔓 Audio unlocked, notifications ready');
+            })
+            .catch(() => console.warn('❌ Audio blocked until user interacts'));
+
+        document.removeEventListener('click', unlockAudio);
+    }, {
+        once: true
+    });
+
+
+    /* -------------------------------
+       SAFE AUDIO PLAY FUNCTION
+    --------------------------------*/
+    function notifySound() {
+        if (!window.audioUnlocked) return;
+
+        if (!notifAudio.paused) {
+            notifAudio.pause();
+            notifAudio.currentTime = 0;
+        }
+
+        notifAudio.play().catch(err => console.warn('❌ Sound failed:', err));
+    }
+
+
+    /* -------------------------------
+       NOTIFICATION HANDLER
+    --------------------------------*/
+    function notifyNewReservation(newCount) {
+        notifySound(); // play sound
+        toastr.info('You have ' + newCount + ' new reservation(s)'); // show toast
+
+        if (typeof getTable === 'function') {
+            getTable('CartListing', 0, 5); // refresh table safely
+        }
+    }
+
+    function getPrice(id) {
+        $('#aiSuggestedPrice').text('...');
+        $('#aiPriceReason').text('Calculating suggested price...');
+        $.ajax({
+            url: "<?= base_url('userfarmer/FarmProduce/getPrice') ?>",
+            method: "POST",
+            dataType: "json",
+            data: {
+                produce_id: id
+            },
+            success: function(res) {
+
+                if (!res || !res.suggested_price) {
+                    $('#aiSuggestedPrice').text('--');
+                    $('#aiPriceReason').text('No price data available yet.');
+                    return;
+                }
+
+                // Update AI price UI
+                $('#aiSuggestedPrice').text(res.suggested_price);
+                $('#aiPriceReason').text(res.reason);
+
+                // Optional: store for reuse
+                $('#btnUseAiPrice').data('price', res.suggested_price);
+            },
+            error: function() {
+                $('#aiSuggestedPrice').text('--');
+                $('#aiPriceReason').text('Unable to calculate price right now.');
+            }
+        });
+    }
+
+    $('#btnUseAiPrice').on('click', function() {
+        const price = $(this).data('price');
+
+        if (price) {
+            $('input[name="price"]').val(price).focus();
+        }
+    });
 
     $('.produceInput').on('keyup', function() {
         let keyword = $(this).val();
@@ -197,6 +329,7 @@ $uri = $this->session->agrishop_login_uri;
 
                     list += `
                         <li class="list-group-item produce-item"
+                            onclick="getPrice(${item.id})"
                             data-id="${item.id}"
                             data-img="${img}"
                             data-name="${item.name}">
@@ -370,6 +503,8 @@ $uri = $this->session->agrishop_login_uri;
         $("#form_save_data" + formId).ajaxForm(saveData);
     }
 
+    saveForm("UpdateGcash", [null], null);
+
     function getTable(tableId, dtd, pl) {
         var drawCounter = 0;
         $("#tbl" + tableId).DataTable().destroy();
@@ -379,7 +514,6 @@ $uri = $this->session->agrishop_login_uri;
             ],
             dom: 'Bfrtip',
             buttons: [],
-            // searching: tableId == 'GradesList' ? false : true,
             "info": pl == -1 ? false : true,
             "paging": pl == -1 ? false : true,
             "ordering": pl == -1 ? false : true,
@@ -391,11 +525,6 @@ $uri = $this->session->agrishop_login_uri;
             language: {
                 searchPlaceholder: "Search...",
             },
-            // pageLength: pl,// Options for records per page
-            // lengthMenu: [
-            //     [10, 25, 50, 100],
-            //     [10, 25, 50, 100]
-            // ],
             ajax: {
                 url: "<?= base_url($uri . '/' . $current_location . '/get') ?>" + tableId,
                 type: "POST",
@@ -404,7 +533,8 @@ $uri = $this->session->agrishop_login_uri;
                     d.length = pl;
                     d.draw = drawCounter;
                     d.search.value = $('#tbl' + tableId + '_filter input').val();
-                    d.search.farm_id = $('#farmList').val();
+                    d.search.farm_id = $("#farmList").val();;
+                    d.search.transaction_id = transaction_id_;
                 }
             },
 
@@ -415,12 +545,13 @@ $uri = $this->session->agrishop_login_uri;
         $("#tbl" + tableId).on('draw.dt', function() {
             $(".searchBtn").attr("disabled", false);
             $(".searchBtn").html("<span class=\"fa fa-search\"></span>");
-            dtd == 1 ? $("#tbl" + tableId).DataTable().destroy() : "";
             $(".collapse" + tableId).trigger('click');
         });
         $("#tbl" + tableId + "_filter").addClass("row");
         $("#tbl" + tableId + "_filter label").css("width", "97%");
         $("#tbl" + tableId + "_filter .form-control-sm").css("width", "97%");
+        dtd == 1 ? $("#tbl" + tableId).DataTable().destroy() : "";
+
     }
 
     function add_qty(data) {
@@ -513,14 +644,10 @@ $uri = $this->session->agrishop_login_uri;
         ).then(function() {
             s2 == 1 ? $("#form_save_data" + formId + " .select" + getList).select2() : "";
         });
-        console.log('tesssssssss')
-        console.log(formId, getList, getQ, s2, where, sel, e);
     }
 
     $('#form_save_dataGradeSubject .selectSubjectList').on("select2:select", function(e) {
-        // console.log('a')
         var unselected_value = $(this).val();
-        // console.log(unselected_value);
     }).trigger('change');
 
 

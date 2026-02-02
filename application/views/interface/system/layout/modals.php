@@ -746,9 +746,3 @@
         </div>
     </div>
 </div>
-
-
-
-<!-- <script type="text/javascript">
-    getTable("FarmProduceList", 0, 5);
-</script> -->

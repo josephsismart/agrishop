@@ -113,7 +113,7 @@ class Map extends MY_Controller
         $totalRecords = $thisQuery->row()->total;
 
         $query = $this->db->query("SELECT ROW_NUMBER() OVER (ORDER BY fp.id DESC) AS row_num, fp.id as fp_id,p.id,p.name as produce,pql.harvest_schedule,pql.uom,pql.price,pql.qty_left,pql.latest_price_id,pc.class_name,p.description,
-                                    p.is_seasonal,p.is_active,p.created_at, p.img_path, fp.farm_id 
+                                    p.is_seasonal,p.is_active,p.created_at, p.img_path,pc.img_path as default_img_path, fp.farm_id 
                                     FROM public.farm_produce fp
                                     LEFT JOIN public.produce p ON fp.produce_id = p.id
                                     LEFT JOIN public.produce_classification pc ON p.produce_classification_id = pc.id
@@ -127,7 +127,11 @@ class Map extends MY_Controller
         $data = array();
         $cc = 0;
         foreach ($query->result() as $key => $value) {
-            $img = $value->img_path ? base_url($value->img_path) : base_url('dist/img/media/icons/1x1.png');
+            // $img = $value->img_path ? base_url($value->img_path) : base_url('dist/img/media/icons/1x1.png');
+            
+            $img = (!empty($value->img_path) && file_exists(FCPATH . $value->img_path))
+                ? base_url($value->img_path)
+                : base_url($value->default_img_path);
             $image_path = "<img src='$img' width='50' height='50' class='rounded' data-toggle='t0
             .0.ooltip' data-placement='top' title=''>";
             $q_id = $value->row_num;
@@ -269,7 +273,7 @@ class Map extends MY_Controller
 
 
         if ($this->db->insert("my_cart_farm_produce", $data_my_cart)) {
-            $cp = $this->getTransactionPeding($person_id);
+            $cp = $this->getTransactionPeding($person_id,'PENDING','client');
             $true += ["message"   => "Added to cart!", "cart_pending"   => $cp];
             $ret = $true;
         } else {
@@ -304,7 +308,7 @@ class Map extends MY_Controller
                 $this->db->query("DELETE FROM transaction WHERE id = $transaction_id");
             }
 
-            $cp = $this->getTransactionPeding($person_id);
+            $cp = $this->getTransactionPeding($person_id,'PENDING','client');
             $true += ["message"   => "Removed from cart!", "cart_pending"   => $cp];
             $ret = $true;
         } else {
@@ -317,7 +321,7 @@ class Map extends MY_Controller
         } else {
             $this->db->trans_commit();
         }
-        $this->session->agrishop_pending_trans_count = $this->getTransactionPeding($person_id);
+        $this->session->agrishop_pending_trans_count = $this->getTransactionPeding($person_id,'PENDING','client');
         echo json_encode($ret);
     }
 
@@ -846,7 +850,7 @@ class Map extends MY_Controller
         ];
 
         if ($this->db->insert("transaction_details", $data_transaction_details)) {
-            $cp = $this->getTransactionPeding($person_id);
+            $cp = $this->getTransactionPeding($person_id,'PENDING','client');
             $true += ["message"   => "Checkout success!", "cart_pending"   => $cp];
             $ret = $true;
         } else {
@@ -909,7 +913,7 @@ class Map extends MY_Controller
         $this->db->update("transaction", $data_transaction, ["id" => $transaction_id]);
 
         if ($this->db->insert("transaction_cancel", $data_transaction_cancel_details)) {
-            $cp = $this->getTransactionPeding($person_id);
+            $cp = $this->getTransactionPeding($person_id,'PENDING','client');
             $true += ["message"   => "Order cancelled!", "cart_pending"   => $cp];
             $ret = $true;
         } else {

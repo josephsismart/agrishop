@@ -13,17 +13,19 @@
 <!-- Ionicons -->
 <!-- SweetAlert2 -->
 <link rel="stylesheet" href="<?= base_url() ?>plugins/sweetalert2-theme-bootstrap-4/bootstrap-4.min.css">
+<!-- Toastr -->
+<link rel="stylesheet" href="<?= base_url() ?>plugins/toastr/toastr.min.css">
 <!-- DataTables -->
 <link rel="stylesheet" href="<?= base_url() ?>plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
 <link rel="stylesheet" href="<?= base_url() ?>plugins/datatables/extensions/buttons/css/buttons.dataTables.min.css">
 <link rel="stylesheet" href="<?= base_url() ?>plugins/datatables/extensions/responsive/css/responsive.dataTables.css">
-<link rel="stylesheet" href="<?= base_url() ?>plugins/select2/css/select2.min.css">
-<link rel="stylesheet" href="<?= base_url() ?>plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css">
+<!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ" crossorigin="anonymous"> -->
+<link rel="stylesheet" href="<?= base_url(); ?>dist/layout_shop/css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" href="<?= base_url(); ?>dist/layout_shop/css/vendor.css">
+<link rel="stylesheet" type="text/css" href="<?= base_url(); ?>dist/layout_shop/css/style.css">
 <link rel="stylesheet" href="<?= base_url() ?>dist/css/adminlte.min.css">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ" crossorigin="anonymous">
-<link rel="stylesheet" type="text/css" href="<?php echo base_url(); ?>dist/layout_shop/css/vendor.css">
-<link rel="stylesheet" type="text/css" href="<?php echo base_url(); ?>dist/layout_shop/css/style.css">
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<link rel="stylesheet" href="<?= base_url() ?>dist/map/leaflet.css">
+<!-- <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" /> -->
 <!-- Google Font: Source Sans Pro -->
 <!-- Select2 -->
 <style type="text/css">
@@ -242,7 +244,7 @@
 
     .produceList li {
         cursor: pointer;
-        display: flex;                                                                                  
+        display: flex;
         align-items: center;
         gap: 10px;
     }
@@ -270,5 +272,258 @@
 
     .menu-list .nav-item.active {
         background-color: #dff0ff;
+    }
+
+    .status-select {
+        font-weight: 600;
+        border: none;
+        transition: filter .2s ease, transform .1s ease;
+    }
+
+    .status-select:hover {
+        filter: brightness(1.15);
+        transform: scale(1.03);
+        cursor: pointer;
+    }
+
+
+
+
+
+
+
+
+
+
+    .modal-md {
+        max-width: 600px;
+    }
+
+    .modal-content {
+        border-radius: 15px !important;
+    }
+
+    .modal-title {
+        font-size: 1.4rem;
+        font-weight: bold;
+    }
+
+    .form-control-lg,
+    .btn-lg {
+        height: calc(2.5em + 1rem + 2px);
+        padding: 0.5rem 1rem;
+        font-size: 1.2rem;
+    }
+
+    /* .input-group-lg > .form-control,
+    .input-group-lg > .input-group-prepend > .input-group-text {
+        height: calc(2.5em + 1rem + 2px);
+        padding: 0.5rem 1rem;
+        font-size: 1.2rem;
+    }
+     */
+    .produceImg img {
+        max-height: 150px;
+        border-radius: 10px;
+        border: 3px solid #e9ecef;
+    }
+
+    .border-success {
+        border-color: #28a745 !important;
+        border-width: 2px !important;
+    }
+
+    .border-success:focus {
+        box-shadow: 0 0 0 0.3rem rgba(40, 167, 69, 0.35);
+        border-color: #28a745 !important;
+    }
+
+    .bg-light-success {
+        background-color: rgba(40, 167, 69, 0.1) !important;
+    }
+
+    .badge-pill {
+        font-size: 1.1rem !important;
+        padding: 0.5rem 1rem !important;
+        min-width: 40px;
+    }
+
+    .card {
+        border-radius: 12px !important;
+        border-width: 2px;
+    }
+
+    .card-header {
+        border-radius: 10px 10px 0 0 !important;
+    }
+
+    .form-label {
+        font-size: 1.2rem;
+        color: #333;
+    }
+
+    .produceList {
+        border: 2px solid #dee2e6;
+        border-radius: 10px;
+        font-size: 1.2rem;
+    }
+
+    .produceList .list-group-item {
+        padding: 0.75rem 1rem;
+        cursor: pointer;
+        border: none;
+        border-bottom: 2px solid #f8f9fa;
+        font-size: 1.1rem;
+    }
+
+    .produceList .list-group-item:hover {
+        background-color: #e8f5e8;
+        transform: translateX(5px);
+        transition: all 0.2s ease;
+    }
+
+    .produceList .list-group-item:last-child {
+        border-bottom: none;
+    }
+
+    .btn-lg {
+        font-weight: bold;
+        border-radius: 10px;
+    }
+
+    .btn-success {
+        background-color: #28a745;
+        border-color: #28a745;
+    }
+
+    .btn-success:hover {
+        background-color: #218838;
+        border-color: #1e7e34;
+        transform: translateY(-2px);
+        transition: all 0.2s ease;
+    }
+
+    .btn-outline-secondary:hover {
+        transform: translateY(-2px);
+        transition: all 0.2s ease;
+    }
+
+    .alert {
+        border-radius: 10px;
+        font-size: 1.1rem;
+    }
+
+    /* Larger font sizes for better readability */
+    .form-text {
+        font-size: 1.05rem !important;
+    }
+
+    /* High contrast for better visibility */
+    .text-dark {
+        color: #212529 !important;
+    }
+
+    /* Clear visual hierarchy */
+    .card-header h6 {
+        font-size: 1.2rem;
+    }
+
+    /* Larger step badges */
+    .badge {
+        font-weight: bold;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    .btn-animated-subscribe {
+        color: #fff;
+        border: none;
+        padding: 6px 14px;
+        border-radius: 20px;
+        background: linear-gradient(270deg,
+                #28a745,
+                #20c997,
+                #ffc107,
+                #28a745);
+        background-size: 600% 600%;
+        animation: gradientMove 4s ease infinite;
+        box-shadow: 0 0 8px rgba(40, 167, 69, 0.6);
+    }
+
+    @keyframes gradientMove {
+        0% {
+            background-position: 0% 50%;
+        }
+
+        50% {
+            background-position: 100% 50%;
+        }
+
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
+    .btn-animated-subscribe:hover {
+        transform: scale(1.08);
+        transition: 0.2s ease;
+    }
+
+    .btn-pulse-subscribe {
+        background-color: #28a745;
+        color: #fff;
+        border-radius: 20px;
+        animation: pulseGlow 1.5s infinite;
+    }
+
+    @keyframes pulseGlow {
+        0% {
+            box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+        }
+
+        70% {
+            box-shadow: 0 0 0 10px rgba(40, 167, 69, 0);
+        }
+
+        100% {
+            box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+        }
+    }
+
+
+    .confetti {
+        position: fixed;
+        width: 10px;
+        height: 10px;
+        background: #28a745;
+        animation: fall 3s linear infinite;
+    }
+
+    @keyframes fall {
+        from {
+            top: -10px;
+        }
+
+        to {
+            top: 100vh;
+        }
+    }
+
+    canvas.confetti-canvas {
+        position: fixed !important;
+        z-index: 99999 !important;
+        pointer-events: none;
     }
 </style>

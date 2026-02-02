@@ -13,7 +13,7 @@ $role_lvl = $this->session->agrishop_login_level;
     <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>
 
-  <?php $this->load->view('interface/system/layout/Navbar')?>
+  <?php $this->load->view('interface/system/layout/Navbar') ?>
 
 </div>
 
@@ -30,12 +30,21 @@ $role_lvl = $this->session->agrishop_login_level;
 
       <div class="col-7">
         <ul class="d-flex justify-content-end list-unstyled m-0">
+          <!-- <li class="pr-2 mt-n1">
+            <?php if ($role_lvl != "") { ?>
+              <button class="btn btn-pulse-subscribe btn-sm fw-bold">
+                🌱 Subscribe Now
+              </button>
+            <?php } ?>
+          </li> -->
           <li>
             <?php if ($role_lvl != "") { ?>
-              <a href="<?php if ($role_lvl == 0) {
-                          echo base_url(); ?>user_admin<?php } elseif ($role_lvl == 1) {
-                                                                              echo base_url(); ?>user_consumer<?php } elseif ($role_lvl == 2) {
-                                                                                                                                    echo base_url(); ?>user_farmer<?php } ?>" class="p-2 mx-1" style="text-decoration: none;font-weight: bold">
+              <!-- <a  class="text-dark" href="<?php if ($role_lvl == 0) {
+                                                  echo base_url(); ?>user_admin<?php } elseif ($role_lvl == 1) {
+                                                                                echo base_url(); ?>user_consumer<?php } elseif ($role_lvl == 2) {
+                                                                                                                echo base_url(); ?>user_farmer<?php } ?>" class="p-2 mx-1" style="text-decoration: none;font-weight: bold">
+                                                                                                                                     -->
+              <a class="text-dark" href="#" class="p-2 mx-1" style="text-decoration: none;font-weight: bold">
                 <i class="fa fa-user"></i> <?php echo $this->session->agrishop_login_uname; ?>
               </a>
             <?php } else { ?>
@@ -52,8 +61,8 @@ $role_lvl = $this->session->agrishop_login_level;
           <?php } ?>
           <?php if ($role_lvl != "") { ?>
             <li>
-              <a href="#" class="p-2 mx-1" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar">
-                <i class="fa fa-bars"></i>
+              <a href="#" class="p-2 mx-1 text-dark" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar">
+                <i class="fa fa-bars"></i><span class="badge bg-info countOrders"><?= $this->session->agrishop_reserved_trans_count; ?></span>
               </a>
             </li>
           <?php } ?>

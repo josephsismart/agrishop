@@ -7,6 +7,7 @@ $role_lvl = $this->session->agrishop_login_level;
 $dashboard = base_url() . $uri . '/Dashboard';
 $profile = base_url() . $uri . '/Profile';
 $farm_produce = base_url() . $uri . '/FarmProduce';
+$client_orders = base_url() . $uri . '/Orders';
 
 
 ?>
@@ -47,38 +48,40 @@ $farm_produce = base_url() . $uri . '/FarmProduce';
             ?>
                 <li class="nav-item border-dashed">
                     <a href="#" data-bs-toggle="modal" data-bs-target="#gcashModal" class="nav-link d-flex align-items-center gap-3 text-dark p-2">
-                        <span><img src="<?= base_url('dist/img/credit/gcash_50x50.png'); ?>" height="20" width="20"/>  My Gcash</span>
+                        <img src="<?= base_url('dist/img/credit/gcash_50x50.png'); ?>" class="mr-n1 ml-n1" height="21" width="21" /> <span>My Gcash</span>
                     </a>
                 </li>
-                
+
                 <li class="nav-item border-dashed">
                     <a href="<?= $farm_produce; ?>" class="nav-link d-flex align-items-center gap-3 text-dark p-2">
-                        <span><i class="fa fa-tractor"></i> Farm Produce</span>
+                        <i class="fa fa-tractor"></i> <span>Farm Produce</span>
                     </a>
                 </li>
-                
+
                 <li class="nav-item border-dashed">
-                    <a href="<?= base_url() . $uri . '/Orders'; ?>" class="nav-link d-flex align-items-center gap-3 text-dark p-2">
-                        <span><i class="fa fa-shopping-basket"></i> Farmer Orders</span>
+                    <a href="<?= $client_orders; ?>" class="nav-link d-flex align-items-center gap-3 text-dark p-2">
+                        <i class="fa fa-shopping-basket"></i> <span>Client Orders</span> <span class="badge bg-info countOrders"><?= $this->session->agrishop_reserved_trans_count; ?></span>
                     </a>
                 </li>
+
             <?php }
             ?>
             <?php if ($role_lvl == 1) {
             ?>
                 <li class="nav-item border-dashed">
-                    <a href="index.html" class="nav-link d-flex align-items-center gap-3 text-dark p-2">
+                    <a href="#" class="nav-link d-flex align-items-center gap-3 text-dark p-2">
                         <i class="fa fa-shopping-basket"></i>
                         <span>My Cart</span>
                     </a>
                 </li>
-                <li class="nav-item border-dashed">
+                <!-- <li class="nav-item border-dashed">
                     <a href="index.html" class="nav-link d-flex align-items-center gap-3 text-dark p-2">
                         <i class="fa fa-table"></i>
                         <span>My Orders</span>
                     </a>
-                </li>
+                </li> -->
             <?php } ?>
+
             <li class="nav-item border-dashed">
                 <a href="<?= base_url() ?>logout" class="nav-link d-flex align-items-center gap-3 text-dark p-2">
                     <i class="fa fa-sign-out-alt"></i>
