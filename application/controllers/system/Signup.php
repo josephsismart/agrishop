@@ -55,6 +55,10 @@ class Signup extends MY_Controller
             $ret = ["fill" => true];
         }
 
+        if ($password != $this->input->post('password2')) {
+            $ret = ["password" => true];
+        }
+
         $chck = $this->db->query(
             "SELECT t1.* FROM public.user t1
                                     WHERE t1.username = ? LIMIT 1",
@@ -86,6 +90,8 @@ class Signup extends MY_Controller
                         "date_registered" => Date('Y-m-d'),
                         "presented_valid_id" => $valid_id,
                         "organization" => $organization,
+                        "approved_by_person_id" => 1,
+                        "approved_at" => Date('Y-m-d'),
                     ];
 
                     if (isset($_FILES['picFarmerID']) && $_FILES['picFarmerID']['error'] === UPLOAD_ERR_OK) {
@@ -95,7 +101,15 @@ class Signup extends MY_Controller
                             "id_img_path" => $upload
                         ];
                     }
-                    $this->db->insert("public.farmer", $data_farmer);
+                    if ($this->db->insert("public.farmer", $data_farmer)) {
+                        $f_id = $this->db->insert_id();
+                        $data_farmer_free_sub = [
+                            "farmer_id" => $f_id,
+                            "started_at" => Date('Y-m-d'),
+                            "ended_at" => date('Y-m-d', strtotime('+2 months')),
+                        ];
+                        $this->db->insert("public.farmer_subscription_free", $data_farmer_free_sub);
+                    }
                 }
 
                 $data_user = [
@@ -136,6 +150,13 @@ class Signup extends MY_Controller
                                     t3.contact_num,
                                     t3.barangay_id,
                                     t3.img_path,
+                                    t4.id as farmer_id,
+
+                                    t5.id as gcash_id,
+                                    t5.type as gcash_type,
+                                    t5.account_name as gcash_account_name,
+                                    t5.number as gcash_account_num,
+                                    t5.qr as gcash_qr,
 
                                     UPPER(CONCAT(
                                         b.description, ' ',
@@ -156,7 +177,8 @@ class Signup extends MY_Controller
                                 LEFT JOIN public.role t2 ON t1.role_id = t2.id
                                 LEFT JOIN public.person t3 ON t1.person_id = t3.id
                                 LEFT JOIN public.farmer t4 ON t3.id = t4.person_id
-
+                                LEFT JOIN (SELECT * FROM public.farmer_payment_method WHERE is_active = true and type='gcash') t5 ON t3.id = t5.person_id
+                                
                                 LEFT JOIN tbl_barangay b ON t3.barangay_id = b.id
                                 LEFT JOIN tbl_citymun c ON b.citymun_id = c.id
                                 LEFT JOIN tbl_province p ON c.province_id = p.id
@@ -171,6 +193,7 @@ class Signup extends MY_Controller
                     $row1 = $chck->row();
                     $person_id = $row1->person_id;
                     $img = $row1->img_path ? base_url($row1->img_path) : base_url('dist/img/media/icons/1x1.png');
+                    $qr = $row1->gcash_qr ? base_url($row1->gcash_qr) : base_url('dist/img/credit/gcash.png');
 
 
                     $data_session += [
@@ -186,8 +209,53 @@ class Signup extends MY_Controller
                         "agrishop_login_img_path" => $img,
                         "agrishop_person_id"        => $person_id, // $query->row('id'),
 
+                        "agrishop_login_farmer_id" => $row1->farmer_id,
+                        "agrishop_login_gcash_id" => $row1->gcash_id,
+                        "agrishop_login_gcash_type" => $row1->gcash_type,
+                        "agrishop_login_gcash_account_name" => $row1->gcash_account_name,
+                        "agrishop_login_gcash_account_num" => $row1->gcash_account_num,
+                        "agrishop_login_gcash_qr" => $qr,
                     ];
 
+
+                    #check farmer subscription
+                    if ($row1->farmer_id) {
+                        $chck2 = $this->db->query("SELECT f.id,TO_CHAR(fsf.ended_at,'yyyy-mm-dd') AS free_end_at, fsf.confirmed AS free_confirmed, fsf.is_expired AS free_expired,
+                                                    fs2.start_date, fs2.end_date,fs2.is_active,fs2.is_expired ,fs2.is_latest
+                                                    FROM farmer AS f
+                                                    JOIN farmer_subscription_free fsf ON f.id = fsf.farmer_id
+                                                    LEFT JOIN farmer_subscription fs2 ON f.id= fs2.farmer_id
+                                                    LEFT JOIN farmer_subscription_application fsa ON fs2.farmer_application_subscription_id = fsa.id
+                                                    WHERE f.id = ?", array($row1->farmer_id));
+                        if ($chck2->num_rows() > 0) {
+                            $row2 = $chck2->row();
+
+                            if (date('Y-m-d') > $row2->free_end_at && $row2->is_expired == false) {
+                                $this->db->query("UPDATE public.farmer_subscription_free SET is_expired = true WHERE farmer_id = $row1->farmer_id");
+                                $data_session += [
+                                    "agrishop_login_sub_free_expired" => 't',
+                                ];
+                            } else if ($row2->is_expired == true) {
+                                $data_session += [
+                                    "agrishop_login_sub_free_expired" => 't',
+                                ];
+                            } else {
+                                $data_session += [
+                                    "agrishop_login_sub_free_expired" => 'f',
+                                ];
+                            }
+
+                            $data_session += [
+                                "agrishop_login_sub_free_end_at" => $row2->free_end_at,
+                                "agrishop_login_sub_free_confirmed" => $row2->free_confirmed,
+                                "agrishop_login_sub_start_date" => $row2->start_date,
+                                "agrishop_login_sub_end_date" => $row2->end_date,
+                                "agrishop_login_sub_is_active" => $row2->is_active,
+                                "agrishop_login_sub_is_expired" => $row2->is_expired,
+                                "agrishop_login_sub_is_latest" => $row2->is_latest,
+                            ];
+                        }
+                    }
 
                     $this->session->set_userdata($data_session);
 

@@ -24,8 +24,8 @@
 <link rel="stylesheet" type="text/css" href="<?= base_url(); ?>dist/layout_shop/css/vendor.css">
 <link rel="stylesheet" type="text/css" href="<?= base_url(); ?>dist/layout_shop/css/style.css">
 <link rel="stylesheet" href="<?= base_url() ?>dist/css/adminlte.min.css">
-<link rel="stylesheet" href="<?= base_url() ?>dist/map/leaflet.css">
-<!-- <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" /> -->
+<!-- <link rel="stylesheet" href="<?= base_url() ?>dist/map/leaflet.css"> -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <!-- Google Font: Source Sans Pro -->
 <!-- Select2 -->
 <style type="text/css">

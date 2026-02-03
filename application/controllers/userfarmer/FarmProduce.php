@@ -181,11 +181,26 @@ class FarmProduce extends MY_Controller
         echo json_encode($results);
     }
 
+    function confirmFreeTrial()
+    {
+        $farmer_id  = (int) $this->session->agrishop_login_farmer_id;
+        $confirm = $this->input->post("confirm");
+        $expired = $this->input->post("expired");
+        if ($confirm == true) {
+            $this->db->query("UPDATE public.farmer_subscription_free SET confirmed = 't' WHERE farmer_id = $farmer_id");
+
+            $data_session = [
+                "agrishop_login_sub_free_confirmed" => "t"
+            ];
+        }
+        $this->session->set_userdata($data_session);
+    }
+
     function getReservedCount()
     {
         $farmer_id  = (int) $this->session->agrishop_login_farmer_id;
-        echo $this->getTransactionPeding($farmer_id,'RESERVED','farmer');
-    }   
+        echo $this->getTransactionPeding($farmer_id, 'RESERVED', 'farmer');
+    }
 
     function getPrice()
     {
@@ -478,6 +493,7 @@ class FarmProduce extends MY_Controller
         $lat = $this->input->post("lat");
         $lon = $this->input->post("lon");
         $login_id = $this->session->agrishop_person_id;
+        $farmer_id = $this->session->agrishop_login_farmer_id;
 
         $person_id = $this->session->agrishop_person_id;
         $exist = $this->db->query("SELECT * FROM public.farmer_farm WHERE farm_name = '$farmName' and created_by_person_id = $person_id")->num_rows();
@@ -490,7 +506,7 @@ class FarmProduce extends MY_Controller
 
 
         $data = [
-            "farmer_id" => 3,
+            "farmer_id" => $farmer_id,
             "farm_name" => $farmName,
             "barangay_id" => $barangay,
             "total_area_sqm" => $totalAreaSqm,

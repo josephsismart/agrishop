@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
-<?php $role_lvl = $this->session->agrishop_login_level; ?>
+<?php
+$role_lvl = $this->session->agrishop_login_level;
+$uri = $this->session->agrishop_login_uri;
+$farm_produce = base_url() . $uri . '/FarmProduce'; ?>
 
 <head>
     <title><?= $system_title ?> | <?= $page_title ?></title>
@@ -39,9 +42,11 @@
     <!-- <script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"></script> -->
 
     <!-- Routing Machine -->
-    <link rel="stylesheet" href="<?= base_url() ?>plugins/leaflet/css/leaflet-routing-machine.css" />
-    <script src="<?= base_url() ?>plugins/leaflet/js/leaflet-routing-machine.js"></script>
-    <!-- <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script> -->
+    <!-- <link rel="stylesheet" href="<?= base_url() ?>plugins/leaflet/css/leaflet-routing-machine.css" /> -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+
+    <!-- <script src="<?= base_url() ?>plugins/leaflet/js/leaflet-routing-machine.js"></script> -->
+    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
 
     <style>
         html,
@@ -161,6 +166,62 @@
                 opacity: 1;
             }
         }
+
+        .route-active {
+            outline: 2px solid #FFD700;
+            background-color: #fff9c4 !important;
+        }
+
+
+
+
+
+
+
+
+
+        .map-controls {
+            position: absolute;
+            top: 35px;
+            right: 15px;
+            width: 180px;
+            max-height: 75vh;
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+            z-index: 1000;
+            overflow: hidden;
+            font-size: 13px;
+        }
+
+        .map-controls-header {
+            background: #198754;
+            color: #fff;
+            padding: 6px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+        }
+
+        .map-controls-header button {
+            padding: 0 8px;
+            line-height: 1;
+        }
+
+        #mapControlsBody {
+            padding: 8px;
+            overflow-y: auto;
+            max-height: 65vh;
+        }
+
+        @media (max-width: 768px) {
+            .map-controls {
+                width: 90%;
+                left: 5%;
+                right: auto;
+            }
+        }
     </style>
 
 </head>
@@ -249,14 +310,16 @@
                                                 echo base_url(); ?>user_admin<?php } elseif ($role_lvl == 1) {
                                                                                 echo '#';
                                                                             } elseif ($role_lvl == 2) {
-                                                                                echo base_url(); ?>user_farmer<?php } ?>" class="p-2 mx-1 text-dark" style="text-decoration: none;font-weight: bold">
+                                                                                echo $farm_produce;
+                                                                            } ?>" class="p-2 mx-1 text-dark" style="text-decoration: none;font-weight: bold">
                                     <i class="fa fa-user"></i> <?php echo $this->session->agrishop_login_uname; ?>
                                 </a>
 
-                                <!-- <a href="#" class="p-2 mx-1 text-dark" style="text-decoration: none;"> -->
-                                <a href="#" data-bs-toggle="modal" data-bs-target="#modalCartListing" class="p-2 mx-1 text-dark" style="text-decoration: none;" onclick="getTable('CartListing', 0, 5);">
-                                    <i class="fa fa-shopping-basket"></i> Cart<span class="badge bg-warning pending-order" title="pending orders"><?= $this->session->agrishop_pending_trans_count; ?></span>
-                                </a>
+                                <?php if ($role_lvl != 2 || $role_lvl != 1) { ?>
+                                    <a href="#" data-bs-toggle="modal" data-bs-target="#modalCartListing" class="p-2 mx-1 text-dark" style="text-decoration: none;" onclick="getTable('CartListing', 0, 5);">
+                                        <i class="fa fa-shopping-basket"></i> Cart<span class="badge bg-warning pending-order" title="pending orders"><?= $this->session->agrishop_pending_trans_count; ?></span>
+                                    </a>
+                                <?php } ?>
 
                             <?php } else { ?>
                                 <a href="<?php echo base_url(); ?>login" class="p-2 mx-1 text-dark" style="text-decoration: none;">
@@ -358,7 +421,48 @@
     <!-- <div class="buttons" id="cityButtons"></div> -->
     <div class="container-fluid p-0">
         <?php $this->load->view('interface/system/layout/landing_page') ?>
-        <div id="map"></div>
+
+        <div id="map">
+            <div id="mapControls" class="map-controls">
+
+                <div class="map-controls-header">
+                    <span>🧭 Routes</span>
+                    <button id="toggleControls" class="btn btn-xs btn-light">–</button>
+                </div>
+
+                <div id="mapControlsBody">
+
+                    <button id="btnLocateMe" class="btn btn-success btn-sm btn-block mb-1">
+                        📍 Get My Location
+                    </button>
+
+                    <button id="btnSetManualLocation" class="btn btn-warning btn-sm btn-block mb-2">
+                        📍 Set Location
+                    </button>
+
+                    <button id="btnViewRoutes" class="btn btn-info btn-sm btn-block mb-2">
+                        🧭 View Routes
+                    </button>
+
+                    <div id="distanceInfo" class="text-primary small mb-2"></div>
+
+                    <div id="routesContainer" style="display:none;">
+                        <table class="table table-sm table-bordered mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Farm</th>
+                                    <th>Km</th>
+                                </tr>
+                            </thead>
+                            <tbody id="routesTableBody"></tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
     </div>
     <!-- <div id="distanceInfo"></div> -->
 
@@ -386,6 +490,7 @@
 
     <?php $this->load->view('interface/system/layout/script') ?>
     <?php $this->load->view('interface/system/layout/cart_script') ?>
+    <?php $this->load->view('interface/system/layout/map') ?>
 
 
 

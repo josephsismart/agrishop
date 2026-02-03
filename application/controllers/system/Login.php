@@ -117,7 +117,7 @@ class Login extends MY_Controller
                     "agrishop_change_password"  => $row1->change_pwd,
                     "agrishop_login_name"       => 'AAAA', #$row2->full_name, // $this->personName($query->row('person_id'),'n'),
                     "agrishop_login_img"        => '', #$this->getImg($row2->img_path), // $this->personName($query->row('person_id'),'n'),
-                    "agrishop_pending_trans_count" => $row1->farmer_id ? $this->getTransactionPeding($person_id,'PENDING','client') : "",
+                    "agrishop_pending_trans_count" => $row1->farmer_id ? $this->getTransactionPeding($person_id, 'PENDING', 'client') : "",
 
                     "agrishop_login_farmer_id" => $row1->farmer_id,
                     "agrishop_login_gcash_id" => $row1->gcash_id,
@@ -125,9 +125,47 @@ class Login extends MY_Controller
                     "agrishop_login_gcash_account_name" => $row1->gcash_account_name,
                     "agrishop_login_gcash_account_num" => $row1->gcash_account_num,
                     "agrishop_login_gcash_qr" => $qr,
-                    "agrishop_reserved_trans_count" => $row1->farmer_id ? $this->getTransactionPeding($row1->farmer_id,'RESERVED','farmer') : 0,
+                    "agrishop_reserved_trans_count" => $row1->farmer_id ? $this->getTransactionPeding($row1->farmer_id, 'RESERVED', 'farmer') : 0,
                 ];
 
+                #check farmer subscription
+                if ($row1->farmer_id) {
+                    $chck2 = $this->db->query("SELECT f.id,TO_CHAR(fsf.ended_at,'yyyy-mm-dd') AS free_end_at, fsf.confirmed AS free_confirmed, fsf.is_expired AS free_expired,
+                                                    fs2.start_date, fs2.end_date,fs2.is_active,fs2.is_expired ,fs2.is_latest
+                                                    FROM farmer AS f
+                                                    JOIN farmer_subscription_free fsf ON f.id = fsf.farmer_id
+                                                    LEFT JOIN farmer_subscription fs2 ON f.id= fs2.farmer_id
+                                                    LEFT JOIN farmer_subscription_application fsa ON fs2.farmer_application_subscription_id = fsa.id
+                                                    WHERE f.id = ?", array($row1->farmer_id));
+                    if ($chck2->num_rows() > 0) {
+                        $row2 = $chck2->row();
+
+                        if (date('Y-m-d') > $row2->free_end_at && $row2->is_expired == false) {
+                            $this->db->query("UPDATE public.farmer_subscription_free SET is_expired = true WHERE farmer_id = $row1->farmer_id");
+                            $data += [
+                                "agrishop_login_sub_free_expired" => 't',
+                            ];
+                        }else if($row2->is_expired == true) {
+                            $data += [
+                                "agrishop_login_sub_free_expired" => 't',
+                            ];
+                        }else {
+                            $data += [
+                                "agrishop_login_sub_free_expired" => 'f',
+                            ];
+                        }
+
+                        $data += [
+                            "agrishop_login_sub_free_end_at" => $row2->free_end_at,
+                            "agrishop_login_sub_free_confirmed" => $row2->free_confirmed,
+                            "agrishop_login_sub_start_date" => $row2->start_date,
+                            "agrishop_login_sub_end_date" => $row2->end_date,
+                            "agrishop_login_sub_is_active" => $row2->is_active,
+                            "agrishop_login_sub_is_expired" => $row2->is_expired,
+                            "agrishop_login_sub_is_latest" => $row2->is_latest,
+                        ];
+                    }
+                }
 
                 $this->session->set_userdata($data);
 
@@ -189,6 +227,14 @@ class Login extends MY_Controller
             "agrishop_login_gcash_account_name" => '',
             "agrishop_login_gcash_account_num" => '',
             "agrishop_login_gcash_qr" => '',
+            "agrishop_login_sub_free_end_at" => '',
+            "agrishop_login_sub_free_confirmed" => '',
+            "agrishop_login_sub_free_expired" => '',
+            "agrishop_login_sub_start_date" => '',
+            "agrishop_login_sub_end_date" => '',
+            "agrishop_login_sub_is_active" => '',
+            "agrishop_login_sub_is_expired" => '',
+            "agrishop_login_sub_is_latest" => '',
 
         ];
         $this->session->unset_userdata($array_logout);

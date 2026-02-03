@@ -8,94 +8,239 @@
 ?>
 <!-- Modal -->
 
-
 <div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xs">
-        <div class="modal-content" style="border-radius:0;">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5" id="profileModalLabel">My Profile</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <?= form_open(base_url('/updateprofile'), 'id=form_save_dataUpdateProfile'); ?>
-            <div class="modal-body">
-                <div class="card-body">
-                    <h6><i class="fas fa-camera-retro"></i> Photo</h6>
-                    <div class="col-12">
-                        <center class="p-0 border">
-                            <div class="form-group">
-                                <img name="previewPic" src="<?= $this->session->agrishop_login_img_path  ?>" onclick="$('[name=picProfile]').trigger('click')" width="120" height="120" class="border border-white border-2 rounded elevation-2" type="button" alt="User Image">
-                            </div>
-                            <div class="form-group">
-                                <input name="picProfile" type="file" accept="image/*" onchange="imageView('picProfile','previewPic','imgtargetLink')" nr="1" hidden="">
-                                <!-- <input name="personId" type="text" nr="1" > -->
-                                <input name="img_path" type="text" nr="1" hidden="">
-                            </div>
-                        </center>
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content shadow-lg border-0 rounded-3 overflow-hidden">
+            
+            <!-- HEADER -->
+            <div class="modal-header bg-primary bg-gradient text-white py-3 px-4">
+                <div class="d-flex align-items-center w-100">
+                    <div class="flex-grow-1">
+                        <h5 class="modal-title fw-bold mb-0">
+                            <i class="fas fa-user-circle me-2"></i>My Profile
+                        </h5>
                     </div>
-                    <div class="row">
-                        <h6><i class="fas fa-user"></i> Name</h6>
-                        <div class="col-lg-4 col-md-4 col-sm-4 col-6">
-                            <input type="text" class="form-control form-control-sm text-uppercase border-primary" value="<?= $this->session->agrishop_login_first_name ?>" name="firstName" placeholder="FIRST NAME" autocomplete="off">
-                        </div>
-                        <div class="col-lg-4 col-md-4 col-sm-4 col-6 mb-2">
-                            <input type="text" class="form-control form-control-sm text-uppercase border-primary" value="<?= $this->session->agrishop_login_middle_name ?>" name="middleName" placeholder="MIDDLE NAME" autocomplete="off" nr="1">
-                        </div>
-                        <div class="col-lg-4 col-md-4 col-sm-4 col-6 mb-2">
-                            <input type="text" class="form-control form-control-sm text-uppercase border-primary" value="<?= $this->session->agrishop_login_last_name ?>" name="lastName" placeholder="LAST NAME" autocomplete="off">
-                        </div>
-                        <div class="col-6">
-                            <h6 class="mt-3"><i class="fas fa-birthday-cake"></i> Birthdate</h6>
-                            <div class="col-12">
-                                <input type="date" class="form-control form-control-sm border-primary" name="birthdate" nr="1" value="<?= $this->session->agrishop_login_birthdate ?>">
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <h6 class="mt-3"><i class="fas fa-venus-mars"></i> Gender</h6>
-                            <div class="col-12">
-                                <select class="form-control form-control-sm border-primary" name="sex">
-                                    <option value="t" <?= $this->session->agrishop_login_sex == 't' ? 'selected' : '' ?>>MALE</option>
-                                    <option value="f" <?= $this->session->agrishop_login_sex == 'f' ? 'selected' : '' ?>>FEMALE</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <h6 class="mt-3"><i class="fas fa-envelope"></i> Email</h6>
-                            <div class="col-12">
-                                <input type="email" class="form-control form-control-sm border-primary" placeholder="EMAIL" name="email" value="<?= $this->session->agrishop_login_email_address ?>" autocomplete="off">
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <h6 class="mt-3"><i class="fas fa-phone"></i> Contact Number</h6>
-                            <div class="col-12">
-                                <input type="text" class="form-control form-control-sm border-primary text-uppercase" placeholder="Contact Number" name="contactNumber" value="<?= $this->session->agrishop_login_contact_num ?>">
-                            </div>
-                        </div>
+                    <button type="button" class="btn-close btn-close-white shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+            </div>
 
-                        <h6 class="mt-3"> <i class="fas fa-map-marker-alt"></i> Address</h6>
-                        <div class="col-12">
-                            <div class="input-group mb-3">
-                                <!-- 160202061 -->
-                                <input name="barangayAll" hidden value="<?= $this->session->agrishop_login_barangay_id ?>">
-                                <input type="text" class="form-control form-control-sm barangayInput border-primary text-uppercase" value="<?= $this->session->agrishop_login_address_text ?>" placeholder="TYPE BARANGAY (min 3 chars)" autocomplete="off" name="barangay_text">
-
+            <?= form_open(base_url('/updateprofile'), 'id="form_save_dataUpdateProfile"'); ?>
+            
+            <!-- BODY -->
+            <div class="modal-body p-0">
+                <div class="row g-0">
+                    
+                    <!-- LEFT SIDE - PROFILE PHOTO -->
+                    <div class="col-lg-4 col-md-5 border-end bg-light">
+                        <div class="p-4">
+                            <div class="text-center mb-4">
+                                <div class="position-relative d-inline-block mb-3">
+                                    <img 
+                                        name="previewPic" 
+                                        src="<?= $this->session->agrishop_login_img_path ?>" 
+                                        onclick="$('[name=picProfile]').trigger('click')" 
+                                        width="140" 
+                                        height="140" 
+                                        class="border border-3 border-white shadow-lg rounded-circle object-fit-cover"
+                                        style="cursor: pointer;" 
+                                        alt="Profile Picture"
+                                    >
+                                    <div class="position-absolute bottom-0 end-0">
+                                        <span class="badge bg-primary rounded-circle p-2 shadow-sm">
+                                            <i class="fas fa-camera fa-xs text-white"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                                <h6 class="text-muted fw-bold mb-2">
+                                    <i class="fas fa-camera-retro me-1"></i>Profile Photo
+                                </h6>
+                                <p class="small text-muted mb-0">Click image to upload new photo</p>
                             </div>
-                            <ul class="list-group barangayResults" style="position:absolute; z-index:9999; width:100%; display:none;cursor:pointer;"></ul>
+                            <input name="picProfile" type="file" accept="image/*" onchange="imageView('picProfile','previewPic','imgtargetLink')" nr="1" hidden>
+                            <input name="img_path" type="text" nr="1" hidden>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT SIDE - FORM FIELDS -->
+                    <div class="col-lg-8 col-md-7">
+                        <div class="p-4">
+                            
+                            <!-- NAME SECTION -->
+                            <div class="mb-4">
+                                <h6 class="text-primary fw-bold mb-3">
+                                    <i class="fas fa-user me-2"></i>Personal Information
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-lg-4 col-md-12">
+                                        <div class="form-floating">
+                                            <input 
+                                                type="text" 
+                                                class="form-control border-primary text-uppercase" 
+                                                id="firstName" 
+                                                value="<?= $this->session->agrishop_login_first_name ?>" 
+                                                name="firstName" 
+                                                placeholder="FIRST NAME" 
+                                                autocomplete="off"
+                                            >
+                                            <label for="firstName" class="text-muted small">First Name</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 col-md-12">
+                                        <div class="form-floating">
+                                            <input 
+                                                type="text" 
+                                                class="form-control border-primary text-uppercase" 
+                                                id="middleName" 
+                                                value="<?= $this->session->agrishop_login_middle_name ?>" 
+                                                name="middleName" 
+                                                placeholder="MIDDLE NAME" 
+                                                autocomplete="off" 
+                                                nr="1"
+                                            >
+                                            <label for="middleName" class="text-muted small">Middle Name</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4 col-md-12">
+                                        <div class="form-floating">
+                                            <input 
+                                                type="text" 
+                                                class="form-control border-primary text-uppercase" 
+                                                id="lastName" 
+                                                value="<?= $this->session->agrishop_login_last_name ?>" 
+                                                name="lastName" 
+                                                placeholder="LAST NAME" 
+                                                autocomplete="off"
+                                            >
+                                            <label for="lastName" class="text-muted small">Last Name</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- BIRTHDATE & GENDER -->
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <h6 class="text-muted fw-bold mb-3">
+                                        <i class="fas fa-birthday-cake me-2"></i>Birthdate
+                                    </h6>
+                                    <div class="form-floating">
+                                        <input 
+                                            type="date" 
+                                            class="form-control border-primary" 
+                                            id="birthdate" 
+                                            name="birthdate" 
+                                            nr="1" 
+                                            value="<?= $this->session->agrishop_login_birthdate ?>"
+                                        >
+                                        <label for="birthdate" class="text-muted small">Select Birthdate</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="text-muted fw-bold mb-3">
+                                        <i class="fas fa-venus-mars me-2"></i>Gender
+                                    </h6>
+                                    <div class="form-floating">
+                                        <select class="form-select border-primary" id="gender" name="sex">
+                                            <option value="t" <?= $this->session->agrishop_login_sex == 't' ? 'selected' : '' ?>>Male</option>
+                                            <option value="f" <?= $this->session->agrishop_login_sex == 'f' ? 'selected' : '' ?>>Female</option>
+                                        </select>
+                                        <label for="gender" class="text-muted small">Select Gender</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- CONTACT INFORMATION -->
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <h6 class="text-muted fw-bold mb-3">
+                                        <i class="fas fa-envelope me-2"></i>Email Address
+                                    </h6>
+                                    <div class="form-floating">
+                                        <input 
+                                            type="email" 
+                                            class="form-control border-primary" 
+                                            id="email" 
+                                            placeholder="EMAIL" 
+                                            name="email" 
+                                            value="<?= $this->session->agrishop_login_email_address ?>" 
+                                            autocomplete="off"
+                                        >
+                                        <label for="email" class="text-muted small">Email Address</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="text-muted fw-bold mb-3">
+                                        <i class="fas fa-phone me-2"></i>Contact Number
+                                    </h6>
+                                    <div class="form-floating">
+                                        <input 
+                                            type="text" 
+                                            class="form-control border-primary text-uppercase" 
+                                            id="contactNumber" 
+                                            placeholder="Contact Number" 
+                                            name="contactNumber" 
+                                            value="<?= $this->session->agrishop_login_contact_num ?>"
+                                        >
+                                        <label for="contactNumber" class="text-muted small">Contact Number</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ADDRESS -->
+                            <div class="mb-4">
+                                <h6 class="text-muted fw-bold mb-3">
+                                    <i class="fas fa-map-marker-alt me-2"></i>Address
+                                </h6>
+                                <div class="position-relative">
+                                    <div class="input-group input-group-lg">
+                                        <span class="input-group-text bg-light border-primary">
+                                            <i class="fas fa-map-pin text-primary"></i>
+                                        </span>
+                                        <div class="form-floating flex-grow-1">
+                                            <input 
+                                                type="text" 
+                                                class="form-control border-start-0 border-primary text-uppercase barangayInput" 
+                                                id="barangayInput" 
+                                                value="<?= $this->session->agrishop_login_address_text ?>" 
+                                                placeholder="TYPE BARANGAY (min 3 chars)" 
+                                                autocomplete="off" 
+                                                name="barangay_text"
+                                            >
+                                            <label for="barangayInput" class="text-muted small">Barangay Name</label>
+                                        </div>
+                                    </div>
+                                    <input name="barangayAll" type="hidden" value="<?= $this->session->agrishop_login_barangay_id ?>">
+                                    <ul class="list-group barangayResults shadow-lg border-0" style="position:absolute; z-index:9999; width:100%; display:none; cursor:pointer; max-height: 200px; overflow-y: auto;"></ul>
+                                </div>
+                                <div class="mt-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle me-1"></i> Type at least 3 characters to search barangay
+                                    </small>
+                                </div>
+                            </div>
 
                         </div>
-
                     </div>
                 </div>
-
-
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="submit" class="btn bg-primary text-white update_profile"> <i class="fas fa-save"></i> Update Profile</button>
+
+            <!-- FOOTER -->
+            <div class="modal-footer bg-light py-3 px-4 border-top">
+                <div class="d-flex w-100 gap-3">
+                    <button type="button" class="btn btn-outline-secondary btn-lg flex-fill rounded-pill" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary btn-lg flex-fill rounded-pill fw-bold shadow-sm update_profile">
+                        <i class="fas fa-save me-2"></i>Update Profile
+                    </button>
+                </div>
             </div>
+            
             </form>
         </div>
     </div>
 </div>
+
 <!-- <div class="modal fade show" id="registerFarmerModal" tabindex="-1" aria-labelledby="registerFarmerModalLabel" aria-hidden="true" style="display: block; padding-left: 0px;"> -->
 <div class="modal fade" id="registerFarmerModal" tabindex="-1" aria-labelledby="registerFarmerModalLabel" aria-hidden="true">
     <div class="modal-dialog">

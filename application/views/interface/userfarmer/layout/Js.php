@@ -43,7 +43,9 @@ $uri = $this->session->agrishop_login_uri;
 <script type="text/javascript">
     let transaction_id_ = null;
     let status_ = null;
+
     
+
     $('#modalFarmInfo').on('shown.bs.modal', function() {
         map.invalidateSize(); // <-- this tells Leaflet to recalc the map size
         map.setView([8.7, 125.6], 9); // optional: recenter map if needed

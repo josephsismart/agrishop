@@ -1,11 +1,11 @@
 <!-- <div class="modal fade show" id="modalFreeTrial" tabindex="-1" aria-labelledby="gcashModalLabel" aria-hidden="true" style="display: block; padding-left: 0px;"> -->
-<div class="modal fade" id="modalFreeTrial" data-backdrop="static" data-keyboard="false">
+<div class="modal fade" id="modalFreeTrial" tabindex="-1" data-backdrop="static" data-keyboard="false">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content shadow-lg rounded-4">
+        <div class="modal-content shadow-lg rounded-4 overflow-hidden">
 
             <!-- HEADER -->
-            <div class="modal-header bg-success text-white text-center">
-                <h4 class="modal-title w-100 fw-bold">
+            <div class="modal-header bg-success text-white justify-content-center">
+                <h4 class="modal-title fw-bold text-center mb-0">
                     🎉 Congratulations, Farmer!
                 </h4>
             </div>
@@ -16,32 +16,31 @@
                 <h3 class="text-success fw-bold mb-3">
                     🌱 FREE 2-MONTH PRO SUBSCRIPTION
                 </h3>
-                <p class="fs-5">
-                    Welcome to <strong>AgriShop</strong>!
-                    You can now enjoy <strong>FULL ACCESS</strong> for <b>2 months</b>.
+
+                <p class="fs-5 mb-4">
+                    Welcome to <strong>AgriShop</strong>! <br>
+                    Enjoy <strong>FULL ACCESS</strong> for <strong>2 months</strong>.
                 </p>
 
-                <div class="row mt-4">
-                    <div class="col-md-6 mb-3">
-                        <div class="p-3 border rounded bg-light">
-                            ✅ Unlimited Farms<br>
-                            ✅ Unlimited Produce
-                        </div>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <div class="p-3 border rounded bg-light">
-                            ⭐ Priority in Search<br>
-                            🚜 More Customer Visibility
+                <!-- FEATURES -->
+                <div class="row justify-content-center">
+                    <div class="col-md-8">
+                        <div class="p-3 border rounded bg-light text-start">
+                            <ul class="list-unstyled mb-0">
+                                <li>✅ Unlimited Farms</li>
+                                <li>✅ Unlimited Produce</li>
+                                <li>⭐ Priority in Search</li>
+                                <li>🚜 More Customer Visibility</li>
+                            </ul>
                         </div>
                     </div>
                 </div>
 
-                <p class="text-muted fs-6 mt-3">
-                    ⏰ After 2 months, your farms are safe but management will be limited.
+                <p class="text-muted fs-6 mt-4">
+                    ⏰ After 2 months, your farms remain safe, but management features will be limited.
                 </p>
 
-
-                <p class="fs-5 text-success fw-bold">
+                <p class="fs-5 text-success fw-bold mt-3 mb-0">
                     🎊 Welcome to PRO Access!
                 </p>
 
@@ -49,7 +48,10 @@
 
             <!-- FOOTER -->
             <div class="modal-footer justify-content-center">
-                <button class="btn btn-success btn-lg px-4 py-0 fw-bold" data-dismiss="modal" style="font-size:1.1rem !important;">
+                <button
+                    type="button"
+                    class="btn btn-success btn-lg px-5 fw-bold start-selling"
+                    data-dismiss="modal">
                     Start Selling 🌾
                 </button>
             </div>
@@ -58,25 +60,6 @@
     </div>
 </div>
 
-<script>
-    function fireConfetti() {
-        confetti({
-            particleCount: 160,
-            spread: 100,
-            origin: {
-                y: 0.6
-            },
-            zIndex: 99999
-        });
-    }
-
-    $('#modalFreeTrial').on('shown.bs.modal', function() {
-        setTimeout(fireConfetti, 300);
-    });
-
-
-    // $('#modalFreeTrial').modal('show');
-</script>
 
 
 
@@ -131,10 +114,7 @@
 
             <!-- FOOTER -->
             <div class="modal-footer justify-content-center gap-2">
-                <button class="btn btn-outline-secondary btn-lg" data-dismiss="modal">
-                    Later
-                </button>
-                <button class="btn btn-success btn-lg px-5 fw-bold">
+                <button class="btn btn-success btn-lg px-5 fw-bold" style="font-size:1.1rem !important;">
                     Subscribe Now 🌾
                 </button>
             </div>
@@ -142,3 +122,45 @@
         </div>
     </div>
 </div>
+
+<script>
+    function fireConfetti() {
+        confetti({
+            particleCount: 160,
+            spread: 100,
+            origin: {
+                y: 0.6
+            },
+            zIndex: 99999
+        });
+    }
+
+    $('#modalFreeTrial').on('shown.bs.modal', function() {
+        setTimeout(fireConfetti, 300);
+    });
+
+    let agrishop_login_sub_free_confirmed = "<?= $this->session->agrishop_login_sub_free_confirmed ?>";
+    if (agrishop_login_sub_free_confirmed == 'f') {
+        $('#modalFreeTrial').modal('show');
+    }
+
+    let agrishop_login_sub_free_expired = "<?= $this->session->agrishop_login_sub_free_expired ?>";
+    if (agrishop_login_sub_free_expired == 't') {
+        $('#modalRenewSub').modal('show');
+    }
+
+    // $('#modalFreeTrial').modal('show');
+
+    $(".start-selling").click(function() {
+        $.post("<?= base_url('userfarmer/FarmProduce/confirmFreeTrial') ?>", {
+            confirm: true
+        }, function(res) {
+            let j = JSON.parse(res);
+            if (j.success == true) {
+                successAlert(j.message);
+            } else {
+                errorAlert(j.message);
+            }
+        });
+    });
+</script>

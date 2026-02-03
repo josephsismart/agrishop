@@ -16,7 +16,14 @@
     <link rel="stylesheet" href="<?= base_url() ?>plugins/icheck-bootstrap/icheck-bootstrap.min.css">
     <!-- Theme style -->
     <link rel="stylesheet" href="<?= base_url() ?>dist/css/adminlte.min.css">
+    <link rel="stylesheet" href="<?= base_url() ?>plugins/bootstrap-alpha3/bootstrap.min.css">
+
 </head>
+<style>
+    .form-floating>label {
+        font-size: 0.875rem;
+    }
+</style>
 
 <body class="hold-transition login-page">
     <div class="login-box">
@@ -41,34 +48,53 @@
                 <?php if ($this->input->get("login_attempt") != md5(0) || $this->input->get("login_attempt") != md5(1)) : ?>
                     <p class="login-box-msg">Sign in to start your session</p>
                 <?php endif ?>
-                
-                <form action="<?= base_url() ?>requestlogin" method="post">
-                    <div class="input-group mb-3">
-                        <input type="text" name="username" class="form-control <?php if ($this->input->get("login_attempt") == md5(0)) : ?> is-invalid <?php endif ?>" placeholder="Email" autofocus autocomplete="off" required>
-                        <div class="input-group-append">
-                            <div class="input-group-text">
-                                <span class="fas fa-envelope"></span>
-                            </div>
+
+                <form action="<?= base_url() ?>requestlogin" method="post" class="needs-validation" novalidate>
+                    <!-- Username/Email Field -->
+                    <div class="mb-4">
+                        <div class="form-floating">
+                            <input type="text" name="username" class="form-control form-control border-1 <?= ($this->input->get("login_attempt") == md5(0) || $this->input->get("login_attempt") == md5(1)) ? 'is-invalid border-danger' : 'border-primary' ?>" id="loginUsername" placeholder="Email or Username" autocomplete="off" required autofocus>
+                            <label for="loginUsername" class="text-muted">
+                                <i class="fas fa-envelope me-2"></i>Email or Username
+                            </label>
+                            <?php if ($this->input->get("login_attempt") == md5(0) || $this->input->get("login_attempt") == md5(1)) : ?>
+                                <div class="invalid-feedback">
+                                    <i class="fas fa-exclamation-circle me-1"></i>Invalid username or password
+                                </div>
+                            <?php endif; ?>
                         </div>
                     </div>
-                    <div class="input-group mb-3">
-                        <input type="password" name="password" class="form-control <?php if ($this->input->get("login_attempt") == md5(0)) : ?> is-invalid <?php endif ?>" placeholder="Password" required>
-                        <div class="input-group-append">
-                            <div class="input-group-text">
-                                <span class="fas fa-lock"></span>
-                            </div>
+
+                    <!-- Password Field -->
+                    <div class="mb-4">
+                        <div class="form-floating">
+                            <input type="password" name="password" class="form-control form-control border-1 <?= ($this->input->get("login_attempt") == md5(0) || $this->input->get("login_attempt") == md5(1)) ? 'is-invalid border-danger' : 'border-primary' ?>" id="loginPassword" placeholder="Password" autocomplete="off" required>
+                            <label for="loginPassword" class="text-muted">
+                                <i class="fas fa-lock me-2"></i>Password
+                            </label>
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="col-12">
-                            <button type="submit" class="btn btn-success btn-block"><i class="fab fa-login mr-2"></i> Login</button>
-                        </div>
-                        <div class="col-12 mb-n2">
-                            <p class="text-center text-sm text-gray">or</p>
-                        </div>
-                        <div class="col-12">
-                            <a href="<?= base_url() ?>signup" type="button" class="btn btn-default btn-block"><i class="fab fa-login mr-2"></i> Signup</a>
-                        </div>
+
+                    <!-- Login Button -->
+                    <div class="d-grid mb-3">
+                        <button type="submit" class="btn btn-success fw-bold py-2 shadow-sm">
+                            <i class="fas fa-sign-in-alt me-2"></i>Sign In to Account
+                        </button>
+                    </div>
+
+                    <!-- Divider -->
+                    <div class="position-relative my-4">
+                        <hr class="border-1">
+                        <span class="position-absolute top-50 start-50 translate-middle bg-white px-3 text-muted small">
+                            OR
+                        </span>
+                    </div>
+
+                    <!-- Signup Button -->
+                    <div class="d-grid">
+                        <a href="<?= base_url() ?>signup" class="btn btn-outline-dark py-2">
+                            <i class="fas fa-user-plus me-2"></i>Create New Account
+                        </a>
                     </div>
                 </form>
                 <!-- /.social-auth-links -->
