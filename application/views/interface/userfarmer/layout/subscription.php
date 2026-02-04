@@ -146,7 +146,7 @@
 
     let agrishop_login_sub_free_expired = "<?= $this->session->agrishop_login_sub_free_expired ?>";
     if (agrishop_login_sub_free_expired == 't') {
-        $('#modalRenewSub').modal('show');
+        // $('#modalRenewSub').modal('show');
     }
 
     // $('#modalFreeTrial').modal('show');
