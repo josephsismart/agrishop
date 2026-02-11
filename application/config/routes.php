@@ -57,7 +57,9 @@ $route['translate_uri_dashes'] = FALSE;
 
 //admin
 $route['map'] = 'system/Map';
-$route['subscribe'] = 'system/Subscribe';
+// $route['subscribe'] = 'system/Subscribe';
+$route['subscribe_application'] = 'ud440aed189/Subscribe/subscribe_application';
+$route['check_subscription'] = 'ud440aed189/Subscribe/check_subscription';
 $route['login'] = 'system/Login';
 $route['signup'] = 'system/Signup';
 $route['index'] = 'system/Index';

@@ -1,3 +1,6 @@
+<?php
+    // $this->redirect();
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -16,6 +19,7 @@
 
     <!-- GOOGLE FONT -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="<?= base_url() ?>plugins/sweetalert2-theme-bootstrap-4/bootstrap-4.min.css">
 
     <style>
         body {
@@ -226,11 +230,66 @@
     <script>
         // Hook this to your payment logic
         //document.querySelector('.subscribe-btn').addEventListener('click', function() {
-            //alert('Redirecting to payment gateway...');
-            // window.location.href = '/payment';
+        //alert('Redirecting to payment gateway...');
+        // window.location.href = '/payment';
         //});
     </script>
 
 </body>
+
+<script src="<?= base_url() ?>plugins/jquery/jquery.min.js"></script>
+<script src="<?= base_url() ?>plugins/sweetalert2/sweetalert2.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        $('#gcashProofForm').on('submit', function(e) {
+            e.preventDefault();
+
+            var formData = new FormData(this);
+            $.ajax({
+                url: '<?= base_url() ?>subscribe_application',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    // Optionally show a success message or redirect
+                    let res = JSON.parse(response);
+                    successAlert(res.message);
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1500);
+
+                },
+                error: function(xhr, status, error) {
+                    console.log(error);
+                    failAlert(res.message);
+                }
+            });
+        });
+
+    });
+
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'center',
+        showConfirmButton: false,
+        timer: 3000
+    });
+
+    function successAlert(a) {
+        Toast.fire({
+            icon: 'success',
+            title: '  ' + a
+        })
+    }
+
+    function failAlert(a) {
+        Toast.fire({
+            icon: 'error',
+            title: '  ' + a
+        })
+    }
+</script>
 
 </html>

@@ -54,6 +54,7 @@ class MY_Controller extends CI_Controller
 
     public function redirect()
     {
+        $this->check_subscription();
         $login = $this->session->agrishop_login_id;
         $defaultPassword = $this->session->agrishop_change_password;
         $uri = $this->session->agrishop_login_uri;
@@ -69,7 +70,6 @@ class MY_Controller extends CI_Controller
             }
         }
     }
-
     public function redirect2()
     {
         $login = $this->session->agrishop_login_id;
@@ -80,6 +80,7 @@ class MY_Controller extends CI_Controller
 
     public function redirect_home()
     {
+        $this->check_subscription();
         $level = $this->session->agrishop_login_level;
         $defaultPassword = $this->session->agrishop_change_password;
         $uri = $this->session->agrishop_login_uri;
@@ -96,68 +97,180 @@ class MY_Controller extends CI_Controller
         }
     }
 
+    public function check_subscription()
+    {
+        $farmer_id = $this->session->agrishop_login_farmer_id;
+        if (!$farmer_id) return;
+
+        /* 1️⃣ WAITING FOR ADMIN VALIDATION */
+        $approved_active = $this->db->query("
+        SELECT 1
+        FROM farmer_subscription
+        WHERE farmer_id = ?
+        AND is_latest = true
+        AND is_active = true
+        AND is_expired = false
+        LIMIT 1
+    ", [$farmer_id])->row();
+
+        if ($approved_active) {
+            $this->session->set_userdata([
+                "agrishop_login_uri" => "userfarmer",
+                "agrishop_login_landing" => "dashboard"
+            ]);
+            return;
+        }
+
+        /* 1️⃣ WAITING FOR ADMIN VALIDATION */
+        $pending = $this->db->query("
+        SELECT 1
+        FROM farmer_subscription_application
+        WHERE farmer_id = ?
+        AND checked_at IS NULL
+        LIMIT 1
+    ", [$farmer_id])->row();
+
+        if ($pending) {
+            $this->session->set_userdata([
+                "agrishop_login_uri" => "ud440aed188v",
+                "agrishop_login_landing" => "validation"
+            ]);
+            return;
+        }
+
+        /* 2️⃣ ACTIVE PAID SUBSCRIPTION */
+        $paid = $this->db->query("
+        SELECT *
+        FROM farmer_subscription
+        WHERE farmer_id = ?
+        AND is_latest = true
+        AND is_active = true
+        AND is_expired = false
+        AND end_date >= CURRENT_DATE
+        LIMIT 1
+    ", [$farmer_id])->row();
+
+        if ($paid) {
+            return; // ✅ allow normal routing
+        }
+
+        /* 3️⃣ PAID SUB EXPIRED */
+        $paid_expired = $this->db->query("
+        SELECT *
+        FROM farmer_subscription
+        WHERE farmer_id = ?
+        AND is_latest = true
+        AND (is_expired = true OR end_date < CURRENT_DATE)
+        LIMIT 1
+    ", [$farmer_id])->row();
+
+        if ($paid_expired) {
+            $this->session->set_userdata([
+                "agrishop_login_uri" => "ud440aed189",
+                "agrishop_login_landing" => "subscribe"
+            ]);
+            return;
+        }
+
+        /* 4️⃣ FREE SUBSCRIPTION */
+        $free = $this->db->query("
+        SELECT *
+        FROM farmer_subscription_free
+        WHERE farmer_id = ?
+        LIMIT 1
+    ", [$farmer_id])->row();
+
+        if ($free) {
+            if (date('Y-m-d') > $free->ended_at) {
+                $this->db->query("
+                UPDATE farmer_subscription_free
+                SET is_expired = true
+                WHERE farmer_id = ?
+            ", [$farmer_id]);
+
+                $this->session->set_userdata([
+                    "agrishop_login_uri" => "ud440aed189",
+                    "agrishop_login_landing" => "subscribe"
+                ]);
+            }
+            return;
+        }
+
+        /* 5️⃣ NO SUBSCRIPTION AT ALL */
+        $this->session->set_userdata([
+            "agrishop_login_uri" => "ud440aed189",
+            "agrishop_login_landing" => "subscribe"
+        ]);
+    }
+
+    // public function check_subscription()
+    // {
+    //     $farmer_id = $this->session->agrishop_login_farmer_id;
+    //     $data = $this->db->query("SELECT * FROM farmer_subscription_application WHERE farmer_id = " . $farmer_id . " AND checked_at IS NULL")->row();
+
+    //     if ($data) {
+    //         $data_session = [
+    //             "agrishop_login_uri" => "ud440aed188v",
+    //             "agrishop_login_landing" => "Validation"
+    //         ];
+    //         $this->session->set_userdata($data_session);
+    //     }
+
+    //     #check farmer subscription
+    //     if ($farmer_id) {
+    //         $chck2 = $this->db->query("SELECT f.id,TO_CHAR(fsf.ended_at,'yyyy-mm-dd') AS free_end_at, fsf.confirmed AS free_confirmed, fsf.is_expired AS free_expired,
+    //                                         fs2.start_date, fs2.end_date,fs2.is_active,fs2.is_expired ,fs2.is_latest, fsa.checked, fsa.checked_at
+    //                                         FROM farmer AS f
+    //                                         JOIN farmer_subscription_free fsf ON f.id = fsf.farmer_id
+    //                                         LEFT JOIN (SELECT * FROM farmer_subscription WHERE is_latest = true) fs2 ON f.id= fs2.farmer_id
+    //                                         LEFT JOIN farmer_subscription_application fsa ON fs2.farmer_application_subscription_id = fsa.id
+    //                                         WHERE f.id = ?", array($farmer_id));
+    //         if ($chck2->num_rows() > 0) {
+    //             $row2 = $chck2->row();
+
+    //             if (date('Y-m-d') > $row2->free_end_at && $row2->end_date == null) {
+    //                 $this->db->query("UPDATE public.farmer_subscription_free SET is_expired = true WHERE farmer_id = $farmer_id");
+    //                 $data += [
+    //                     "agrishop_login_sub_free_expired" => 't',
+    //                     "agrishop_login_uri" => 'ud440aed189',
+    //                     "agrishop_login_landing" => 'subscribe',
+    //                 ];
+    //             } else if ($row2->is_expired == true) {
+    //                 $data += [
+    //                     "agrishop_login_sub_free_expired" => 't',
+    //                     "agrishop_login_uri" => 'ud440aed189',
+    //                     "agrishop_login_landing" => 'subscribe',
+    //                 ];
+    //             } else {
+    //                 $data += [
+    //                     "agrishop_login_sub_free_expired" => 'f',
+    //                     "agrishop_login_uri"        => ($this->session->agrishop_login_change_pwd == 't' ? "ud440aed189" : ($this->session->agrishop_login_level == 0 ? "useradmin" : ($this->session->agrishop_login_level == 1 ? "userconsumer" : ($this->session->agrishop_login_level == 2 ? "userfarmer" : "")))),
+    //                     "agrishop_login_landing"    => $this->session->agrishop_login_change_pwd == 't' ? "changepassword" : ($this->session->agrishop_login_level == 2 ? "dashboard" : "dataentry"),
+    //                 ];
+    //             }
+
+    //             if ($row2->end_date !== null && date('Y-m-d') >= $row2->end_date) {
+    //                 $data += [
+    //                     "agrishop_login_uri" => 'ud440aed189',
+    //                     "agrishop_login_landing" => 'subscribe',
+    //                 ];
+    //             }
+    //         }
+    //     }
+
+    //     // $farmer_id = $this->session->agrishop_login_farmer_id;
+    //     // $data = $this->db->query("SELECT * FROM farmer_subscription WHERE farmer_id = " . $farmer_id . " AND is_active = true AND is_latest = true")->row();
+    //     // return $data;
+    // }
+
+
+
     public function redirect_session()
     {
         $login = $this->session->agrishop_login_id;
         if (!$login) {
             redirect(base_url('/'));
         }
-    }
-
-    public function submitGradesBtn($a, $b, $mm, $d, $f)
-    {
-        $c = $this->clean($mm);
-        $e = "";
-        $g = 'data-toggle="tooltip" data-placement="bottom" data-html="true" title="<em>Message:</em> <b>' . $c . '</b>"';
-        $h = '<i class="fa fa-envelope float-right text-yellow"></i>';
-        if ($a && $a != "RECHECK") {
-            $e = '<span class="badge w-100 text-sm ' . ($a == 'APPROVED' ? 'bg-success' : 'bg-navy') . '" ' . ($c ? $g : '') . '>'
-                . ($a == 'APPROVED' ? '<i class="fa fa-check-circle"></i> ' : '')
-                . $a . ' Q' . $f . ' - ' . $b . '%
-                ' . ($c ? $h : '') . '
-                </span>';
-        } else if ($a || $b) {
-            $e = '<button onclick="preSbmitGrades(' . $d . ',' . $f . ',' . $b . ')" type="button" class="btn btn-block btn-xs btn-info float-right ml-1" ' . ($c ? $g : '') . '>
-                    <i class="fa fa-paper-plane"></i> <b>' . ($a == "RECHECK" ? $a : "SUBMIT") . ' Q' . $f . ' - ' . $b . '%</b>
-                    ' . ($c ? $h : '') . '
-                    </button>';
-        } else {
-            $e = null;
-        }
-        return $e;
-    }
-
-    public function apprvGradesBtn($a, $b, $mm, $d, $f, $g)
-    {
-        $c = $this->clean($mm);
-        $e = "";
-        $h = 'data-toggle="tooltip" data-placement="bottom" data-html="true" title="<em>Message:</em> <b>' . $c . '</b>"';
-        $i = '<i class="fa fa-envelope float-right text-yellow"></i>';
-
-        if ($a == "FOR APPROVAL") {
-            $e =    '<button  ' . ($c ? $h : '') . ' ' .
-                "onclick='preSbmitGrades(\"$a\"," . $b . ",\"$c\"," . $d . "," . $f . "," . $g . ")' "
-                . 'type="button" class="btn btn-block btn-xs btn-info">
-                            <b> Q' . $f . ' - ' . $b . '%</b> APPROVE/RECHECK
-                            ' . ($c ? $i : '') . '
-                    </button>';
-        } else if ($a == "APPROVED") {
-            $e =    '<button  ' . ($c ? $h : '') . ' ' .
-                "onclick='preSbmitGrades(\"$a\"," . $b . ",\"$c\"," . $d . "," . $f . "," . $g . ")' "
-                . 'type="button" class="btn btn-block btn-xs btn-success">
-                            <i class="fa fa-thumbs-up"></i>  <b> Q' . $f . ' - ' . $b . '%</b> APPROVED
-                            ' . ($c ? $i : '') . '
-                    </button>';
-        } else if ($a == "RECHECK") {
-            $e =    '<button  ' . ($c ? $h : '') . ' '
-                . 'type="button" class="btn btn-block btn-xs bg-navy" style="cursor:default;">
-                            <b> Q' . $f . ' - ' . $b . '%</b> RECHECK
-                            ' . ($c ? $i : '') . '
-                    </button>';
-        } else {
-            $e = null;
-        }
-        return $e;
     }
 
     public function removeCharacter($text)
@@ -201,105 +314,6 @@ class MY_Controller extends CI_Controller
     {
         $return = !$a ? 0 : $a;
         return $return;
-    }
-
-    public function returnDashed($a)
-    {
-        $return = ($a == 0 ? '--' : $a);
-        return $return;
-    }
-
-    public function returnDDashed($a)
-    {
-        $return = ($a == 0 ? '--' : ($a == NULL ? '--' : $a));
-        return $return;
-    }
-
-    public function returnBtnHonor($a, $b)
-    {
-        $return = $b ? "<button class='btn btn-xs px-0 my-n2' onclick='$(\"#modalHonor\").modal(\"show\");showTableHonors(" . json_encode($a) . ");'>"
-            . $this->returnDashed($b) . "</button>" : "-";
-        return $return;
-    }
-
-    public function RegionList($filter, $default)
-    {
-        $data = ["data" => []];
-        // $orby = $default ? "t1.id," : "";
-        $thisQuery = $this->db->query("SELECT * FROM address.tbl_region t1 ORDER BY t1.order_by");
-        foreach ($thisQuery->result() as $key => $value) {
-            $data["data"][] = [
-                "id" => $value->id,
-                "item" => $value->regional_designation,
-            ];
-        }
-        return $data;
-    }
-
-    public function ProvinceList($filter, $default)
-    {
-        $data = ["data" => []];
-        $orby = $default ? "t1.id," : "";
-        $thisQuery = $this->db->query("SELECT * FROM address.tbl_province t1 WHERE t1.region_id=$filter ORDER BY t1.id");
-        foreach ($thisQuery->result() as $key => $value) {
-            $data["data"][] = [
-                "id" => $value->id,
-                "item" => $value->description,
-            ];
-        }
-        return $data;
-    }
-
-    public function CityMunList($filter, $default)
-    {
-        $data = ["data" => []];
-        $orby = $default ? "t1.id," : "";
-        $thisQuery = $this->db->query("SELECT * FROM address.tbl_citymun t1 WHERE t1.province_id=$filter ORDER BY $orby t1.description");
-        foreach ($thisQuery->result() as $key => $value) {
-            $data["data"][] = [
-                "id" => $value->id,
-                "item" => $value->description,
-            ];
-        }
-        return $data;
-    }
-
-    public function BarangayList($filter)
-    {
-        $data = ["data" => []];
-        $thisQuery = $this->db->query("SELECT * FROM address.tbl_barangay t1 WHERE t1.citymun_id=$filter ORDER BY t1.description");
-        foreach ($thisQuery->result() as $key => $value) {
-            $data["data"][] = [
-                "id" => $value->id,
-                "item" => $value->description,
-            ];
-        }
-        return $data;
-    }
-
-    public function cleanStringQ($input)
-    {
-        if (is_string($input)) {
-            // Remove single quotes and double quotes from the input string
-            $cleanedString = str_replace(["'", '"'], "", $input);
-            return $cleanedString;
-        } else {
-            // If the input is not a string, return it as is
-            return $input;
-        }
-    }
-
-    public function PurokList($filter)
-    {
-        $data = ["data" => []];
-        $thisQuery = $this->db->query("SELECT * FROM address.tbl_purok t1 WHERE t1.barangay_id=$filter ORDER BY t1.description");
-        foreach ($thisQuery->result() as $key => $value) {
-            $data["data"][] = [
-                "id" => $value->id,
-                "item" => $value->description,
-            ];
-        }
-        return $data;
     }
 
     public function getAddress($filter)
@@ -445,30 +459,6 @@ class MY_Controller extends CI_Controller
             $address = $query->row()->address;
         }
         return $address;
-    }
-
-    public function getBarangay_City($brgy, $city)
-    {
-        $brgy_id = 160202038; #160202054;
-        if (strtoUpper($city) == 'BUTUAN CITY (CAPITAL)') {
-            $query = $this->db->query("SELECT t1.id FROM address.tbl_barangay t1 WHERE t1.citymun_id=160201
-                                        AND orig_desc ILIKE '%$brgy%' LIMIT 1");
-            if ($query->num_rows() > 0) {
-                $brgy_id = $query->row()->id;
-            } else {
-                $brgy_id = 160202038; #160202054;
-            }
-        } else {
-            $query = $this->db->query("SELECT t2.id FROM address.tbl_citymun t1 
-                                        LEFT JOIN address.tbl_barangay t2 ON t1.id=t2.citymun_id
-                                        WHERE t1.description ILIKE '%$city%' AND t2.orig_desc ILIKE '%$brgy%' LIMIT 1");
-            if ($query->num_rows() > 0) {
-                $brgy_id = $query->row()->id;
-            } else {
-                $brgy_id = 160202038; #160202054;
-            }
-        }
-        return $brgy_id;
     }
 
     public function allow_schema()

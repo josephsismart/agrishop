@@ -18,153 +18,87 @@ class Dashboard extends MY_Controller
             "page_title"        => "Dashboard",
             "current_location"  => "dashboard",
             "content"           =>  [$this->load->view('interface/' . $uri . '/Dashboard', [
-                // "getOnLoad" => $this->getOnLoad(),
-                // "dashboard" => $this->getDashboard(),
-                // "getYearMonth" => $this->getDateYearMonth(),
-                //"useraccount"      => $this->get_useraccount(),
-                //"pending"      => $this->get_pending(),
-                //"documents"      => $this->get_documents(),
+                "dashboard" => $this->getDashboard(),
             ], TRUE)]
         ];
         $this->public_create_page($page_data);
     }
 
 
-            // 1444  160201000 160201000 Butuan
-            // 1455  160212000 160212000 Remedios
-            // 1453  160210000 160210000 Santiago
-            // 1451  160208000 160208000 Magallanes
-            // 1454  160211000 160211000 Tubay
-            // 1445  160202000 160202000 Buenavista
-            // 1446  160203000 160203000 City
-            // 1447  160204000 160204000 Carmen
-            // 1448  160205000 160205000 Jabonga
-            // 1449  160206000 160206000 Kitcharao
-            // 1450  160207000 160207000 Las
-            // 1452  160209000 160209000 Nasipit
-
-
     function getDashboard()
     {
-        $sy = $this->getOnLoad()["sy_id"];
-        $q_learner = $this->db->query("SELECT count(1) AS cc FROM sy$sy.bs_tbl_learner_enrollment t1 WHERE t1.status_id=5");
-        $q_teaching = $this->db->query("SELECT count(1) AS cc FROM profile.tbl_schoolpersonnel t1 WHERE t1.employee_type_id=4 AND t1.is_active=1");
-        $q_nteaching = $this->db->query("SELECT count(1) AS cc FROM profile.tbl_schoolpersonnel t1 WHERE t1.employee_type_id=5 AND t1.is_active=1");
-        $q_scanned = $this->db->query("SELECT count(1) AS cc, to_char(date,'mm-dd-yyyy') scanned_date FROM logs.tbl_scan_logs$sy t1
-                                        WHERE to_char(date,'mm-dd-yyyy') = to_char(now(),'mm-dd-yyyy')
-                                        GROUP BY to_char(date,'mm-dd-yyyy')");
+        $farmer_id = $this->session->agrishop_login_farmer_id;
+        $revenue = $this->db->query("SELECT count(t.id) AS total_orders, SUM(td.total_payment)-SUM(td.to_admin) AS revenue,
+                                        (SELECT COUNT(DISTINCT fp.produce_id) AS products
+                                            FROM farm_produce fp
+                                            JOIN farmer_farm ff ON fp.farm_id = ff.id
+                                            WHERE ff.farmer_id = $farmer_id) as products,
+                                        (SELECT count(ff.id) FROM farmer_farm ff
+                                            WHERE ff.farmer_id = $farmer_id) as farms
+                                        FROM (SELECT ff.farmer_id,t.* FROM transaction t
+                                        JOIN farmer_farm ff  ON t.farm_id = ff.id
+                                        WHERE ff.farmer_id = $farmer_id) t 
+                                        LEFT JOIN transaction_details td ON t.id = td.transaction_id
+                                        LEFT JOIN transaction_cancel tc ON t.id= tc.transaction_id
+                                        WHERE tc.id IS null")->row();
 
         $data = [
-            "learner" => number_format($q_learner->row()->cc, 0),
-            "teaching" => number_format($q_teaching->row()->cc, 0),
-            "nteaching" => number_format($q_nteaching->row()->cc, 0),
-            "scanned" => number_format(($q_scanned->num_rows() > 0 ? $q_scanned->row()->cc : 0), 0),
+            "revenue" => number_format($revenue->revenue, 0),
+            "total_orders" => number_format($revenue->total_orders, 0),
+            "products" => number_format($revenue->products, 0),
+            "farms" => number_format($revenue->farms, 0),
         ];
+
+        $products_selling = $this->db->query("SELECT p.id,p.name,COALESCE(p.img_path,pc.img_path) AS img_path ,sum(mcfp.qty) AS qty,pmfp.price, fp.uom FROM (SELECT ff.farmer_id,t.* FROM transaction t
+                                                JOIN farmer_farm ff  ON t.farm_id = ff.id
+                                                WHERE ff.farmer_id = $farmer_id) t 
+                                                LEFT JOIN transaction_details td ON t.id = td.transaction_id
+                                                LEFT JOIN transaction_cancel tc ON t.id= tc.transaction_id
+                                                LEFT JOIN my_cart_farm_produce mcfp ON t.id = mcfp.transaction_id
+                                                LEFT JOIN farm_produce fp ON mcfp.farm_produce_id = fp.id
+                                                LEFT JOIN produce p ON fp.produce_id = p.id
+                                                LEFT JOIN price_monitoring_farm_produce pmfp ON mcfp.price_id_during_transact = pmfp.id 
+                                                LEFT JOIN produce_classification pc ON p.produce_classification_id = pc.id
+                                                WHERE tc.id IS null
+                                                GROUP BY p.id,pmfp.price,fp.uom,pc.img_path ORDER BY sum(mcfp.qty) desc")->result();
+        $p_selling = json_encode($products_selling);
+
+        $data += [
+            "p_selling" => $p_selling
+        ];
+
+        $current_year = date('Y');
+        $orders = $this->db->query("SELECT to_char(t.transaction_date,'MON') mon,sum(mcfp.qty) AS qty,sum(td.total_payment - td.to_admin) as revenue FROM (SELECT ff.farmer_id,t.* FROM transaction t
+                                                JOIN farmer_farm ff  ON t.farm_id = ff.id
+                                                WHERE ff.farmer_id = $farmer_id AND to_char(t.transaction_date,'yyyy')::int=$current_year ) t 
+                                                LEFT JOIN transaction_details td ON t.id = td.transaction_id
+                                                LEFT JOIN transaction_cancel tc ON t.id= tc.transaction_id
+                                                LEFT JOIN my_cart_farm_produce mcfp ON t.id = mcfp.transaction_id
+                                                LEFT JOIN farm_produce fp ON mcfp.farm_produce_id = fp.id
+                                                LEFT JOIN produce p ON fp.produce_id = p.id
+                                                LEFT JOIN price_monitoring_farm_produce pmfp ON mcfp.price_id_during_transact = pmfp.id 
+                                                LEFT JOIN produce_classification pc ON p.produce_classification_id = pc.id
+                                                WHERE tc.id IS null
+                                                GROUP BY to_char(t.transaction_date,'MON') ,to_char(t.transaction_date,'mm')  ORDER BY to_char(t.transaction_date,'mm')")->result();
+        $ordersGraph = json_encode($orders);
+
+        $data += [
+            "ordersGraph" => $ordersGraph
+        ];
+
+        $classification = $this->db->query("SELECT pc.class_name, count(p.id)  FROM farm_produce fp
+                                                LEFT JOIN farmer_farm ff ON fp.farm_id = ff.id
+                                                LEFT JOIN produce p ON fp.produce_id = p.id
+                                                LEFT JOIN produce_classification pc ON p.produce_classification_id = pc.id
+                                                WHERE ff.farmer_id =3
+                                                GROUP BY pc.class_name")->result();
+        $classificationGraph = json_encode($classification);
+
+        $data += [
+            "classificationGraph" => $classificationGraph
+        ];
+
         return $data;
-    }
-
-    function getMapPlot()
-    {
-        $sy = $this->getOnLoad()["sy_id"];
-        $cm = $this->input->get("cc");
-        $data = ["data_map" => []];
-        $query = $this->db->query("SELECT
-                                            t1.barangay_id AS barangay,
-                                            SUM(CASE WHEN t1.sex_bool = TRUE  THEN 1 ELSE 0 END) AS male,
-                                            SUM(CASE WHEN t1.sex_bool = FALSE THEN 1 ELSE 0 END) AS female,
-                                            SUM(1) AS total
-                                        FROM
-                                            sy$sy.bs_view_enrollment t1
-                                            -- JOIN address.tbl_barangay t2 ON t1.barangay_id = t2.id
-                                        WHERE
-                                            t1.status_id = 5 AND CONCAT(t1.citymun_id,'000')='$cm' 
-                                        GROUP BY
-                                            t1.barangay_id;");
-
-        foreach ($query->result() as $row) {
-            $data["data_map"][] = [$row->barangay, [intval($row->total)], ['m', [intval($row->male)]], ['f', [intval($row->female)]]];
-            $data["data_sex_m"][$row->barangay] = [intval($row->male)];
-            $data["data_sex_f"][$row->barangay] = [intval($row->female)];
-        }
-
-        echo json_encode($data);
-    }
-
-    function getMapPlotCityMun()
-    {
-        $sy = $this->getOnLoad()["sy_id"];
-        $data = ["data_map" => []];
-        $query = $this->db->query("SELECT t2.code  AS city_mun,
-                                        SUM(CASE WHEN t1.sex_bool = TRUE  THEN 1 ELSE 0 END) AS male,
-                                        SUM(CASE WHEN t1.sex_bool = FALSE THEN 1 ELSE 0 END) AS female,
-                                        SUM(1) AS total
-                                    FROM
-                                        sy$sy.bs_view_enrollment t1
-                                        JOIN address.tbl_citymun t2 ON t1.citymun_id = t2.id
-                                    WHERE
-                                        t1.status_id = 5
-                                    GROUP BY
-                                        t1.citymun_id, t2.code;");
-
-        foreach ($query->result() as $row) {
-            $data["data_map"][] = [$row->city_mun, [intval($row->total)]];
-            $data["data_sex_m"][$row->city_mun] = [intval($row->male)];
-            $data["data_sex_f"][$row->city_mun] = [intval($row->female)];
-        }
-
-        echo json_encode($data);
-    }
-
-    function getPopulationLearner()
-    {
-        $sy = $this->getOnLoad()["sy_id"];
-        $query = $this->db->query("SELECT
-                                        age_bracket,
-                                        SUM(CASE WHEN sex = True THEN 1 ELSE 0 END) * -1 AS male_count,
-                                        SUM(CASE WHEN sex = False THEN 1 ELSE 0 END) AS female_count
-                                    FROM
-                                        (
-                                            SELECT
-                                                t1.sex_bool AS sex,
-                                                CASE
-                                                    WHEN EXTRACT(YEAR FROM age(t1.birthdate)) <= 13 THEN '13↓'
-                                                    WHEN EXTRACT(YEAR FROM age(t1.birthdate)) = 14 THEN '14'
-                                                    WHEN EXTRACT(YEAR FROM age(t1.birthdate)) = 15 THEN '15'
-                                                    WHEN EXTRACT(YEAR FROM age(t1.birthdate)) = 16 THEN '16'
-                                                    WHEN EXTRACT(YEAR FROM age(t1.birthdate)) = 17 THEN '17'
-                                                    WHEN EXTRACT(YEAR FROM age(t1.birthdate)) = 18 THEN '18'
-                                                    WHEN EXTRACT(YEAR FROM age(t1.birthdate)) = 19 THEN '19'
-                                                    WHEN EXTRACT(YEAR FROM age(t1.birthdate)) = 20 THEN '20'
-                                                    WHEN EXTRACT(YEAR FROM age(t1.birthdate)) = 21 THEN '21'
-                                                    WHEN EXTRACT(YEAR FROM age(t1.birthdate)) >= 22 THEN '22↑'
-                                                END AS age_bracket
-                                            FROM
-                                                sy$sy.bs_view_enrollment t1
-                                        ) AS subquery
-                                    WHERE age_bracket >= '13↓' AND age_bracket <= '26↑'
-                                    GROUP BY
-                                        age_bracket
-                                    ORDER BY
-                                        CASE
-                                            WHEN age_bracket = '13↓' THEN 1
-                                            WHEN age_bracket = '14' THEN 2
-                                            WHEN age_bracket = '15' THEN 3
-                                            WHEN age_bracket = '16' THEN 4
-                                            WHEN age_bracket = '17' THEN 5
-                                            WHEN age_bracket = '18' THEN 6
-                                            WHEN age_bracket = '19' THEN 7
-                                            WHEN age_bracket = '20' THEN 8
-                                            WHEN age_bracket = '21' THEN 9
-                                            ELSE 10
-                                        END;");
-
-        foreach ($query->result() as $row) {
-            $data["data_age"][] = [$row->age_bracket];
-            $data["data_sex_m"][] = intval($row->male_count);
-            $data["data_sex_f"][] = intval($row->female_count);
-        }
-
-        echo json_encode($data);
     }
 }
 

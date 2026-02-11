@@ -348,11 +348,11 @@ $farm_produce = base_url() . $uri . '/FarmProduce'; ?>
 
                         <div class="col-10">
                             <form id="search-form" class="text-center" action="index.html" method="post">
-                                <input type="text" class="form-control border-0 bg-transparent" id="searchProduce" placeholder="Search Produce such as TOMATO, SQUASH, CUCUMBER ..." autocomplete="off">
+                                <input type="text" class="form-control border-0 bg-transparent" id="searchProduce" placeholder="" autocomplete="off">
                             </form>
                         </div>
                         <div class="col-1" style="text-align: right;">
-                            <i class="fa fa-search"></i>
+                            <i class="fa fa-search" onclick="searchProduce()" style="cursor: pointer;"></i>
                         </div>
                         <div class="col-1" style="text-align: left;">
                             <badge type="button" id="home_click" class="badge bg-success" onclick="
@@ -433,15 +433,15 @@ $farm_produce = base_url() . $uri . '/FarmProduce'; ?>
                 <div id="mapControlsBody">
 
                     <button id="btnLocateMe" class="btn btn-success btn-sm btn-block mb-1">
-                        📍 Get My Location
+                        <i class="fas fa-location-arrow"></i> Get My Location
                     </button>
 
                     <button id="btnSetManualLocation" class="btn btn-warning btn-sm btn-block mb-2">
-                        📍 Set Location
+                        <i class="fas fa-map-marker-alt"></i> Set Location
                     </button>
 
                     <button id="btnViewRoutes" class="btn btn-info btn-sm btn-block mb-2">
-                        🧭 View Routes
+                        <i class="fas fa-route"></i> View Routes
                     </button>
 
                     <div id="distanceInfo" class="text-primary small mb-2"></div>
@@ -492,7 +492,76 @@ $farm_produce = base_url() . $uri . '/FarmProduce'; ?>
     <?php $this->load->view('interface/system/layout/cart_script') ?>
     <?php $this->load->view('interface/system/layout/map') ?>
 
+    <script>
+        $(function() {
 
+            const texts = [
+                "Search: Tomato",
+                "Cucumber",
+                "Kamatis",
+                "Kalabasa"
+            ];
+
+            const $input = $("#searchProduce");
+
+            let textIndex = 0;
+            let charIndex = 0;
+            let isDeleting = false;
+            let userInteracting = false;
+
+            const typingSpeed = 90;
+            const deletingSpeed = 60;
+            const pauseAfterTyping = 400;
+            const pauseAfterDeleting = 50;
+
+            function startTyping() {
+
+                if (userInteracting) return;
+
+                const currentText = texts[textIndex];
+
+                if (!isDeleting) {
+                    // typing
+                    $input.attr("placeholder", currentText.substring(0, charIndex + 1));
+                    charIndex++;
+
+                    if (charIndex === currentText.length) {
+                        setTimeout(() => {
+                            isDeleting = true;
+                        }, pauseAfterTyping);
+                    }
+
+                } else {
+                    // deleting
+                    $input.attr("placeholder", currentText.substring(0, charIndex - 1));
+                    charIndex--;
+
+                    if (charIndex === 0) {
+                        isDeleting = false;
+                        textIndex = (textIndex + 1) % texts.length;
+
+                        setTimeout(() => {}, pauseAfterDeleting);
+                    }
+                }
+
+                setTimeout(startTyping, isDeleting ? deletingSpeed : typingSpeed);
+            }
+
+            // Pause when user types
+            $input.on("focus input", function() {
+                userInteracting = true;
+            });
+
+            // Resume if empty
+            $input.on("blur", function() {
+                if ($(this).val() === "") {
+                    userInteracting = false;
+                }
+            });
+
+            startTyping();
+        });
+    </script>
 
 </body>
 
