@@ -345,26 +345,64 @@ $uri = $this->session->agrishop_login_uri;
 
 
                                 <select class="form-control form-control-lg border-success" name="uom" style="font-size: 1.1rem;">
-                                    <option value="KG">Kilograms (KG)</option>
-                                    <option value="G">Grams (G)</option>
-                                    <option value="LB">Pounds (LB)</option>
-                                    <option value="SACK">Sack</option>
-                                    <option value="BAG">Bag</option>
-                                    <!-- Count -->
-                                    <option value="PC">Piece (PC)</option>
-                                    <option value="PACK">Pack</option>
-                                    <option value="BUNDLE">Bundle</option>
-                                    <option value="BUNCH">Bunch</option>
-                                    <option value="CLUSTER">Cluster</option>
-                                    <option value="DOZEN">Dozen</option>
-                                    <option value="TRAY">Tray</option>
-                                    <option value="HEAD">Head</option>
-                                    <option value="STICK">Stick</option>
-                                    <!-- Volume -->
-                                    <option value="L">Liters (L)</option>
-                                    <option value="ML">Milliliters (ML)</option>
+                                    <?php
+                                    $query = $this->db->query("SELECT id, name, abbr FROM public.uom ORDER BY order_by");
+                                    $uoms = $query->result();
+                                    foreach ($uoms as $uom) {
+                                        echo '<option value="' . $uom->abbr . '"> ' . $uom->name . '</option>';
+                                    }
+                                    ?>
                                 </select>
                             </div>
+
+                            <hr>
+
+                            <div class="form-group">
+                                <div class="custom-control custom-switch" style="cursor: pointer;">
+                                    <input type="checkbox" class="custom-control-input" id="enableWholesale" name="enable_wholesale">
+                                    <label class="custom-control-label font-weight-bold" for="enableWholesale">
+                                        Enable Wholesale Pricing
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div id="wholesaleFields" style="display:none;">
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3 mb-md-0">
+                                        <label class="form-label text-dark font-weight-bold mb-2 d-block" style="font-size: 1.1rem;">
+                                            <i class="fas fa-calendar-day mr-2"></i>Minimum Quantity
+                                        </label>
+                                        <div class="form-group mb-0">
+                                            <div class="input-group input-group-lg">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text bg-white border-success" style="font-size: 1.2rem;">
+                                                        <i class="fas fa-calendar-check text-success"></i>
+                                                    </span>
+                                                </div>
+                                                <input type="number" class="form-control form-control-lg border-success wholesale-input" name="wholesale_min_qty" min="1" placeholder="Example: 10" nr="1" style="font-size: 1.1rem;">
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3 mb-md-0">
+                                        <label class="form-label text-dark mb-2" style="font-size: 1.1rem;">
+                                            <i class="fas fa-hashtag mr-2"></i>Wholesale Price
+                                        </label>
+                                        <div class="input-group input-group-lg">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text bg-white border-success" style="font-size: 1.2rem;">
+                                                    <i class="fas fa-weight text-success"></i>
+                                                </span>
+                                            </div>
+                                            <input type="number" class="form-control  form-control-lg border-success wholesale-input" name="wholesale_price" min="1" placeholder="Enter wholesale price" nr="1">
+
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+
 
                             <small class="form-text text-muted mt-2" style="font-size: 1rem;">
                                 <i class="fas fa-info-circle mr-1"></i>
@@ -414,11 +452,11 @@ $uri = $this->session->agrishop_login_uri;
 
 <!-- <div class="modal fade show" id="modalFarmProduceSupply" data-backdrop="static" style="padding-right: 15px; display: block;" aria-modal="true" role="dialog"> -->
 <div class="modal fade" id="modalAddFarmProduceSupply" data-backdrop="static">
-    <div class="modal-dialog modal-md modal-dialog-centered">
+    <div class="modal-dialog modal-sm">
         <div class="modal-content shadow rounded">
 
             <!-- HEADER -->
-            <div class="modal-header bg-success text-white py-3">
+            <div class="modal-header p-2 bg-navy">
                 <h5 class="modal-title mb-0">
                     <i class="fas fa-seedling mr-2"></i> Add Farm Supply
                 </h5>
@@ -431,70 +469,73 @@ $uri = $this->session->agrishop_login_uri;
             <input type="hidden" name="fp_id">
 
             <!-- BODY -->
-            <div class="modal-body p-4">
+            <div class="modal-body">
 
                 <!-- IMAGE + NAME -->
-                <div class="text-center mb-2">
-                    <img name="previewPicProduce" src="<?= base_url('dist/img/media/icons/1x1.png') ?>" class="rounded border shadow-sm mb-2" width="120" height="120">
+                <div class="text-center mb-n2 p-1">
+                    <img name="previewPicProduce" src="<?= base_url('dist/img/media/icons/1x1.png') ?>" class="rounded shadow-sm border mb-2" style="width:130px;height:130px;object-fit:cover;">
 
-                    <div class="h5 font-weight-bold mb-1" name="show_produceName"></div>
-                    <div class="text-muted" style="font-size:1rem;" name="show_classification"></div>
-                </div>
-
-                <!-- ADD QUANTITY -->
-                <div class="bg-light rounded p-2 mb-2">
-                    <div class="font-weight-bold mb-2" style="font-size:1.1rem;">
-                        👉 Quantity to Add
-                    </div>
-
-                    <input type="number" class="form-control form-control-lg border-success" name="qty_add" min="1" placeholder="Sample: 10">
+                    <h4 class="font-weight-bold mb-1" name="show_produceName"></h4>
+                    <div class="text-success font-weight-bold" name="show_classification"></div>
                 </div>
 
 
-                <!-- PRODUCE INFORMATION (RE-ARRANGED) -->
-                <div class="bg-light rounded p-2" style="font-size:1.2rem !important;">
-                    <div class="font-weight-bold mb-3" style="font-size:1.1rem;">
-                        ℹ️ Produce Information
-                    </div>
+                <!-- ADD QUANTITY CARD -->
+                <div class="card border-0 shadow-sm mb-1">
+                    <div class="card-body">
 
-                    <div class="row mb-1">
-                        <div class="col-6 text-muted">Unit</div>
-                        <div class="col-6 font-weight-bold">
-                            <span name="show_uom"></span>
-                        </div>
-                    </div>
+                        <input type="number" class="form-control form-control border-primary text-center" name="qty_add" min="1" placeholder="Enter quantity (ex: 10)">
 
-                    <div class="row mb-1">
-                        <div class="col-6 text-muted">Seasonal</div>
-                        <div class="col-6 font-weight-bold">
-                            <span name="show_seasonal"></span>
-                        </div>
                     </div>
+                </div>
 
-                    <div class="row mb-1">
-                        <div class="col-6 text-muted">Stock Left</div>
-                        <div class="col-6 font-weight-bold text-success" style="font-size:1.2rem;">
-                            <span name="show_qty_left"></span>
-                        </div>
-                    </div>
 
-                    <div class="row mb-n4">
-                        <div class="col-6 text-muted">Current Price</div>
-                        <div class="col-6 font-weight-bold text-primary" style="font-size:1.2rem;">
-                            ₱ <span name="price"></span>
+                <!-- PRODUCE INFORMATION CARD -->
+                <div class="card border-0 shadow-sm mb-n3">
+
+                    <div class="card-body p-2">
+                        <!-- SEASONAL -->
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="font-weight-bold" name="show_seasonal"></span>
                         </div>
+                        <!-- STOCK -->
+                        <div class="text-center rounded bg-light mb-1">
+                            <div class="text-muted small">Stock Left</div>
+
+                            <div class="font-weight-bold text-black" style="font-size:1.5rem;">
+                                <span name="show_qty_left"></span>
+                            </div>
+                        </div>
+
+                        <!-- PRICE -->
+                        <div class="text-center rounded bg-light">
+                            <div class="text-muted small">Current Price</div>
+
+                            <div class="font-weight-bold text-primary" style="font-size:1.8rem;">
+                                ₱ <span name="price"></span>/<span name="show_uom"></span>
+                            </div>
+                        </div>
+
+                        <!-- WHOLESALE PRICE -->
+                        <div class="text-center rounded bg-light wholesale-price">
+                            <div class="text-muted small">Wholesale Price</div>
+
+                            <div class="badge bg-gray" style="font-size:1rem;">
+                                ₱ <span name="wholesale_price"></span> @ <span name="wholesale_qty"></span> qty
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
             </div>
 
+
             <!-- FOOTER -->
-            <div class="modal-footer px-4 py-3">
-                <button type="submit" class="btn btn-success btn-lg btn-block">
+            <div class="modal-footer px-3 py-2 d-flex flex-column">
+
+                <button type="submit" class="btn bg-green btn-lg btn-block shadow-sm p-0" style="font-size: 1.2rem !important;">
                     <i class="fas fa-plus"></i> Add Supply
-                </button>
-                <button type="button" class="btn btn-secondary btn-sm btn-block" data-dismiss="modal">
-                    Close
                 </button>
             </div>
 
@@ -668,6 +709,32 @@ $uri = $this->session->agrishop_login_uri;
             </div>
 
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- <div class="modal fade show" id="viewGcashModal" tabindex="-1" aria-labelledby="viewGcashModalLabel" aria-hidden="true" style="display: block; padding-left: 0px;"> -->
+<div class="modal fade" id="viewGcashModal" tabindex="-1" aria-labelledby="viewGcashModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content shadow-lg rounded-3 overflow-hidden border-0">
+
+            <!-- HEADER -->
+            <div class="modal-header bg-primary bg-gradient text-white py-3 px-4">
+                <div class="d-flex align-items-center w-100">
+                    <div class="flex-grow-1">
+                        <h6 class="modal-title fw-bold mb-0">
+                            <i class="fas fa-wallet me-2"></i>Proof of payment
+                        </h6>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white shadow-none m-0" data-bs-dismiss="modal"></button>
+                </div>
+            </div>
+
+            <!-- BODY -->
+            <div class="modal-body p-4">
+                <div class="text-center proof_payment">
+                </div>
+            </div>
         </div>
     </div>
 </div>

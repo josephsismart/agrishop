@@ -360,18 +360,77 @@
             produceHtml += "<br><b>Produce List:</b><br>";
 
             produceList.forEach(function(p) {
+
                 var prodImg = p.img_path ?
-                    `<img src="${p.img_path}" width="40" height="40" class="rounded">` :
-                    `<img src="dist/img/media/icons/1x1.png" width="40" height="40">`;
+                    `<img src="${p.img_path}" width="50" height="50" class="rounded">` :
+                    `<img src="dist/img/media/icons/1x1.png" width="50" height="50">`;
 
                 produceHtml += `
-                <div style="margin-top:6px; border-bottom:1px solid #eee; padding-bottom:4px;">
-                    ${prodImg}
-                    <b>${p.name}</b> – ₱${p.price} / ${p.uom}<br>
-                    <small>Quantity Left: <b>${p.qty_left}</b></small><br>
-                    <small>Harvest: <b>${p.harvest_at}</b></small>
-                </div>
-            `;
+                                <div style="
+                                    margin-top:10px;
+                                    border:1px solid #eee;
+                                    border-radius:8px;
+                                    padding:10px;
+                                    background:#fff;
+                                ">
+
+                                    <div style="display:flex; align-items:center; gap:10px;">
+                                        ${prodImg}
+
+                                        <div style="flex:1;">
+                                            <div style="font-size:12px; font-weight:600;">
+                                                ${p.name}
+                                            </div>
+
+                                            <!-- BIG PRICE -->
+                                            <div style="font-size:20px; font-weight:bold; color:#28a745;">
+                                                ₱${p.price} / ${p.uom}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- BIG QUANTITY -->
+                                    <div style="
+                                        margin-top:8px;
+                                        font-size:15px;
+                                    ">
+                                        Quantity Left:
+                                        <span style="
+                                            font-size:18px;
+                                            font-weight:bold;
+                                            color:#dc3545;
+                                        ">
+                                            ${p.qty_left}
+                                        </span>
+                                    </div>
+
+                                    <div style="margin-top:4px;">
+                                        Harvest: <b>${p.harvest_at}</b>
+                                    </div>
+
+                                    <!-- WHOLESALE BOX -->
+                                        ${p.wholesale_at_qty ? `
+                                    <div style="
+                                        margin-top:8px;
+                                        padding:8px;
+                                        border-radius:6px;
+                                        background:#f8f9fa;
+                                        border-left:4px solid #007bff;
+                                    ">
+                                        <div style="font-weight:600; color:#007bff;">
+                                            Wholesale Offer
+                                        </div>
+                                        <div>
+                                            Minimum Qty: <b>${p.wholesale_at_qty}</b>
+                                        </div>
+                                        <div style="font-size:17px; font-weight:bold;">
+                                            ₱${p.price_wholesale} / ${p.uom}
+                                        </div>
+                                    </div>
+                                        ` : ''}
+
+                                </div>
+                                `;
             });
         } else {
             produceHtml = "<br><i>No produce available</i>";
@@ -567,13 +626,13 @@
 
         if (e.which == 13) {
             e.preventDefault();
-            searchProduce();
+            searchProduces();
 
         }
     })
 
 
-    function searchProduce() {
+    function searchProduces() {
         let value = $("#searchProduce").val();
         if (value.length < 3) {
             existAlert("at least 3 characters!");

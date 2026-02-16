@@ -1,14 +1,16 @@
-<?php defined('BASEPATH') OR exit('No direct script access allowed'); ?>
-<?php 
-    if (!$this->session->schoolmis_login_level) {
-        redirect(base_url('login'));
-    }
-    $uri = 'userteacher'; //$this->session->schoolmis_login_uri;
- ?>
+<?php defined('BASEPATH') or exit('No direct script access allowed'); ?>
+<?php
+if (!$this->session->agrishop_login_level) {
+    redirect(base_url('login'));
+}
+$uri = $this->session->agrishop_login_uri;
+$uri2 = $current_location=='learner'?'userteacher':$uri;
+?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <?php $this->load->view('interface/'.$uri.'/layout/Css'); ?>            
+    <?php $this->load->view('interface/' . $uri . '/layout/Css'); ?>
     <!-- <script src="<?= base_url() ?>bower_components/jquery/dist/jquery.min.js"></script> -->
     <script src="<?= base_url() ?>plugins/jquery/jquery.min.js"></script>
 </head>
@@ -22,9 +24,9 @@
     }
 </style>
 
-<body class="hold-transition layout-fixed layout-navbar-fixed sidebar-collapse layout-top-nav text-sm"><!--  dark-mode -->
+<body class="hold-transition layout-fixed layout-navbar-fixed sidebar-collapse layout-top-nav text-sm">
     <div class="wrapper">
-        <?php $this->load->view('interface/'.$uri.'/layout/Header')?>
+        <?php $this->load->view('interface/' . $uri . '/layout/Header') ?>
         <div class="content-wrapper">
             <div class="content">
                 <div class="container p-0">
@@ -35,20 +37,22 @@
             </div>
         </div>
         <?php $this->load->view('interface/global/Footer') ?>
-       <!-- Control Sidebar -->
-       <aside class="control-sidebar control-sidebar-dark">
+        <!-- Control Sidebar -->
+        <aside class="control-sidebar control-sidebar-dark">
             <!-- Control sidebar content goes here -->
             <div class="p-3">
                 <h5>Title</h5>
                 <p>Sidebar content</p>
             </div>
-       </aside>
-       <!-- /.control-sidebar -->
+        </aside>
+        <!-- /.control-sidebar -->
         <?php $this->load->view('interface/'.$uri.'/layout/Modal')?>
-        <?php $this->load->view('interface/'.$uri.'/layout/ModalReport')?>
-        <?php $this->load->view('interface/'.$uri.'/layout/ModalDownloadable')?>
     </div>
     <?php $this->load->view('interface/' . $uri . '/layout/Js'); ?>
+    <?php $this->load->view('interface/' . $uri . '/layout/cart_script') ?>
+    <?php $this->load->view('interface/' . $uri . '/layout/subscription') ?>
+
+
     <a id="back-to-top" href="#" class="btn btn-primary btn-lg back-to-top" role="button"><i class="fas fa-chevron-up"></i></a>
 
     <script type="text/javascript">
@@ -69,4 +73,5 @@
         });
     </script>
 </body>
+
 </html>

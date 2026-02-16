@@ -137,7 +137,7 @@ if (!$this->session->agrishop_login_level) {
                         <div class="row">
 
                             <div class="col-6 mb-3">
-                                <div class="card border-warning">
+                                <div class="card">
                                     <img src="<?= base_url($p_selling[count($p_selling) - 1]['img_path']) ?>" class="card-img-top" style="height:120px;object-fit:cover;">
                                     <div class="card-body p-2">
                                         <h6 class="mb-1"><?= $p_selling[count($p_selling) - 1]['name'] ?></h6>
@@ -148,7 +148,7 @@ if (!$this->session->agrishop_login_level) {
                             </div>
 
                             <div class="col-6 mb-3">
-                                <div class="card border-warning">
+                                <div class="card">
                                     <img src="<?= base_url($p_selling[count($p_selling) - 2]['img_path']) ?>" class="card-img-top" style="height:120px;object-fit:cover;">
                                     <div class="card-body p-2">
                                         <h6 class="mb-1"><?= $p_selling[count($p_selling) - 2]['name'] ?></h6>
@@ -170,7 +170,7 @@ if (!$this->session->agrishop_login_level) {
 
     <div class="row m-0">
 
-        <div class="col-md-6 col-sm-12">
+        <div class="col-md-5 col-sm-12">
             <div class="card">
                 <div class="card-header">
                     <h5 class="card-title"><i class="fa fa-chart-line"></i> Monthly Orders</h5>
@@ -205,7 +205,7 @@ if (!$this->session->agrishop_login_level) {
 
         </div>
 
-        <div class="col-md-6 col-sm-12">
+        <div class="col-md-5 col-sm-12">
             <div class="card">
                 <div class="card-header">
                     <h5 class="card-title"><i class="fa fa-chart-bar"></i> Produce Sales Volume</h5>
@@ -233,6 +233,20 @@ if (!$this->session->agrishop_login_level) {
                 <!-- <div class="overlay dark container2">
                     <i style="font-size:100px;color:#fff;" class="fa fa-circle-notch fa-spin"></i>
                 </div> -->
+            </div>
+        </div>
+
+
+        <div class="col-md-2 col-sm-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fa fa-pie-chart"></i> Sold Products
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="wholesaleVsRetail"></canvas>
+                </div>
             </div>
         </div>
 
@@ -402,6 +416,59 @@ if (!$this->session->agrishop_login_level) {
                             let percentage = ((value / total) * 100).toFixed(1);
 
                             return ` ${context.label}: ${value} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+
+    const trendCtx2 = document.getElementById('wholesaleVsRetail').getContext('2d');
+    const wholesaleRetailData = <?php echo $dashboard["wholesale_retail_graph"]; ?>;
+
+    // get qty
+    const counts_wr = wholesaleRetailData.map(item => Number(item.qty));
+
+    // get revenue
+    const revenue_wr = wholesaleRetailData.map(item => Number(item.revenue));
+
+    // total qty
+    const total_wr = counts_wr.reduce((sum, value) => sum + value, 0);
+
+    // total revenue (optional if needed later)
+    const total_revenue_wr = revenue_wr.reduce((sum, value) => sum + value, 0);
+
+    new Chart(trendCtx2, {
+        type: 'pie',
+        data: {
+            labels: wholesaleRetailData.map(item => item.w_r),
+            datasets: [{
+                data: counts_wr
+            }]
+        },
+        options: {
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+
+                            let index = context.dataIndex;
+
+                            let qty = counts_wr[index];
+                            let revenue = revenue_wr[index];
+
+                            let percentage = ((qty / total_wr) * 100).toFixed(1);
+
+                            return [
+                                `Qty Sold: ${qty}`,
+                                `Revenue: ₱${revenue.toLocaleString()}`,
+                                `Share: ${percentage}%`
+                            ];
                         }
                     }
                 }

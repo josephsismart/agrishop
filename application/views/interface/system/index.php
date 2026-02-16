@@ -297,7 +297,7 @@ $farm_produce = base_url() . $uri . '/FarmProduce'; ?>
             <div class="row py-3 border-bottom">
 
                 <div class="col-5 text-center text-sm-start d-flex gap-3">
-                    <a href="index.html">
+                    <a href="<?= base_url(); ?>">
                         <img src="<?php echo base_url(); ?>dist/layout_shop/images/logo.svg" alt="logo" class="img-fluid">
                     </a>
                 </div>
@@ -352,7 +352,7 @@ $farm_produce = base_url() . $uri . '/FarmProduce'; ?>
                             </form>
                         </div>
                         <div class="col-1" style="text-align: right;">
-                            <i class="fa fa-search" onclick="searchProduce()" style="cursor: pointer;"></i>
+                            <i class="fa fa-search" onclick="searchProduces()" style="cursor: pointer;"></i>
                         </div>
                         <div class="col-1" style="text-align: left;">
                             <badge type="button" id="home_click" class="badge bg-success" onclick="
@@ -430,7 +430,7 @@ $farm_produce = base_url() . $uri . '/FarmProduce'; ?>
                     <button id="toggleControls" class="btn btn-xs btn-light">–</button>
                 </div>
 
-                <div id="mapControlsBody">
+                <div id="mapControlsBody" style="display: none;">
 
                     <button id="btnLocateMe" class="btn btn-success btn-sm btn-block mb-1">
                         <i class="fas fa-location-arrow"></i> Get My Location

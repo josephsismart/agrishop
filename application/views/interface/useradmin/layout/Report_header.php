@@ -1,9 +1,9 @@
 <?php defined('BASEPATH') OR exit('No direct script access allowed'); ?>
 <?php 
-    if (!$this->session->schoolmis_login_level) {
+    if (!$this->session->agrishop_login_level) {
         redirect(base_url('login'));
     }
-    $uri = 'userteacher'; //$this->session->schoolmis_login_uri;
+    $uri = $this->session->agrishop_login_uri;
 ?>
 <address style="text-align:left;border-bottom:2px solid green;margin-bottom:5px;padding-bottom:5px;">
     <div class="row">

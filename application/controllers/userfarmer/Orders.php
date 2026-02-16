@@ -118,9 +118,8 @@ class Orders extends MY_Controller
         $requestData = $_REQUEST;
         $farmer_id = $this->session->agrishop_login_farmer_id;
         $status = $status ?? $this->input->post('status');
-        $FILTER_STATUS = $status == 'COMPLETED' ? "(t2.status = 'COMPLETED')" :(
-                         $status == 'CANCELLED' ? "(t2.status = 'CANCELLED')" : 
-                                    "(t2.status != 'COMPLETED' AND t2.status != 'PENDING' AND t2.status != 'CANCELLED')");
+        $FILTER_STATUS = $status == 'COMPLETED' ? "(t2.status = 'COMPLETED')" : ($status == 'CANCELLED' ? "(t2.status = 'CANCELLED')" :
+            "(t2.status != 'COMPLETED' AND t2.status != 'PENDING' AND t2.status != 'CANCELLED')");
         $searchValue = $searchValue ?: (isset($requestData['search']['value']) ? $requestData['search']['value'] : '');
 
         // Calculate pagination parameters using the separate function
@@ -140,12 +139,13 @@ class Orders extends MY_Controller
         $totalRecords = $thisQuery->row()->total;
 
         $query = $this->db->query("SELECT t1.id AS transaction_id,t1.transaction_date ,t1.person_id,t5.barangay_id,t5.contact_num,  t5.img_path, to_char(t1.transaction_date,'mm/dd/yy') date_, 
-                                            t4.farm_name,t2.status,t2.created_at,t3.payable FROM transaction t1 
+                                            t4.farm_name,t2.status,t2.created_at,t3.payable,t6.img AS gcash FROM transaction t1 
                                     JOIN (SELECT * FROM transaction_status WHERE is_latest IS TRUE) t2 ON t1.id = t2.transaction_id
 		                            LEFT JOIN (SELECT transaction_id, sum(sub_total) AS payable FROM my_cart_farm_produce mcfp
 		                                        GROUP BY transaction_id) t3 ON t1.id = t3.transaction_id
                                     LEFT JOIN farmer_farm t4 ON t1.farm_id = t4.id
                                     LEFT JOIN person t5 ON t1.person_id = t5.id
+                                    LEFT JOIN transaction_proof_of_payment t6 ON t1.id = t6.transaction_id
                                     WHERE 
                                     t4.farmer_id = $farmer_id AND 
                                     $FILTER_STATUS AND 
@@ -191,9 +191,11 @@ class Orders extends MY_Controller
                                     ' . $value->contact_num . '
                                 </div>
                             </div>
-                            <span class="badge bg-success mb-1" style="font-size:16px;">
+                            <span class="badge bg-success" style="font-size:16px;">
                                 ₱ ' . $this->format_price($total) . '
                             </span>
+                            
+                                
                         </div>
 
                         <!-- BOTTOM ROW -->
@@ -216,7 +218,13 @@ class Orders extends MY_Controller
                                 <span class="badge bg-white" style="cursor:pointer;"
                                     onclick="updateModalStatus(' . $value->transaction_id . ',\'' . $payment_status . '\',\'PAYMENT\')">
                                     <i class="fa fa-money-bill"></i> ' . $this->statusBadge($payment_status) . '
-                                </span>
+                                </span>'.
+                                ($value->gcash != null ? '
+                                <span class="badge bg-white ml-n1" style="cursor:pointer;"
+                                    onclick="viewGcashAttachment(`' . base_url($value->gcash) . '`)">
+                                    <img src="' . base_url('dist/img/credit/gcash_50x50.png') . '" alt="GCash" style="width:18px; height:18px;">
+                                </span>' : '').
+                                '
                             </div>
                             ' : '') . '
                         </div>
@@ -245,7 +253,7 @@ class Orders extends MY_Controller
         // Calculate pagination parameters using the separate function
         list($limit, $offset) = $this->calculatePagination($requestData);
 
-        $query = $this->db->query("SELECT t1.id as cart_id,t1.transaction_id,t1.qty,t4.price,t2.uom,t3.name as produce_name,t3.img_path,t1.created_at,
+        $query = $this->db->query("SELECT t1.id as cart_id,t1.transaction_id,t1.qty,t4.price,t4.price_wholesale,t2.uom,t3.name as produce_name,t3.img_path,t1.created_at, t1.is_wholesale,
                                         t5.status as t_status,t6.status as t_p_status,t7.status as t_d_status
                                     FROM my_cart_farm_produce t1
                                     LEFT JOIN farm_produce t2 ON t1.farm_produce_id = t2.id
@@ -267,8 +275,8 @@ class Orders extends MY_Controller
         $subtotal = 0;
         $trash = '';
         foreach ($query->result() as $value) {
-
-            $price = $value->price * $value->qty;
+            $pricing = $value->is_wholesale == 't' ? $value->price_wholesale : $value->price;
+            $price = $pricing * $value->qty;
             $subtotal += $price;
 
             $img = $value->img_path
@@ -295,7 +303,9 @@ class Orders extends MY_Controller
                                     </div>
 
                                     <div class="text-muted" style="font-size:12px;">
-                                        ' . $value->qty . ' ' . $value->uom . ' × ₱ ' . $this->format_price($value->price) . '
+                                        ' . $value->qty . ' ' . $value->uom . ' × ₱ ' . ($value->is_wholesale == 't' ?
+                    $this->format_price($value->price_wholesale) . ' <span class="badge bg-gray p-1" style="font-size:10px;">wholesale</span>'
+                    :  $this->format_price($value->price)) . '
                                     </div>
                                 </div>
 

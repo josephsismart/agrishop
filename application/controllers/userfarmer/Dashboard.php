@@ -90,12 +90,31 @@ class Dashboard extends MY_Controller
                                                 LEFT JOIN farmer_farm ff ON fp.farm_id = ff.id
                                                 LEFT JOIN produce p ON fp.produce_id = p.id
                                                 LEFT JOIN produce_classification pc ON p.produce_classification_id = pc.id
-                                                WHERE ff.farmer_id =3
+                                                WHERE ff.farmer_id =$farmer_id
                                                 GROUP BY pc.class_name")->result();
         $classificationGraph = json_encode($classification);
 
         $data += [
             "classificationGraph" => $classificationGraph
+        ];
+
+        $wholesale_retail = $this->db->query("SELECT CASE WHEN pmfp.price_wholesale IS NOT NULL THEN 'WHOLESALE' ELSE 'RETAIL' END w_r, sum(mcfp.qty) AS qty,sum(td.total_payment - td.to_admin) as revenue FROM (SELECT ff.farmer_id,t.* FROM transaction t
+                                                JOIN farmer_farm ff  ON t.farm_id = ff.id
+                                                WHERE ff.farmer_id = $farmer_id AND to_char(t.transaction_date,'yyyy')::int=$current_year ) t 
+                                                LEFT JOIN transaction_details td ON t.id = td.transaction_id
+                                                LEFT JOIN transaction_cancel tc ON t.id= tc.transaction_id
+                                                LEFT JOIN my_cart_farm_produce mcfp ON t.id = mcfp.transaction_id
+                                                LEFT JOIN farm_produce fp ON mcfp.farm_produce_id = fp.id
+                                                LEFT JOIN produce p ON fp.produce_id = p.id
+                                                LEFT JOIN price_monitoring_farm_produce pmfp ON mcfp.price_id_during_transact = pmfp.id 
+                                                LEFT JOIN produce_classification pc ON p.produce_classification_id = pc.id
+                                                WHERE tc.id IS NULL
+                                                GROUP BY CASE WHEN pmfp.price_wholesale IS NOT NULL THEN 'WHOLESALE' ELSE 'RETAIL' END
+")->result();
+        $wholesale_retail_graph = json_encode($wholesale_retail);
+
+        $data += [
+            "wholesale_retail_graph" => $wholesale_retail_graph
         ];
 
         return $data;

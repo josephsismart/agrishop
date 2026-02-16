@@ -97,6 +97,17 @@ class MY_Controller extends CI_Controller
         }
     }
 
+    public function check_qty_left($farm_produce_id, $qty){
+        $check_qty_left = $this->db->query("SELECT pql.qty_left, name FROM price_qty_left pql
+                                            LEFT JOIN produce p on pql.produce_id = p.id
+                                            WHERE pql.id = $farm_produce_id LIMIT 1")->row();
+        if ($check_qty_left->qty_left < $qty) {
+            $false = ["success"   => false, "message" => "Quantity for " . $check_qty_left->name . " left is $check_qty_left->qty_left, not enough!"];
+            echo json_encode($false);
+            return;
+        }
+    }
+
     public function check_subscription()
     {
         $farmer_id = $this->session->agrishop_login_farmer_id;

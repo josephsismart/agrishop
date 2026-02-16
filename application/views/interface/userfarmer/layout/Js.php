@@ -44,7 +44,7 @@ $uri = $this->session->agrishop_login_uri;
     let transaction_id_ = null;
     let status_ = null;
 
-    
+
 
     $('#modalFarmInfo').on('shown.bs.modal', function() {
         map.invalidateSize(); // <-- this tells Leaflet to recalc the map size
@@ -407,6 +407,16 @@ $uri = $this->session->agrishop_login_uri;
         }, 1000)
     }
 
+    $('#enableWholesale').change(function() {
+        if ($(this).is(':checked')) {
+            $('#wholesaleFields').slideDown();
+            $('.wholesale-input').removeAttr('nr');
+        } else {
+            $('#wholesaleFields').slideUp();
+            $('.wholesale-input').attr('nr', '1');
+        }
+    });
+
 
     function validate(form_id) {
         let invalid = 0;
@@ -488,6 +498,9 @@ $uri = $this->session->agrishop_login_uri;
                             location.reload();
                         }, 1000);
                     }
+                    // if(formId=="AddFarmProduceSupply" ){
+                    //     $("#modalAddFarmProduceSupply").modal("hide");
+                    // }
                 } else if (d.success == false && d.exist == true) {
                     existAlert(d.message);
                 } else {
@@ -570,6 +583,17 @@ $uri = $this->session->agrishop_login_uri;
 
         // Image
         $('[name=previewPicProduce]').attr("src", data.img_path);
+
+        // Wholesale price
+        if (data.wholesale_price){
+            $('.wholesale-price').show();
+            $('[name=wholesale_price]').text(data.wholesale_price);
+            $('[name=wholesale_qty]').text(data.wholesale_qty);
+        } else {
+            $('.wholesale-price').hide();
+            $('[name=wholesale_price]').text("");
+            $('[name=wholesale_qty]').text("");
+        }
 
     }
 

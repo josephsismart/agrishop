@@ -1,5 +1,6 @@
 <script>
     function add_to_cart(item) {
+        console.log(item)
         let login_uname = "<?= $this->session->agrishop_login_uname ?>";
         if (login_uname == "") {
             window.location.href = "<?= base_url('login') ?>";
@@ -14,7 +15,7 @@
                 successAlert(j.message);
                 $(".pending-order").text(j.cart_pending);
             } else {
-                errorAlert(j.message);
+                failAlert(j.message);
             }
         });
     }
@@ -61,7 +62,7 @@
                         $(".pending-order").text(j.cart_pending);
 
                     } else {
-                        errorAlert(j.message);
+                        failAlert(j.message);
                     }
 
                 });
@@ -99,38 +100,6 @@
         $("#modalOrderProduce [name=farmerName]").text(data.farmer_name);
         $("#modalOrderProduce [name=farmerContact]").text(data.farmerContact);
         $("#modalOrderProduce [name=farmerImage]").html(data.farmer_img_path);
-
-        //         farmImage
-        // farmName
-        // farmLocation
-        // ownerPic
-        // ownerName
-        // ownerExperience
-        // ownerContact
-
-
-        // Produce
-        // $('[name=produce_id]').val(data.id);
-        // $('[name=order_produce_img]').attr('src', data.img_path);
-        // $('[name=order_produce_name]').text(data.produce);
-        // $('[name=order_produce_class]').text(data.classification);
-        // $('[name=order_price]').text(data.price);
-        // $('[name=order_uom]').text(data.uom);
-        // $('[name=order_qty_left]').text(data.qty_left);
-        // $('[name=order_harvest]').text(data.harvest_schedule);
-
-        // // Farmer
-        // $('[name=farmer_id]').val(data.farmer_id);
-        // $('[name=farmer_img]').attr('src', data.farmer_img);
-        // $('[name=farmer_name]').text(data.farmer_name);
-        // $('[name=farmer_exp]').text(data.farmer_experience);
-        // $('[name=farmer_loc]').text(data.farmer_location);
-        // $('[name=farmer_rating]').text(data.farmer_rating);
-
-        // // Reset
-        // $('[name=order_qty]').val('');
-        // $('[name=order_notes]').val('');
-        // $('[name=order_method]').val('');
     }
 
     $(".checkout-btn").click(function() {
@@ -230,10 +199,14 @@
                 contentType: false,
                 success: res => {
                     let j = JSON.parse(res);
-                    successAlert(j.message);
-                    $('#modalCartDetails').modal('hide');
-                    getTable('CartListing', 0, 5);
                     $(".pending-order").text(j.cart_pending);
+                    if (j.success == true) {
+                        successAlert(j.message); //this line
+                        $('#modalCartDetails').modal('hide');
+                        getTable('CartListing', 0, 5);;
+                    } else {
+                        failAlert(j.message);
+                    }
 
                     // setTimeout(function() {
                     //     location.reload();
@@ -300,9 +273,13 @@
                 contentType: false,
                 success: res => {
                     let j = JSON.parse(res);
-                    successAlert(j.message);
-                    getTable('CartListing', 0, 5);
-                    $(".pending-order").text(j.cart_pending);
+                    if (j.success == true) {
+                        successAlert(j.message);
+                        getTable('CartListing', 0, 5);
+                        $(".pending-order").text(j.cart_pending);
+                    } else {
+                        failAlert(j.message);
+                    }
                 }
             });
         });

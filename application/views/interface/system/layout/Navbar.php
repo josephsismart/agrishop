@@ -14,12 +14,15 @@ $client_orders = base_url() . $uri . '/Orders';
 <div class="offcanvas-body">
     <?php if ($role_lvl != "") { ?>
         <ul class="navbar-nav justify-content-end menu-list list-unstyled d-flex gap-md-3 mb-0">
+            
+            <?php if ($role_lvl == 2) { ?>
             <li class="nav-item border-dashed">
-                <a href="<?php $dashboard; ?>" class="nav-link d-flex align-items-center gap-3 text-dark p-2">
+                <a href="<?= $dashboard; ?>" class="nav-link d-flex align-items-center gap-3 text-dark p-2">
                     <i class="fa fa-chart-line"></i>
                     <span>Dashboard</span>
                 </a>
             </li>
+            <?php } ?>
             <li class="nav-item border-dashed">
                 <a href="#" data-bs-toggle="modal" data-bs-target="#profileModal" class="nav-link d-flex align-items-center gap-3 text-dark p-2">
                     <i class="fa fa-user"></i>
@@ -69,7 +72,7 @@ $client_orders = base_url() . $uri . '/Orders';
             <?php if ($role_lvl == 1) {
             ?>
                 <li class="nav-item border-dashed">
-                    <a href="#" class="nav-link d-flex align-items-center gap-3 text-dark p-2">
+                    <a href="#" class="nav-link d-flex align-items-center gap-3 text-dark p-2" data-bs-toggle="modal" data-bs-target="#modalCartListing" onclick="getTable('CartListing', 0, 5);">
                         <i class="fa fa-shopping-basket"></i>
                         <span>My Cart</span>
                     </a>

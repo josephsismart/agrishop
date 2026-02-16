@@ -10,6 +10,11 @@
         getTable("CartDetails", 1, 10000);
     }
 
+    function viewGcashAttachment(img){
+        $(".proof_payment").html(`<img name="previewPic" src="${img}" width="100%" height="100%" class="rounded-3 border border-3 border-primary shadow" style="cursor:pointer; object-fit:cover;" alt="GCash QR Code" nr="1">`);
+        $("#viewGcashModal").modal("show");
+    }
+
     function acceptAndPrepare(transaction_id,status) {
         transaction_id_ = transaction_id;
         // $("#modalCartDetails").modal("show");

@@ -36,7 +36,9 @@ class Map extends MY_Controller
                                                 'harvest_at', fp.harvest_schedule,
                                                 'price', fp.price,
                                                 'uom', fp.uom,
-                                                'qty_left', fp.qty_left
+                                                'qty_left', fp.qty_left,
+                                                'price_wholesale', fp.price_wholesale,
+                                                'wholesale_at_qty', fp.wholesale_at_qty
                                             )
                                             ORDER BY fp.harvest_schedule
                                         ) AS produce
@@ -52,8 +54,9 @@ class Map extends MY_Controller
                                         FROM price_qty_left t11
                                         JOIN produce t22 ON t11.produce_id = t22.id
                                         WHERE
-                                            t11.qty_left > 0
-                                            AND CONCAT(t22.name, t22.tags) ILIKE '%$value%'
+                                            -- t11.qty_left > 0
+                                            -- AND 
+                                            CONCAT(t22.name, t22.tags) ILIKE '%$value%'
                                     ) fp
                                     LEFT JOIN farmer_farm ff ON fp.farm_id = ff.id
                                     LEFT JOIN farmer f ON ff.farmer_id = f.id
@@ -107,18 +110,18 @@ class Map extends MY_Controller
                                     LEFT JOIN public.produce p ON fp.produce_id = p.id
                                     LEFT JOIN public.produce_classification pc ON p.produce_classification_id = pc.id
                                     LEFT JOIN price_qty_left pql ON fp.farm_id = pql.farm_id AND fp.produce_id = pql.produce_id
-                                    WHERE fp.farm_id = $farm_id AND CONCAT(p.name,pc.class_name,p.description,(CASE WHEN p.is_seasonal = true THEN 'SEASONAL' ELSE 'NON-SEASONAL' END),(CASE WHEN p.is_active = true THEN 'ACTIVE' ELSE 'INACTIVE' END)) 
+                                    WHERE fp.farm_id = $farm_id AND CONCAT(p.name,p.tags,pc.class_name,p.description,(CASE WHEN p.is_seasonal = true THEN 'SEASONAL' ELSE 'NON-SEASONAL' END),(CASE WHEN p.is_active = true THEN 'ACTIVE' ELSE 'INACTIVE' END)) 
                                     ILIKE '%$searchValue%'");
 
         $totalRecords = $thisQuery->row()->total;
 
-        $query = $this->db->query("SELECT ROW_NUMBER() OVER (ORDER BY fp.id DESC) AS row_num, fp.id as fp_id,p.id,p.name as produce,pql.harvest_schedule,pql.uom,pql.price,pql.qty_left,pql.latest_price_id,pc.class_name,p.description,
-                                    p.is_seasonal,p.is_active,p.created_at, p.img_path,pc.img_path as default_img_path, fp.farm_id 
+        $query = $this->db->query("SELECT ROW_NUMBER() OVER (ORDER BY fp.id DESC) AS row_num, fp.id as fp_id,p.id,p.name as produce,p.tags,pql.harvest_schedule,pql.uom,pql.price,pql.qty_left,pql.latest_price_id,pc.class_name,p.description,
+                                    p.is_seasonal,p.is_active,p.created_at, p.img_path,pc.img_path as default_img_path, fp.farm_id, pql.wholesale_at_qty,pql.price_wholesale
                                     FROM public.farm_produce fp
                                     LEFT JOIN public.produce p ON fp.produce_id = p.id
                                     LEFT JOIN public.produce_classification pc ON p.produce_classification_id = pc.id
                                     LEFT JOIN price_qty_left pql ON fp.farm_id = pql.farm_id AND fp.produce_id = pql.produce_id
-                                    WHERE fp.farm_id = $farm_id AND CONCAT(p.name,pc.class_name,p.description,(CASE WHEN p.is_seasonal = true THEN 'SEASONAL' ELSE 'NON-SEASONAL' END),(CASE WHEN p.is_active = true THEN 'ACTIVE' ELSE 'INACTIVE' END)) 
+                                    WHERE fp.farm_id = $farm_id AND CONCAT(p.name,p.tags,pc.class_name,p.description,(CASE WHEN p.is_seasonal = true THEN 'SEASONAL' ELSE 'NON-SEASONAL' END),(CASE WHEN p.is_active = true THEN 'ACTIVE' ELSE 'INACTIVE' END)) 
                                     ILIKE '%$searchValue%'
                                     ORDER BY p.created_at DESC
                                     LIMIT $limit OFFSET $offset
@@ -127,42 +130,94 @@ class Map extends MY_Controller
         $data = array();
         $cc = 0;
         foreach ($query->result() as $key => $value) {
-            // $img = $value->img_path ? base_url($value->img_path) : base_url('dist/img/media/icons/1x1.png');
-            
+
+            // ---------- SAFE VALUES ----------
+            $produce = htmlspecialchars($value->produce, ENT_QUOTES, 'UTF-8');
+            $tags = htmlspecialchars($value->tags ?? '', ENT_QUOTES, 'UTF-8');
+            $uom = htmlspecialchars($value->uom, ENT_QUOTES, 'UTF-8');
+
+            // ---------- IMAGE ----------
             $img = (!empty($value->img_path) && file_exists(FCPATH . $value->img_path))
                 ? base_url($value->img_path)
                 : base_url($value->default_img_path);
-            $image_path = "<img src='$img' width='50' height='50' class='rounded' data-toggle='t0
-            .0.ooltip' data-placement='top' title=''>";
+
+            $image_path = "
+        <img src='{$img}'
+             width='60'
+             height='60'
+             class='rounded shadow-sm border'
+             style='object-fit:cover;'>
+    ";
+
+            // ---------- STOCK COLOR ----------
+            $stockColor = ($value->qty_left <= 10) ? "text-danger font-weight-bold" : "text-success font-weight-bold";
+
+            $stock_display = "
+        <span class='{$stockColor}' style='font-size:1.1rem;'>
+            {$value->qty_left}
+        </span>
+    ";
+
+            // ---------- PRICE DISPLAY ----------
+            $price_display = "
+        <div class='font-weight-bold text-primary' style='font-size:1.1rem;'>
+            ₱" . number_format($value->price, 2) . "
+        </div>
+        <small class='text-muted' style='display: block;'>per {$uom}</small>
+    " . ($value->wholesale_at_qty ? "<small class='badge bg-gray'>Wholesale:<br/> ₱" . number_format($value->price_wholesale, 2) . " per {$uom}<br/> @min {$value->wholesale_at_qty} qty</small>" : "") . "
+    ";
+
+            // ---------- QTY INPUT ----------
             $q_id = $value->row_num;
-            $add_to_cart = "<span class='badge bg-warning text-black' type='button' onclick='add_to_cart({
-                                id: \"$value->fp_id\",
-                                id_: \"$value->row_num\",
-                                img_path: \"$img\",
-                                produce: \"$value->produce\",
-                                harvest_schedule: \"$value->harvest_schedule\",
-                                qty_left: \"$value->qty_left\",
-                                price: \"$value->price\",
-                                uom: \"$value->uom\",
-                                class_name: \"$value->class_name\",
-                                is_seasonal: \"$value->is_seasonal\",
-                                is_active: \"$value->is_active\",
-                                farm_id: \"$value->farm_id\",
-                                latest_price_id: \"$value->latest_price_id\"
-                            })'><i class='fa fa-cart'></i> Add to cart</span>";
+
+            $qty_input = "
+        <input type='number'
+               style='width:90px;text-align:center;'
+               id='qty{$q_id}'
+               min='1'
+               max='{$value->qty_left}'
+               value='1'
+               class='form-control form-control-sm border-success font-weight-bold'>
+    ";
+
+            // ---------- ADD TO CART BUTTON ----------
+            $add_to_cart = "
+        <button class='btn btn-sm btn-warning shadow-sm'
+            onclick='add_to_cart({
+                id: \"{$value->fp_id}\",
+                id_: \"{$value->row_num}\",
+                img_path: \"{$img}\",
+                produce: \"{$produce}\",
+                harvest_schedule: \"{$value->harvest_schedule}\",
+                qty_left: \"{$value->qty_left}\",
+                price: \"{$value->price}\",
+                uom: \"{$uom}\",
+                class_name: \"{$value->class_name}\",
+                is_seasonal: \"{$value->is_seasonal}\",
+                is_active: \"{$value->is_active}\",
+                farm_id: \"{$value->farm_id}\",
+                latest_price_id: \"{$value->latest_price_id}\"
+            })'>Add to cart
+        </button>
+    ";
+
+            // ---------- PRODUCE NAME ----------
+            $produce_display = "
+        <div class='font-weight-bold'>{$produce}</div>
+        " . ($tags ? "<small class='text-muted' style='display: block;'>({$tags})</small>" : "");
+
+            // ---------- FINAL DATA ----------
             $data[] = array(
                 $add_to_cart,
-                '<input type="number" style="width: 100px;" id="qty' . $q_id . '" min="1" max="' . $value->qty_left . '" value="1" class="form-control form-control-sm">',
+                $qty_input,
                 $image_path,
-                $value->produce,
-                $value->harvest_schedule,
-                $value->qty_left,
-                $value->price . '/' . $value->uom,
-                // $value->class_name,
-                // $is_seasonal,
-                // $is_active,
+                $produce_display,
+                '<span class="badge bg-white">'. $value->harvest_schedule .'</span>',
+                $stock_display,
+                $price_display
             );
-        } // Prepare the response data in the required format
+        }
+        // Prepare the response data in the required format
         $response = array(
             'draw' => intval($requestData['draw']),
             'recordsTotal' => intval($totalRecords),
@@ -182,11 +237,23 @@ class Map extends MY_Controller
         $farm_id = $item['farm_id'];
         parse_str($this->input->post("c"), $filter);
         $person_id = $this->session->agrishop_person_id;
+        $farm_produce_id = $item['id'];
+        $latest_price_id = $item['latest_price_id'];
         $dateNow = $this->now();
         $transaction_id = '';
         $transaction_status = '';
         $true = ["success"   => true];
         $false = ["success"   => false];
+
+        $check_qty_left = $this->db->query("SELECT pql.qty_left, name FROM price_qty_left pql
+                                            LEFT JOIN produce p on pql.produce_id = p.id
+                                            WHERE pql.id = $farm_produce_id LIMIT 1")->row();
+        if ($check_qty_left->qty_left < $qty) {
+            $false = ["success"   => false, "message" => "Quantity for " . $check_qty_left->name . " left is $check_qty_left->qty_left, not enough!"];
+            echo json_encode($false);
+            return;
+        }
+
 
         $check = $this->db->query("SELECT * FROM transaction WHERE person_id = $person_id AND is_done is FALSE AND farm_id = $farm_id LIMIT 1")->row();
 
@@ -220,8 +287,6 @@ class Map extends MY_Controller
 
         $this->db->insert("transaction_status", $data_transaction_status);
 
-        $farm_produce_id = $item['id'];
-        $latest_price_id = $item['latest_price_id'];
         // $check_exist_cart = $this->db->query("SELECT * FROM my_cart_farm_produce WHERE transaction_id = $transaction_id 
         //                                         AND farm_produce_id = $farm_produce_id 
         //                                         AND price_id_during_transact = $latest_price_id
@@ -267,13 +332,24 @@ class Map extends MY_Controller
             'farm_produce_id' => $farm_produce_id,
             'price_id_during_transact' => $latest_price_id,
             'qty' => $qty,
-            'sub_total' => $item['price'] * $qty,
             'created_at' => $dateNow
         ];
 
 
+        $check_qty_left = $this->db->query("SELECT * FROM price_qty_left pql WHERE id = $farm_produce_id AND pql.wholesale_at_qty <= $qty")->row();
+        if ($check_qty_left) {
+            $data_my_cart += [
+                'is_wholesale' => true,
+                'sub_total' => $check_qty_left->price_wholesale * $qty,
+            ];
+        } else {
+            $data_my_cart += [
+                'sub_total' => $item['price'] * $qty,
+            ];
+        }
+
         if ($this->db->insert("my_cart_farm_produce", $data_my_cart)) {
-            $cp = $this->getTransactionPeding($person_id,'PENDING','client');
+            $cp = $this->getTransactionPeding($person_id, 'PENDING', 'client');
             $true += ["message"   => "Added to cart!", "cart_pending"   => $cp];
             $ret = $true;
         } else {
@@ -308,7 +384,7 @@ class Map extends MY_Controller
                 $this->db->query("DELETE FROM transaction WHERE id = $transaction_id");
             }
 
-            $cp = $this->getTransactionPeding($person_id,'PENDING','client');
+            $cp = $this->getTransactionPeding($person_id, 'PENDING', 'client');
             $true += ["message"   => "Removed from cart!", "cart_pending"   => $cp];
             $ret = $true;
         } else {
@@ -321,7 +397,7 @@ class Map extends MY_Controller
         } else {
             $this->db->trans_commit();
         }
-        $this->session->agrishop_pending_trans_count = $this->getTransactionPeding($person_id,'PENDING','client');
+        $this->session->agrishop_pending_trans_count = $this->getTransactionPeding($person_id, 'PENDING', 'client');
         echo json_encode($ret);
     }
 
@@ -424,7 +500,7 @@ class Map extends MY_Controller
         // Calculate pagination parameters using the separate function
         list($limit, $offset) = $this->calculatePagination($requestData);
 
-        $query = $this->db->query("SELECT t1.id as cart_id,t1.transaction_id,t1.qty,t4.price,t2.uom,t3.name as produce_name,t3.img_path,t1.created_at,
+        $query = $this->db->query("SELECT t1.id as cart_id,t1.transaction_id,t1.qty,t4.price,t4.price_wholesale,t2.uom,t3.name as produce_name,t3.img_path,t1.created_at, t1.is_wholesale,
                                         t5.status as t_status,t6.status as t_p_status,t7.status as t_d_status
                                     FROM my_cart_farm_produce t1
                                     LEFT JOIN farm_produce t2 ON t1.farm_produce_id = t2.id
@@ -457,8 +533,8 @@ class Map extends MY_Controller
         $g_pay = '';
         $trash = '';
         foreach ($query->result() as $value) {
-
-            $price = $value->price * $value->qty;
+            $pricing = $value->is_wholesale == 't' ? $value->price_wholesale : $value->price;
+            $price = $pricing * $value->qty;
             $subtotal += $price;
 
             $img = $value->img_path
@@ -492,7 +568,9 @@ class Map extends MY_Controller
                                     </div>
 
                                     <div class="text-muted" style="font-size:12px;">
-                                        ' . $value->qty . ' ' . $value->uom . ' × ₱ ' . $this->format_price($value->price) . '
+                                        ' . $value->qty . ' ' . $value->uom . ' × ₱ ' . ($value->is_wholesale == 't' ?
+                    $this->format_price($value->price_wholesale) . ' <span class="badge bg-gray p-1" style="font-size:10px;">wholesale</span>'
+                    :  $this->format_price($value->price)) . '
                                     </div>
                                 </div>
 
@@ -773,6 +851,25 @@ class Map extends MY_Controller
         $proof    = $this->input->post('proof_of_payment');
 
 
+        // $check_qty_left = $this->db->query("SELECT pql.qty_left, name FROM price_qty_left pql
+        //                                     LEFT JOIN produce p on pql.produce_id = p.id
+        //                                     WHERE pql.id = $farm_produce_id LIMIT 1")->row();
+
+        $check_qty_left = $this->db->query("SELECT pql.id,pql.qty_left,qq.qty_to_be_checkout,p.name FROM price_qty_left pql 
+            JOIN  (SELECT mcfp.farm_produce_id, sum(mcfp.qty) AS qty_to_be_checkout FROM my_cart_farm_produce mcfp  
+                    WHERE mcfp.transaction_id = $transaction_id
+                    GROUP BY farm_produce_id) qq ON pql.id=qq.farm_produce_id AND qq.qty_to_be_checkout>pql.qty_left
+            JOIN produce p ON pql.produce_id = p.id")->result();
+        if (!empty($check_qty_left)) {
+            $item = $check_qty_left[0];
+
+            echo json_encode([
+                "success" => false,
+                "message" => "Quantity for {$item->name} left is {$item->qty_left}, not enough!"
+            ]);
+            return;
+        }
+
 
         // FILE (GCash proof)
         if (!empty($_FILES['proof_of_payment'])) {
@@ -850,7 +947,7 @@ class Map extends MY_Controller
         ];
 
         if ($this->db->insert("transaction_details", $data_transaction_details)) {
-            $cp = $this->getTransactionPeding($person_id,'PENDING','client');
+            $cp = $this->getTransactionPeding($person_id, 'PENDING', 'client');
             $true += ["message"   => "Checkout success!", "cart_pending"   => $cp];
             $ret = $true;
         } else {
@@ -882,7 +979,7 @@ class Map extends MY_Controller
         $check = $this->checkTransactionStatus($transaction_id);
 
         if ($check == 'PREPARING' || $check == 'DELIVERED' || $check == 'CANCELLED') {
-            $false += ["message"   => "You cannot cancel this order!"];
+            $false += ["message"   => "You cannot cancel anymore this order!"];
             $ret = $false;
             echo json_encode($ret);
             return;
@@ -904,7 +1001,7 @@ class Map extends MY_Controller
             'created_by' => $person_id,
         ];
 
-        
+
         // 🧾 TRANSACTION DONE
         $data_transaction = [
             'is_done' => true,
@@ -913,7 +1010,7 @@ class Map extends MY_Controller
         $this->db->update("transaction", $data_transaction, ["id" => $transaction_id]);
 
         if ($this->db->insert("transaction_cancel", $data_transaction_cancel_details)) {
-            $cp = $this->getTransactionPeding($person_id,'PENDING','client');
+            $cp = $this->getTransactionPeding($person_id, 'PENDING', 'client');
             $true += ["message"   => "Order cancelled!", "cart_pending"   => $cp];
             $ret = $true;
         } else {

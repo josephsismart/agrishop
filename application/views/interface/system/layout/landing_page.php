@@ -1,11 +1,75 @@
+<style>
+    /* ===== INITIAL HIDDEN STATE ===== */
+    .animate-on-load {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+
+    /* ===== FADE + SLIDE UP ===== */
+    .fade-slide-up {
+        animation: fadeSlideUp 1s ease forwards;
+    }
+
+    @keyframes fadeSlideUp {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* ===== POP EFFECT ===== */
+    .pop-in {
+        animation: popIn .6s ease forwards;
+    }
+
+    @keyframes popIn {
+        0% {
+            opacity: 0;
+            transform: scale(.8);
+        }
+
+        100% {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    /* ===== STAGGER DELAYS ===== */
+    .delay-1 {
+        animation-delay: .2s;
+    }
+
+    .delay-2 {
+        animation-delay: .4s;
+    }
+
+    .delay-3 {
+        animation-delay: .6s;
+    }
+
+    /* ===== HOVER CARD EFFECT ===== */
+    .card {
+        transition: .3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-6px);
+    }
+
+    /* optional smoother page feel */
+    body {
+        scroll-behavior: smooth;
+    }
+</style>
+
 <div id="landing_Page" class="">
     <section style="background-image: url('<?php echo base_url(); ?>dist/layout_shop/images/banner-1.jpg');background-repeat: no-repeat;background-size: cover;">
         <div class="container-lg">
             <div class="row">
                 <div class="col-lg-6 pt-5 mt-5">
-                    <h2 class="display-3 ls-4"><span class="fw-bold" style="color: #6aad51ff;">Farm-Fresh</span> Goodness Delivered <span class="fw-bold" style="color: #6bb252;">Today</span></h2>
-                    <p class="fs-4">Order now to lock in peak freshness before it’s gone.</p>
-                    <div class="d-flex gap-3">
+                    <h2 class="display-3 ls-4 animate-on-load hero-title"><span class="fw-bold" style="color: #6aad51ff;">Farm-Fresh</span> Goodness Delivered <span class="fw-bold" style="color: #6bb252;">Today</span></h2>
+                    <p class="fs-4 animate-on-load hero-sub">Order now to lock in peak freshness before it’s gone.</p>
+                    <div class="d-flex gap-3 animate-on-load hero-btn">
                         <a href="#" class="btn bg-orange text-uppercase fs-6 rounded-pill px-4 py-3 mt-3" style="color: #fff !important;">Start Shopping</a>
                         <?php if (!$this->session->agrishop_login_id) { ?>
                             <a href="<?= base_url() ?>signup" class="btn btn-dark text-uppercase fs-6 rounded-pill px-4 py-3 mt-3">Sign Up Now</a>
@@ -15,7 +79,7 @@
                         <div class="col">
                             <div class="row text-dark">
                                 <div class="col-auto">
-                                    <p class="fs-1 fw-bold lh-sm mb-0">14k+</p>
+                                    <p class="fs-1 fw-bold lh-sm mb-0 counter">14k+</p>
                                 </div>
                                 <div class="col">
                                     <p class="text-uppercase lh-sm mb-0">Product Varieties</p>
@@ -25,7 +89,7 @@
                         <div class="col">
                             <div class="row text-dark">
                                 <div class="col-auto">
-                                    <p class="fs-1 fw-bold lh-sm mb-0">50k+</p>
+                                    <p class="fs-1 fw-bold lh-sm mb-0 counter">50k+</p>
                                 </div>
                                 <div class="col">
                                     <p class="text-uppercase lh-sm mb-0">Happy Customers</p>
@@ -35,7 +99,7 @@
                         <div class="col">
                             <div class="row text-dark">
                                 <div class="col-auto">
-                                    <p class="fs-1 fw-bold lh-sm mb-0">10+</p>
+                                    <p class="fs-1 fw-bold lh-sm mb-0 counter">10+</p>
                                 </div>
                                 <div class="col">
                                     <p class="text-uppercase lh-sm mb-0">Store Locations</p>
@@ -48,7 +112,7 @@
 
             <div class="row row-cols-1 row-cols-sm-3 row-cols-lg-3 g-0 justify-content-center">
                 <div class="col">
-                    <div class="card border-0 bg-success rounded-0 p-4 text-light">
+                    <div class="card border-0 bg-success rounded-0 p-4 text-light animate-on-load feature-card delay-1">
                         <div class="row">
                             <div class="col-md-3 text-center">
                                 <svg width="60" height="60">
@@ -65,7 +129,7 @@
                     </div>
                 </div>
                 <div class="col">
-                    <div class="card border-0 bg-secondary rounded-0 p-4 text-light">
+                    <div class="card border-0 bg-secondary rounded-0 p-4 text-light animate-on-load feature-card delay-2">
                         <div class="row">
                             <div class="col-md-3 text-center">
                                 <svg width="60" height="60">
@@ -82,7 +146,7 @@
                     </div>
                 </div>
                 <div class="col">
-                    <div class="card border-0 bg-orange rounded-0 p-4 text-light">
+                    <div class="card border-0 bg-orange rounded-0 p-4 text-light animate-on-load feature-card delay-3">
                         <div class="row">
                             <div class="col-md-3 text-center">
                                 <svg width="60" height="60">
@@ -127,7 +191,7 @@
             <div class="row">
                 <div class="col-md-12">
 
-                    <div class="category-carousel swiper">
+                    <div class="category-carousel swiper animate-on-load farmers">
                         <div class="swiper-wrapper">
                             <a href="category.html" class="nav-link swiper-slide text-center">
                                 <img src="<?php echo base_url(); ?>dist/img/media/person/3.jpg" width="165" height="165" class="rounded-circle" alt="Category Thumbnail">
@@ -325,3 +389,38 @@
         </div>
     </div>
 </div>
+
+<script>
+$(document).ready(function(){
+
+    /* HERO ANIMATION */
+    setTimeout(()=> $('.hero-title').addClass('fade-slide-up'), 200);
+    setTimeout(()=> $('.hero-sub').addClass('fade-slide-up'), 500);
+    setTimeout(()=> $('.hero-btn').addClass('pop-in'), 800);
+
+    /* FEATURE CARDS */
+    setTimeout(()=> $('.feature-card').addClass('fade-slide-up'), 1000);
+
+    /* FARMERS SECTION */
+    setTimeout(()=> $('.farmers').addClass('fade-slide-up'), 1400);
+
+    /* COUNT UP NUMBERS */
+    $('.counter').each(function(){
+        let $this = $(this);
+        let text = $this.text();
+        let number = parseInt(text.replace(/\D/g,''));
+
+        $({count:0}).animate({count:number},{
+            duration:1500,
+            easing:'swing',
+            step:function(){
+                $this.text(Math.floor(this.count) + '+');
+            },
+            complete:function(){
+                $this.text(number + '+');
+            }
+        });
+    });
+
+});
+</script>

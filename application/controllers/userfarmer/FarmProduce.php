@@ -296,8 +296,7 @@ class FarmProduce extends MY_Controller
             ]);
             return;
         }
-
-        $query = $this->db->query("SELECT fp.id as fp_id,p.id,p.name as produce,pql.harvest_schedule,pql.uom,pql.price,pql.qty_left ,pc.class_name,p.description,
+        $query = $this->db->query("SELECT fp.id as fp_id,p.id,p.name as produce,pql.harvest_schedule,pql.uom,pql.price,pql.qty_left ,pc.class_name,p.description,pql.price_wholesale,pql.wholesale_at_qty,
                                     p.is_seasonal,p.is_active,p.created_at, p.img_path, pc.img_path as default_img_path 
                                     FROM public.farm_produce fp
                                     LEFT JOIN public.produce p ON fp.produce_id = p.id
@@ -356,7 +355,7 @@ class FarmProduce extends MY_Controller
 
             // Beautified Action Button
             $add_produce = "<div class='text-center'>
-                        <button class='btn btn-success btn-sm px-3 py-2 shadow-sm' 
+                        <button class='btn bg-navy btn-sm px-3 py-2 shadow-sm' 
                                 data-toggle='modal' 
                                 data-target='#modalAddFarmProduceSupply' 
                                 type='button' 
@@ -370,7 +369,9 @@ class FarmProduce extends MY_Controller
                                     uom: \"" . htmlspecialchars($value->uom, ENT_QUOTES) . "\",
                                     class_name: \"" . htmlspecialchars($value->class_name, ENT_QUOTES) . "\",
                                     is_seasonal: \"$value->is_seasonal\",
-                                    is_active: \"$value->is_active\"
+                                    is_active: \"$value->is_active\",
+                                    wholesale_price: \"$value->price_wholesale\",
+                                    wholesale_qty: \"$value->wholesale_at_qty\"
                                 })'>
                             <i class='fas fa-plus mr-1'></i> ADD MORE
                         </button>
@@ -379,6 +380,7 @@ class FarmProduce extends MY_Controller
             // Format numbers with better readability
             $formatted_qty = number_format($value->qty_left, 2);
             $formatted_price = "₱ " . number_format($value->price, 2);
+            $formatted_wholesale_price = $value->price_wholesale ? "₱ " . number_format($value->price_wholesale, 2) : "";
 
             // Format date for better display
             $formatted_date = date('M d, Y', strtotime($value->harvest_schedule));
@@ -413,7 +415,8 @@ class FarmProduce extends MY_Controller
                          <div class='text-muted small'>
                              per " . htmlspecialchars($value->uom, ENT_QUOTES) . "
                          </div>
-                      </div>";
+                      </div>"
+                      . ($value->price_wholesale ? "<div class='badge bg-gray'  title='Wholesale Price' whole-sale>ws@ $formatted_wholesale_price (min " . $value->wholesale_at_qty . ")</div>" : "");
 
             // Beautified Harvest Date
             $date_display = "<div class='text-center'>
@@ -433,7 +436,7 @@ class FarmProduce extends MY_Controller
                 $date_display,         // Harvest date
                 $quantity_display,     // Quantity left
                 $price_display,        // Price
-                $is_seasonal,          // Seasonal status
+                $is_seasonal,
                 $is_active,            // Active status
             );
         }
@@ -609,6 +612,8 @@ class FarmProduce extends MY_Controller
         $farmId = $this->input->post("farmId");
         $produceSelectedId = $this->input->post("produceSelectedId");
         $produceCreatedById = $this->input->post("produceCreatedById");
+        $wholesale_min_qty = $this->input->post("wholesale_min_qty");
+        $wholesale_price = $this->input->post("wholesale_price");
         $qty_add = $this->input->post("qty_add");
         $price = $this->input->post("price");
         $uom = $this->input->post("uom");
@@ -640,6 +645,12 @@ class FarmProduce extends MY_Controller
                 "price" => $price,
                 "created_by_person_id" => $person_id,
             ];
+            if ($wholesale_min_qty != null && $wholesale_price != null) {
+                $data_price_monitor += [
+                    "wholesale_at_qty" => $wholesale_min_qty,
+                    "price_wholesale" => $wholesale_price,
+                ];
+            }
             if ($this->db->insert("price_monitoring_farm_produce", $data_price_monitor)) {
                 $data_fp_supply = [
                     "farm_produce_id" => $farm_produce_id,
