@@ -7,6 +7,7 @@ class Login extends MY_Controller
     public function __construct()
     {
         parent::__construct();
+        $this->db->query('SET SQL_BIG_SELECTS=1');
     }
 
     public function index()
@@ -60,10 +61,10 @@ class Login extends MY_Controller
                                     'f' AS change_pwd,
                                     t1.is_active
 
-                                FROM public.user t1
-                                LEFT JOIN public.role t2 ON t1.role_id = t2.id
-                                LEFT JOIN public.person t3 ON t1.person_id = t3.id
-                                LEFT JOIN public.farmer t4 ON t3.id = t4.person_id
+                                FROM user t1
+                                LEFT JOIN role t2 ON t1.role_id = t2.id
+                                LEFT JOIN person t3 ON t1.person_id = t3.id
+                                LEFT JOIN farmer t4 ON t3.id = t4.person_id
 
                                 LEFT JOIN tbl_barangay b ON t3.barangay_id = b.id
                                 LEFT JOIN tbl_citymun c ON b.citymun_id = c.id

@@ -7,6 +7,42 @@ class MY_Controller extends CI_Controller
     public $global_requestid = null;
     public $global_requestid_personnel = null;
 
+    // just add these new ones below
+    public $session;
+    public $db;
+    public $load;
+    public $benchmark;
+    public $hooks;
+    public $config;
+    public $uri;
+    public $router;
+    public $output;
+    public $security;
+    public $input;
+    public $lang;
+    public $form_validation;
+    public $pagination;
+    public $upload;
+    public $email;
+    public $cart;
+    public $encrypt;
+    public $migration;
+    public $cache;
+    public $zip;
+    public $ftp;
+    public $xmlrpc;
+    public $unit;
+    public $trackback;
+    public $typography;
+    public $template_parser;
+    public $javascript;
+    public $calendar;
+    public $table;
+    public $shopping_cart;
+    public $image_lib;
+    public $MainModel;
+    public $mainModel;
+
     public function system()
     {
         $data = [
@@ -54,7 +90,7 @@ class MY_Controller extends CI_Controller
 
     public function redirect()
     {
-        $this->check_subscription();
+        $this->check_subscription2();
         $login = $this->session->agrishop_login_id;
         $defaultPassword = $this->session->agrishop_change_password;
         $uri = $this->session->agrishop_login_uri;
@@ -80,7 +116,7 @@ class MY_Controller extends CI_Controller
 
     public function redirect_home()
     {
-        $this->check_subscription();
+        $this->check_subscription2();
         $level = $this->session->agrishop_login_level;
         $defaultPassword = $this->session->agrishop_change_password;
         $uri = $this->session->agrishop_login_uri;
@@ -97,8 +133,10 @@ class MY_Controller extends CI_Controller
         }
     }
 
-    public function check_qty_left($farm_produce_id, $qty){
-        $check_qty_left = $this->db->query("SELECT pql.qty_left, name FROM price_qty_left pql
+    public function check_qty_left($farm_produce_id, $qty)
+    {
+        $price_qty_left = $this->price_qty_left();
+        $check_qty_left = $this->db->query("SELECT pql.qty_left, name FROM ($price_qty_left) pql
                                             LEFT JOIN produce p on pql.produce_id = p.id
                                             WHERE pql.id = $farm_produce_id LIMIT 1")->row();
         if ($check_qty_left->qty_left < $qty) {
@@ -108,111 +146,298 @@ class MY_Controller extends CI_Controller
         }
     }
 
+    public function check_subscription2()
+    {
+
+        // $farmer_id = (int) $this->session->agrishop_login_farmer_id;
+        // $query_pending = $this->db->query("SELECT b.id,  DATE_FORMAT(b.billing_due_date,'yyyy-mm-dd') as billing_due_date, b.proof_img_path, b.status, f.is_active FROM billing b
+        //                             LEFT JOIN farmer f ON b.farmer_id=f.id
+        //                             WHERE b.farmer_id = $farmer_id AND b.status!='PAID' AND b.payment_for ='SUBSCRIPTION'")->row();
+        // if (($query_pending->billing_due_date > date('Y-m-d') && $query_pending->status == 'PENDING')) {
+        //     // $this->db->query("UPDATE farmer SET is_active = false WHERE id = $farmer_id");
+        //     $this->session->set_userdata([
+        //         "agrishop_login_uri" => "ud440aed189",
+        //         "agrishop_login_landing" => "Subscription"
+        //     ]);
+        //     return;
+        // }
+
+        // if (($query_pending->proof_img_path!="" && $query_pending->status == 'FOR_APPROVAL')) {
+        //     $this->session->set_userdata([
+        //         "agrishop_login_uri" => "ud440aed188v",
+        //         "agrishop_login_landing" => "Validation"
+        //     ]);
+        //     return;
+        // }
+    }
+
     public function check_subscription()
     {
         $farmer_id = $this->session->agrishop_login_farmer_id;
-        if (!$farmer_id) return;
 
-        /* 1️⃣ WAITING FOR ADMIN VALIDATION */
-        $approved_active = $this->db->query("
-        SELECT 1
-        FROM farmer_subscription
-        WHERE farmer_id = ?
-        AND is_latest = true
-        AND is_active = true
-        AND is_expired = false
-        LIMIT 1
-    ", [$farmer_id])->row();
-
-        if ($approved_active) {
-            $this->session->set_userdata([
-                "agrishop_login_uri" => "userfarmer",
-                "agrishop_login_landing" => "dashboard"
-            ]);
+        if (!$farmer_id) {
+            // echo json_encode(["status" => false]);
             return;
         }
 
-        /* 1️⃣ WAITING FOR ADMIN VALIDATION */
-        $pending = $this->db->query("
-        SELECT 1
-        FROM farmer_subscription_application
-        WHERE farmer_id = ?
-        AND checked_at IS NULL
-        LIMIT 1
-    ", [$farmer_id])->row();
+        $current_date = date('Y-m-d');
 
-        if ($pending) {
-            $this->session->set_userdata([
-                "agrishop_login_uri" => "ud440aed188v",
-                "agrishop_login_landing" => "validation"
-            ]);
-            return;
-        }
+        /*
+        ----------------------------
+        1️⃣ GET SUBSCRIPTION
+        ----------------------------
+        */
+        $sub = $this->db->query("
+            SELECT *
+            FROM subscription_history
+            WHERE farmer_id = ?
+            ORDER BY subscription_to DESC
+            LIMIT 1
+        ", [$farmer_id])->row();
 
-        /* 2️⃣ ACTIVE PAID SUBSCRIPTION */
-        $paid = $this->db->query("
-        SELECT *
-        FROM farmer_subscription
-        WHERE farmer_id = ?
-        AND is_latest = true
-        AND is_active = true
-        AND is_expired = false
-        AND end_date >= CURRENT_DATE
-        LIMIT 1
-    ", [$farmer_id])->row();
+        /*
+        ----------------------------
+        2️⃣ GET UNPAID INVOICE
+        ----------------------------
+        */
+        $invoice = $this->db->query("
+            SELECT *
+            FROM invoice_billing
+            WHERE farmer_id = ?
+            AND is_paid = false
+            ORDER BY billing_due_date ASC
+            LIMIT 1
+        ", [$farmer_id])->row();
 
-        if ($paid) {
-            return; // ✅ allow normal routing
-        }
+        $response = [
+            "status" => true,
+            "subscription" => $sub,
+            "invoice" => $invoice,
+            "allowed" => false
+        ];
 
-        /* 3️⃣ PAID SUB EXPIRED */
-        $paid_expired = $this->db->query("
-        SELECT *
-        FROM farmer_subscription
-        WHERE farmer_id = ?
-        AND is_latest = true
-        AND (is_expired = true OR end_date < CURRENT_DATE)
-        LIMIT 1
-    ", [$farmer_id])->row();
+        if ($sub) {
 
-        if ($paid_expired) {
-            $this->session->set_userdata([
-                "agrishop_login_uri" => "ud440aed189",
-                "agrishop_login_landing" => "subscribe"
-            ]);
-            return;
-        }
+            // compute grace end
+            $grace_end = date(
+                'Y-m-d',
+                strtotime($sub->billing_due_date . " +{$sub->grace_period_days} days")
+            );
 
-        /* 4️⃣ FREE SUBSCRIPTION */
-        $free = $this->db->query("
-        SELECT *
-        FROM farmer_subscription_free
-        WHERE farmer_id = ?
-        LIMIT 1
-    ", [$farmer_id])->row();
-
-        if ($free) {
-            if (date('Y-m-d') > $free->ended_at) {
+            // auto expire
+            if ($current_date > $grace_end && $sub->is_active) {
                 $this->db->query("
-                UPDATE farmer_subscription_free
-                SET is_expired = true
-                WHERE farmer_id = ?
-            ", [$farmer_id]);
+                UPDATE subscription_history
+                SET is_active = false
+                WHERE id = ?
+            ", [$sub->id]);
 
-                $this->session->set_userdata([
-                    "agrishop_login_uri" => "ud440aed189",
-                    "agrishop_login_landing" => "subscribe"
-                ]);
+                $sub->is_active = false;
             }
-            return;
+
+            if ($sub->is_active) {
+                $response["allowed"] = true;
+            }
         }
 
-        /* 5️⃣ NO SUBSCRIPTION AT ALL */
-        $this->session->set_userdata([
-            "agrishop_login_uri" => "ud440aed189",
-            "agrishop_login_landing" => "subscribe"
-        ]);
+        return $response;
     }
+
+    public function billing_page($check_count = false)
+    {
+        $farmer_id = $this->session->agrishop_login_farmer_id;
+        $billing = $this->billing();
+
+        // CURRENT SUBSCRIPTION
+        $subscription = $this->db->query("
+            SELECT *
+            FROM subscription_history
+            WHERE farmer_id = ? AND is_active = true
+            ORDER BY subscription_to DESC
+            LIMIT 1
+        ", [$farmer_id])->row_array();
+
+
+        // SUBSCRIPTION BILLING
+        $subscription_invoice = $this->db->query("
+            SELECT * FROM ($billing) as b
+            WHERE b.farmer_id = ?
+            AND b.payment_for = 'SUBSCRIPTION'
+            AND b.is_paid = false
+            ORDER BY b.id DESC
+            LIMIT 1
+        ", [$farmer_id])->row_array();
+
+
+        // SERVICE FEE BILLING
+        $service_invoice = $this->db->query("
+            SELECT * FROM ($billing) as b
+            WHERE b.farmer_id = ?
+            AND b.payment_for = 'SERVICE_FEE'
+            AND b.is_paid = false
+            ORDER BY b.id DESC
+            LIMIT 1
+        ", [$farmer_id])->row_array();
+
+        if ($check_count) {
+            $count_billing = $this->db->query("
+                SELECT count(1) as count FROM invoice_billing
+                WHERE farmer_id = ?
+                AND (payment_for = 'SERVICE_FEE' OR payment_for = 'SUBSCRIPTION')
+                AND is_paid = false
+            ", [$farmer_id])->row();
+            return [
+                "count" => $count_billing->count,
+            ];
+        }
+
+        return [
+            "subscription" => $subscription,
+            "subscription_invoice" => $subscription_invoice,
+            "service_invoice" => $service_invoice,
+        ];
+    }
+
+    public function insert_billing_status($id, $status, $remarks = null, $payment_for = null, $farmer_id = null)
+    {
+        $person_id = $this->session->agrishop_person_id;
+        $this->db->insert("invoice_billing_status", [
+            "invoice_billing_id" => $id,
+            "status" => $status,
+            "remarks" => $remarks,
+            "is_latest" => true,
+            "created_by_person_id" => $person_id,
+        ]);
+        if ($status == 'PAID') {
+            $this->db->update("invoice_billing", [
+                "is_paid" => true,
+                "paid_at" => date("Y-m-d H:i:s"),
+                "approved_payment_by_person_id" => $person_id,
+            ], [
+                "id" => $id,
+            ]);
+        }
+
+        if ($payment_for == 'SUBSCRIPTION' && $status == 'PAID') {
+            $this->db->insert("billing", [
+                "farmer_id" => $farmer_id,
+                "subscription_type" => 'REGULAR',
+                "is_active" => true,
+                "subscription_from" => date("Y-m-d"),
+                "subscription_to" => date("Y-m-d", strtotime("+1 month")),
+                "billing_due_date" => date("Y-m-d", strtotime("+1 month")),
+                "grace_period_days" => 7,
+                "created_at" => date("Y-m-d H:i:s"),
+                "created_by_person_id" => $person_id,
+            ]);
+        }
+    }
+
+    // public function check_subscription()
+    // {
+    //     $farmer_id = $this->session->agrishop_login_farmer_id;
+    //     if (!$farmer_id) return;
+
+    //     /* 1️⃣ WAITING FOR ADMIN VALIDATION */
+    //     $approved_active = $this->db->query("
+    //     SELECT 1
+    //     FROM farmer_subscription
+    //     WHERE farmer_id = ?
+    //     AND is_latest = true
+    //     AND is_active = true
+    //     AND is_expired = false
+    //     LIMIT 1
+    // ", [$farmer_id])->row();
+
+    //     if ($approved_active) {
+    //         $this->session->set_userdata([
+    //             "agrishop_login_uri" => "userfarmer",
+    //             "agrishop_login_landing" => "dashboard"
+    //         ]);
+    //         return;
+    //     }
+
+    //     /* 1️⃣ WAITING FOR ADMIN VALIDATION */
+    //     $pending = $this->db->query("
+    //     SELECT 1
+    //     FROM farmer_subscription_application
+    //     WHERE farmer_id = ?
+    //     AND checked_at IS NULL
+    //     LIMIT 1
+    // ", [$farmer_id])->row();
+
+    //     if ($pending) {
+    //         $this->session->set_userdata([
+    //             "agrishop_login_uri" => "ud440aed188v",
+    //             "agrishop_login_landing" => "validation"
+    //         ]);
+    //         return;
+    //     }
+
+    //     /* 2️⃣ ACTIVE PAID SUBSCRIPTION */
+    //     $paid = $this->db->query("
+    //     SELECT *
+    //     FROM farmer_subscription
+    //     WHERE farmer_id = ?
+    //     AND is_latest = true
+    //     AND is_active = true
+    //     AND is_expired = false
+    //     AND end_date >= CURRENT_DATE
+    //     LIMIT 1
+    // ", [$farmer_id])->row();
+
+    //     if ($paid) {
+    //         return; // ✅ allow normal routing
+    //     }
+
+    //     /* 3️⃣ PAID SUB EXPIRED */
+    //     $paid_expired = $this->db->query("
+    //     SELECT *
+    //     FROM farmer_subscription
+    //     WHERE farmer_id = ?
+    //     AND is_latest = true
+    //     AND (is_expired = true OR end_date < CURRENT_DATE)
+    //     LIMIT 1
+    // ", [$farmer_id])->row();
+
+    //     if ($paid_expired) {
+    //         $this->session->set_userdata([
+    //             "agrishop_login_uri" => "ud440aed189",
+    //             "agrishop_login_landing" => "subscribe"
+    //         ]);
+    //         return;
+    //     }
+
+    //     /* 4️⃣ FREE SUBSCRIPTION */
+    //     $free = $this->db->query("
+    //     SELECT *
+    //     FROM farmer_subscription_free
+    //     WHERE farmer_id = ?
+    //     LIMIT 1
+    // ", [$farmer_id])->row();
+
+    //     if ($free) {
+    //         if (date('Y-m-d') > $free->ended_at) {
+    //             $this->db->query("
+    //             UPDATE farmer_subscription_free
+    //             SET is_expired = true
+    //             WHERE farmer_id = ?
+    //         ", [$farmer_id]);
+
+    //             $this->session->set_userdata([
+    //                 "agrishop_login_uri" => "ud440aed189",
+    //                 "agrishop_login_landing" => "subscribe"
+    //             ]);
+    //         }
+    //         return;
+    //     }
+
+    //     /* 5️⃣ NO SUBSCRIPTION AT ALL */
+    //     $this->session->set_userdata([
+    //         "agrishop_login_uri" => "ud440aed189",
+    //         "agrishop_login_landing" => "subscribe"
+    //     ]);
+    // }
 
     // public function check_subscription()
     // {
@@ -229,7 +454,7 @@ class MY_Controller extends CI_Controller
 
     //     #check farmer subscription
     //     if ($farmer_id) {
-    //         $chck2 = $this->db->query("SELECT f.id,TO_CHAR(fsf.ended_at,'yyyy-mm-dd') AS free_end_at, fsf.confirmed AS free_confirmed, fsf.is_expired AS free_expired,
+    //         $chck2 = $this->db->query("SELECT f.id,DATE_FORMAT(fsf.ended_at,'yyyy-mm-dd') AS free_end_at, fsf.confirmed AS free_confirmed, fsf.is_expired AS free_expired,
     //                                         fs2.start_date, fs2.end_date,fs2.is_active,fs2.is_expired ,fs2.is_latest, fsa.checked, fsa.checked_at
     //                                         FROM farmer AS f
     //                                         JOIN farmer_subscription_free fsf ON f.id = fsf.farmer_id
@@ -240,7 +465,7 @@ class MY_Controller extends CI_Controller
     //             $row2 = $chck2->row();
 
     //             if (date('Y-m-d') > $row2->free_end_at && $row2->end_date == null) {
-    //                 $this->db->query("UPDATE public.farmer_subscription_free SET is_expired = true WHERE farmer_id = $farmer_id");
+    //                 $this->db->query("UPDATE farmer_subscription_free SET is_expired = true WHERE farmer_id = $farmer_id");
     //                 $data += [
     //                     "agrishop_login_sub_free_expired" => 't',
     //                     "agrishop_login_uri" => 'ud440aed189',
@@ -275,6 +500,151 @@ class MY_Controller extends CI_Controller
     // }
 
 
+
+    public function price_qty_left()
+    {
+        return "
+            SELECT
+                fp2.id,
+                fp2.farm_id,
+                f2.person_id AS farmer_person_id,
+                fp2.produce_id,
+                fp2.harvest_schedule,
+                pmfp.price,
+                pmfp.id AS latest_price_id,
+                pmfp.price_wholesale,
+                pmfp.wholesale_at_qty,
+                fp2.uom,
+                tt1.total_qty,
+                t2.qty_sold,
+                CAST(tt1.total_qty AS DOUBLE) - COALESCE(t2.qty_sold, 0) AS qty_left
+            FROM farm_produce fp2
+            LEFT JOIN farmer_farm ff2 ON fp2.farm_id = ff2.id
+            LEFT JOIN farmer f2 ON ff2.farmer_id = f2.id
+            LEFT JOIN (
+                SELECT farm_produce_supply.farm_produce_id,
+                    SUM(farm_produce_supply.qty) AS total_qty
+                FROM farm_produce_supply
+                GROUP BY farm_produce_supply.farm_produce_id
+            ) tt1 ON fp2.id = tt1.farm_produce_id
+            LEFT JOIN (
+                SELECT pmfp1.id, pmfp1.farm_produce_id, pmfp1.price,
+                    pmfp1.is_latest, pmfp1.created_at, pmfp1.created_by_person_id,
+                    pmfp1.price_wholesale, pmfp1.wholesale_at_qty
+                FROM price_monitoring_farm_produce pmfp1
+                WHERE pmfp1.is_latest = 1
+            ) pmfp ON fp2.id = pmfp.farm_produce_id
+            LEFT JOIN (
+                SELECT mcfp.farm_produce_id, SUM(mcfp.qty) AS qty_sold
+                FROM my_cart_farm_produce mcfp
+                LEFT JOIN transaction t ON mcfp.transaction_id = t.id
+                LEFT JOIN (
+                    SELECT ts.id, ts.transaction_id, ts.status,
+                        ts.is_latest, ts.created_at AS create_at,
+                        ts.created_by_person_id
+                    FROM transaction_status ts
+                    WHERE ts.is_latest = 1
+                ) t1 ON t.id = t1.transaction_id
+                WHERE t1.status = 'COMPLETED' OR t1.status = 'RESERVED'
+                GROUP BY mcfp.farm_produce_id
+            ) t2 ON fp2.id = t2.farm_produce_id
+        ";
+    }
+
+    public function billing()
+    {
+        return "
+            SELECT 
+                t3.img_path AS proof_img_path,
+                t3.is_approved AS proof_is_approved,
+                t2.status,
+                t2.remarks AS status_remarks,
+                t1.id,
+                t1.farmer_id,
+                CONCAT(t5.first_name, ' ', t5.last_name) AS farmer,
+                t1.payment_for,
+                t1.total_payment,
+                t1.billing_period_from,
+                t1.billing_period_to,
+                t1.billing_due_date,
+                t1.is_paid,
+                t1.paid_at,
+                t1.approved_payment_by_person_id,
+                t1.invoice_no,
+                t1.created_at
+            FROM invoice_billing t1
+            LEFT JOIN (
+                SELECT 
+                    invoice_billing_status.id,
+                    invoice_billing_status.invoice_billing_id,
+                    invoice_billing_status.status,
+                    invoice_billing_status.is_latest,
+                    invoice_billing_status.created_at,
+                    invoice_billing_status.created_by_person_id,
+                    invoice_billing_status.remarks
+                FROM invoice_billing_status
+                WHERE invoice_billing_status.is_latest = 1
+            ) t2 ON t1.id = t2.invoice_billing_id
+            LEFT JOIN (
+                SELECT 
+                    t.id,
+                    t.invoice_billing_id,
+                    t.img_path,
+                    t.is_approved,
+                    t.approved_at,
+                    t.approved_by_person_id,
+                    t.remarks,
+                    t.created_at,
+                    t.created_by_person_id,
+                    t.rn
+                FROM (
+                    SELECT 
+                        invoice_billing_proof_of_payment.id,
+                        invoice_billing_proof_of_payment.invoice_billing_id,
+                        invoice_billing_proof_of_payment.img_path,
+                        invoice_billing_proof_of_payment.is_approved,
+                        invoice_billing_proof_of_payment.approved_at,
+                        invoice_billing_proof_of_payment.approved_by_person_id,
+                        invoice_billing_proof_of_payment.remarks,
+                        invoice_billing_proof_of_payment.created_at,
+                        invoice_billing_proof_of_payment.created_by_person_id,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY invoice_billing_proof_of_payment.invoice_billing_id 
+                            ORDER BY invoice_billing_proof_of_payment.created_at DESC
+                        ) AS rn
+                    FROM invoice_billing_proof_of_payment
+                ) t
+                WHERE t.rn = 1
+            ) t3 ON t1.id = t3.invoice_billing_id
+            LEFT JOIN farmer t4 ON t1.farmer_id = t4.id
+            LEFT JOIN person t5 ON t4.person_id = t5.id";
+    }
+
+    public function transaction_status($data)
+    {
+        $this->db->where('transaction_id', $data["transaction_id"]);
+        $this->db->update('transaction_status', ['is_latest' => 0]);
+        $this->db->insert("transaction_status", $data);
+        return true;
+    }
+
+    public function transaction_delivery_status($data)
+    {
+        $this->db->where('transaction_id', $data["transaction_id"]);
+        $this->db->update('transaction_delivery_status', ['is_latest' => 0]);
+        $this->db->insert("transaction_delivery_status", $data);
+        return true;
+
+    }
+
+    public function transaction_payment_status($data)
+    {
+        $this->db->where('transaction_id', $data["transaction_id"]);
+        $this->db->update('transaction_payment_status', ['is_latest' => 0]);
+        $this->db->insert("transaction_payment_status", $data);
+        return true;
+
+    }
 
     public function redirect_session()
     {
@@ -820,24 +1190,24 @@ class MY_Controller extends CI_Controller
 
     public function checkTransactionStatus($transaction_id)
     {
-        $query = $this->db->query("SELECT t2.status FROM public.transaction t1
-                                    JOIN (SELECT * FROM public.transaction_status WHERE transaction_id=$transaction_id AND is_latest=TRUE) t2 ON t1.id=t2.transaction_id
+        $query = $this->db->query("SELECT t2.status FROM transaction t1
+                                    JOIN (SELECT * FROM transaction_status WHERE transaction_id=$transaction_id AND is_latest=TRUE) t2 ON t1.id=t2.transaction_id
                                     WHERE t1.id=$transaction_id LIMIT 1");
         return $query->row("status");
     }
 
     public function checkTransactionDeliveryStatus($transaction_id)
     {
-        $query = $this->db->query("SELECT t2.status FROM public.transaction t1
-                                    JOIN (SELECT * FROM public.transaction_delivery_status WHERE transaction_id=$transaction_id AND is_latest=TRUE) t2 ON t1.id=t2.transaction_id
+        $query = $this->db->query("SELECT t2.status FROM transaction t1
+                                    JOIN (SELECT * FROM transaction_delivery_status WHERE transaction_id=$transaction_id AND is_latest=TRUE) t2 ON t1.id=t2.transaction_id
                                     WHERE t1.id=$transaction_id LIMIT 1");
         return $query->row("status");
     }
 
     public function checkTransactionPaymentStatus($transaction_id)
     {
-        $query = $this->db->query("SELECT t2.status FROM public.transaction t1
-                                    JOIN (SELECT * FROM public.transaction_payment_status WHERE transaction_id=$transaction_id AND is_latest=TRUE) t2 ON t1.id=t2.transaction_id
+        $query = $this->db->query("SELECT t2.status FROM transaction t1
+                                    JOIN (SELECT * FROM transaction_payment_status WHERE transaction_id=$transaction_id AND is_latest=TRUE) t2 ON t1.id=t2.transaction_id
                                     WHERE t1.id=$transaction_id LIMIT 1");
         return $query->row("status");
     }

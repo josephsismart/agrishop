@@ -5,6 +5,8 @@ if (!$this->session->agrishop_login_level) {
 $uri = $this->session->agrishop_login_uri;
 $role_lvl = $this->session->agrishop_login_level;
 $dashboard = base_url() . $uri . '/Dashboard';
+$subscription = base_url() . $uri . '/Subscription';
+$billing = base_url() . $uri . '/Billing';
 $profile = base_url() . $uri . '/Profile';
 $farm_produce = base_url() . $uri . '/FarmProduce';
 $client_orders = base_url() . $uri . '/Orders';
@@ -14,21 +16,37 @@ $client_orders = base_url() . $uri . '/Orders';
 <div class="offcanvas-body">
     <?php if ($role_lvl != "") { ?>
         <ul class="navbar-nav justify-content-end menu-list list-unstyled d-flex gap-md-3 mb-0">
-            
-            <?php if ($role_lvl == 2) { ?>
-            <li class="nav-item border-dashed">
-                <a href="<?= $dashboard; ?>" class="nav-link d-flex align-items-center gap-3 text-dark p-2">
-                    <i class="fa fa-chart-line"></i>
-                    <span>Dashboard</span>
-                </a>
-            </li>
+
+            <?php if ($role_lvl == 2 || $role_lvl == 3) { ?>
+                <li class="nav-item border-dashed">
+                    <a href="<?= $dashboard; ?>" class="nav-link d-flex align-items-center gap-3 text-dark p-2">
+                        <i class="fa fa-chart-line"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
             <?php } ?>
             <li class="nav-item border-dashed">
                 <a href="#" data-bs-toggle="modal" data-bs-target="#profileModal" class="nav-link d-flex align-items-center gap-3 text-dark p-2">
                     <i class="fa fa-user"></i>
-                    <span>My Profile</span>
+                    <span><?= $this->session->agrishop_login_first_name; ?> <?= $this->session->agrishop_login_last_name; ?></span>
                 </a>
             </li>
+
+            <?php if ($role_lvl == 3) { ?>
+                <li class="nav-item border-dashed">
+                    <a href="#" data-bs-toggle="modal" data-bs-target="#gcashModal" class="nav-link d-flex align-items-center gap-3 text-dark p-2">
+                        <img src="<?= base_url('dist/img/credit/gcash_50x50.png'); ?>" class="mr-n1 ml-n1" height="21" width="21" /> <span>My Gcash</span>
+                    </a>
+                </li>
+            <?php } ?>
+            <?php if ($role_lvl == 3 || $role_lvl == 2) { ?>
+                <li class="nav-item border-dashed">
+                    <a href="<?= $billing; ?>" class="nav-link d-flex align-items-center gap-3 text-dark p-2">
+                        <i class="fa fa-credit-card"></i>
+                        <span> Billing</span> <span class="badge bg-warning countBilling"></span>
+                    </a>
+                </li>
+            <?php } ?>
             <!-- <?php //if ($role_lvl == 2) { 
                     ?> -->
             <?php if ($role_lvl != 2 && $this->session->agrishop_request_registration == 0) { ?>
@@ -63,7 +81,7 @@ $client_orders = base_url() . $uri . '/Orders';
 
                 <li class="nav-item border-dashed">
                     <a href="<?= $client_orders; ?>" class="nav-link d-flex align-items-center gap-3 text-dark p-2">
-                        <i class="fa fa-shopping-basket"></i> <span>Client Orders</span> <span class="badge bg-info countOrders"><?= $this->session->agrishop_reserved_trans_count; ?></span>
+                        <i class="fa fa-shopping-basket"></i> <span>Client Orders</span> <span class="badge bg-info countOrders"><?= $this->session->agrishop_reserved_trans_count > 0 ? $this->session->agrishop_reserved_trans_count : ''; ?></span>
                     </a>
                 </li>
 
@@ -74,15 +92,67 @@ $client_orders = base_url() . $uri . '/Orders';
                 <li class="nav-item border-dashed">
                     <a href="#" class="nav-link d-flex align-items-center gap-3 text-dark p-2" data-bs-toggle="modal" data-bs-target="#modalCartListing" onclick="getTable('CartListing', 0, 5);">
                         <i class="fa fa-shopping-basket"></i>
-                        <span>My Cart</span>
+                        <span>My Cart</span><span class="badge bg-warning pending-order" title="pending orders"><?= $this->session->agrishop_pending_trans_count; ?></span>
                     </a>
                 </li>
-                <!-- <li class="nav-item border-dashed">
-                    <a href="index.html" class="nav-link d-flex align-items-center gap-3 text-dark p-2">
+                <li class="nav-item border-dashed">
+
+                    <!-- MAIN MENU -->
+                    <a class="nav-link d-flex align-items-center gap-3 text-dark p-2" data-bs-toggle="collapse" href="#orderSubMenu">
+
                         <i class="fa fa-table"></i>
                         <span>My Orders</span>
+                        <i class="fa fa-chevron-down ms-auto"></i>
                     </a>
-                </li> -->
+
+                    <!-- SUB MENU -->
+                    <ul class="collapsed list-unstyled ps-4 pl-5" id="orderSubMenu">
+
+                        <li>
+                            <a href="#" class="nav-link text-dark"  data-bs-toggle="modal" data-bs-target="#modalOrderListing" onclick="getTable('OrderListing', 0, 5);">
+                                <i class="fa fa-clock"></i> Reserved
+                            </a>
+                        </li>
+
+                        <li>
+                            <a href="#" class="nav-link text-dark" onclick="getTable('OrderListing','PREPARING',5)">
+                                <i class="fa fa-people-carry"></i> Preparing
+                            </a>
+                        </li>
+
+                        <li>
+                            <a href="#" class="nav-link text-dark" onclick="getTable('OrderListing','READY_FOR_PICKUP',5)">
+                                <i class="fa fa-box"></i> Ready for Pickup
+                            </a>
+                        </li>
+
+                        <li>
+                            <a href="#" class="nav-link text-dark" onclick="getTable('OrderListing','OUT_FOR_DELIVERY',5)">
+                                <i class="fa fa-truck"></i>   Out for Delivery
+                            </a>
+                        </li>
+
+                    </ul>
+
+                </li>
+                <li class="nav-item border-dashed">
+                    <a href="#" class="nav-link d-flex align-items-center gap-3 text-dark p-2" data-bs-toggle="modal" data-bs-target="#modalCompletedOrderListing" onclick="getTable('CompletedOrderListing', 0, 5);">
+                        <i class="fa fa-check-circle"></i>
+                        <span>Completed Orders</span>
+                    </a>
+                </li>
+                <li class="nav-item border-dashed">
+                    <a href="#" class="nav-link d-flex align-items-center gap-3 text-dark p-2" data-bs-toggle="modal" data-bs-target="#modalCancelledOrderListing" onclick="getTable('CancelledOrderListing', 0, 5);">
+                        <i class="fa fa-times-circle"></i>
+                        <span>Cancelled Orders</span>
+                    </a>
+                </li>
+                <li class="nav-item border-dashed">
+                    <a href="#" class="nav-link d-flex align-items-center gap-3 text-dark p-2" data-bs-toggle="modal" data-bs-target="#modalRateOrderListing" onclick="getTable('RateOrderListing', 0, 5);">
+                        <i class="fa fa-star"></i>
+                        <span>Rate Orders</span>
+                    </a>
+                </li>
             <?php } ?>
 
             <li class="nav-item border-dashed">

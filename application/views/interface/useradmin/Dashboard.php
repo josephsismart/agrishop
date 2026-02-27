@@ -4,6 +4,31 @@ if (!$this->session->agrishop_login_level) {
     redirect(base_url('login'));
 }
 ?>
+<?php
+/* ================= MOCK DATA ================= */
+
+// dashboard mock if empty
+$dashboard["farmers"] = $dashboard["farmers"] ?? 324;
+$dashboard["users"] = $dashboard["users"] ?? 1520;
+$dashboard["subscriptions"] = $dashboard["subscriptions"] ?? 210;
+$dashboard["remittance"] = $dashboard["remittance"] ?? "₱125,430.00";
+
+// farmer remittance list
+$farmer_remittance = [
+    ["name" => "Juan Dela Cruz", "amount" => "₱12,500", "status" => "Paid"],
+    ["name" => "Alfredo Esperanza", "amount" => "₱8,200", "status" => "Pending"],
+    ["name" => "Marcelo Kalaw", "amount" => "₱6,900", "status" => "Paid"],
+    ["name" => "Danielo Plaza", "amount" => "₱4,300", "status" => "Pending"],
+];
+
+// top farmers mock
+$top_farmers = [
+    ["name" => "Juan Dela Cruz", "sales" => "₱52,000"],
+    ["name" => "Alfredo Esperanza", "sales" => "₱44,200"],
+    ["name" => "Marcelo Kalaw", "sales" => "₱39,800"],
+    ["name" => "Danielo Plaza", "sales" => "₱32,500"],
+];
+?>
 <!-- Highcharts -->
 <!-- Content Header (Page header) -->
 <section class="content-header">
@@ -25,26 +50,24 @@ if (!$this->session->agrishop_login_level) {
 
             <div class="col-md-3 col-6">
                 <div class="info-box shadow-sm">
-                    <span class="info-box-icon bg-success">
-                        <i class="fa fa-sack-dollar"></i>
+                    <span class="info-box-icon bg-primary">
+                        <i class="fa fa-user"></i>
                     </span>
                     <div class="info-box-content">
-                        <span class="info-box-text">Revenue</span>
-                        <span class="info-box-number fs-4"><?= $dashboard["revenue"] ?></span>
-                        <!-- <small class="text-success">▲ +12%</small> -->
+                        <span class="info-box-text">Users</span>
+                        <span class="info-box-number fs-4"><?= $dashboard["user"] ?></span>
                     </div>
                 </div>
             </div>
 
             <div class="col-md-3 col-6">
                 <div class="info-box shadow-sm">
-                    <span class="info-box-icon bg-info">
-                        <i class="fa fa-basket-shopping"></i>
+                    <span class="info-box-icon bg-success">
+                        <i class="fa fa-tractor"></i>
                     </span>
                     <div class="info-box-content">
-                        <span class="info-box-text">Orders</span>
-                        <span class="info-box-number fs-4"><?= $dashboard["total_orders"] ?></span>
-                        <!-- <small class="text-info">steady</small> -->
+                        <span class="info-box-text">Farmers</span>
+                        <span class="info-box-number fs-4"><?= $dashboard["farmer"] ?></span>
                     </div>
                 </div>
             </div>
@@ -52,11 +75,11 @@ if (!$this->session->agrishop_login_level) {
             <div class="col-md-3 col-6">
                 <div class="info-box shadow-sm">
                     <span class="info-box-icon bg-warning">
-                        <i class="fa fa-seedling"></i>
+                        <i class="fa fa-crown"></i>
                     </span>
                     <div class="info-box-content">
-                        <span class="info-box-text">Products</span>
-                        <span class="info-box-number fs-4"><?= $dashboard["products"] ?></span>
+                        <span class="info-box-text">Subscriptions</span>
+                        <span class="info-box-number fs-4"><?= $dashboard["subscriptions"] ?></span>
                     </div>
                 </div>
             </div>
@@ -64,415 +87,321 @@ if (!$this->session->agrishop_login_level) {
             <div class="col-md-3 col-6">
                 <div class="info-box shadow-sm">
                     <span class="info-box-icon bg-danger">
-                        <i class="fa-solid fa-house-chimney-window"></i>
+                        <i class="fa fa-money-bill-wave"></i>
                     </span>
                     <div class="info-box-content">
-                        <span class="info-box-text">Farms</span>
-                        <span class="info-box-number fs-4"><?= $dashboard["farms"] ?></span>
+                        <span class="info-box-text">Farmer Remittance</span>
+                        <span class="info-box-number fs-4"><?= $dashboard["revenue"] ?></span>
                     </div>
                 </div>
             </div>
 
         </div>
 
-        <?php
-        $p_selling = json_decode($dashboard["p_selling"], true) ?? [];
-
-        $default = [
-            'img_path' => 'dist/img/media/icons/1x1.png', // put your placeholder
-            'name'     => '--',
-            'qty'      => '--',
-            'price'    => '--',
-            'uom'      => '--'
-        ];
-
-        // ensure at least 4 items
-        for ($i = count($p_selling); $i < 4; $i++) {
-            $p_selling[] = $default;
-        }
-        ?>
-
         <div class="row">
+
+            <!-- TOP FARMERS -->
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-header bg-success text-white">
-                        <h5 class="card-title"><i class="fa fa-arrow-up"></i> Top Selling Produce</h5>
+                        <h5 class="card-title"><i class="fa fa-trophy"></i> Top Farmers</h5>
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <!-- PRODUCE CARD -->
-                            <div class="col-6 mb-3">
-                                <div class="card shadow-sm">
-                                    <img src="<?= base_url($p_selling[0]['img_path']) ?>" class="card-img-top" style="height:120px;object-fit:cover;">
-                                    <div class="card-body p-2">
-                                        <h6 class="mb-1"><?= $p_selling[0]['name'] ?></h6>
-                                        <span class="badge bg-success"> <?= $p_selling[0]['qty'] ?> sold</span>
-                                        <p class="mb-0 text-muted"> <?= $p_selling[0]['price'] ?> / <?= $p_selling[0]['uom'] ?></p>
-                                    </div>
-                                </div>
-                            </div>
 
-                            <div class="col-6 mb-3">
-                                <div class="card shadow-sm">
-                                    <img src="<?= base_url($p_selling[1]['img_path']) ?>" class="card-img-top" style="height:120px;object-fit:cover;">
-                                    <div class="card-body p-2">
-                                        <h6 class="mb-1"><?= $p_selling[1]['name'] ?></h6>
-                                        <span class="badge bg-success"> <?= $p_selling[1]['qty'] ?> sold</span>
-                                        <p class="mb-0 text-muted"> <?= $p_selling[1]['price'] ?> / <?= $p_selling[1]['uom'] ?></p>
-                                    </div>
-                                </div>
-                            </div>
-
-                        </div>
+                    <div class="card-body p-0">
+                        <table class="table table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th width="1">#</th>
+                                    <th>Farmer</th>
+                                    <th>Sales</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php $counter = 1;
+                                foreach (json_decode($dashboard["top_farmer"]) as $f) : ?>
+                                    <tr>
+                                        <td><?= $counter++ ?></td>
+                                        <td><?= $f->farmer ?></td>
+                                        <td class="text-success fw-bold">₱<?= number_format($f->revenue, 2) ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
 
+            <!-- FARMER REMITTANCE -->
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-header bg-warning">
-                        <h5 class="card-title"><i class="fa fa-arrow-down"></i> Slow Moving Produce</h5>
+                        <h5 class="card-title"><i class="fa fa-wallet"></i> Farmer Remittance</h5>
                     </div>
-                    <div class="card-body">
-                        <div class="row">
 
-                            <div class="col-6 mb-3">
-                                <div class="card">
-                                    <img src="<?= base_url($p_selling[count($p_selling) - 1]['img_path']) ?>" class="card-img-top" style="height:120px;object-fit:cover;">
-                                    <div class="card-body p-2">
-                                        <h6 class="mb-1"><?= $p_selling[count($p_selling) - 1]['name'] ?></h6>
-                                        <span class="badge bg-warning"><?= $p_selling[count($p_selling) - 1]['qty'] ?> sold</span>
-                                        <p class="mb-0 text-muted"> <?= $p_selling[count($p_selling) - 1]['price'] ?> / <?= $p_selling[count($p_selling) - 1]['uom'] ?></p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-6 mb-3">
-                                <div class="card">
-                                    <img src="<?= base_url($p_selling[count($p_selling) - 2]['img_path']) ?>" class="card-img-top" style="height:120px;object-fit:cover;">
-                                    <div class="card-body p-2">
-                                        <h6 class="mb-1"><?= $p_selling[count($p_selling) - 2]['name'] ?></h6>
-                                        <span class="badge bg-warning"><?= $p_selling[count($p_selling) - 2]['qty'] ?> sold</span>
-                                        <p class="mb-0 text-muted"> <?= $p_selling[count($p_selling) - 2]['price'] ?> / <?= $p_selling[count($p_selling) - 2]['uom'] ?></p>
-                                    </div>
-                                </div>
-                            </div>
-
-                        </div>
+                    <div class="card-body p-0">
+                        <table class="table table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Farmer</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach (json_decode($dashboard["farmer_remittance"]) as $r) : ?>
+                                    <tr>
+                                        <td><?= $r->farmer ?></td>
+                                        <td>₱<?= number_format($r->amount, 2) ?></td>
+                                        <td>
+                                            <span class="badge <?= $r->status == "t" ? "bg-success" : "bg-warning" ?>">
+                                                <?= $r->status == "t" ? "PAID" : "PENDING" ?>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
+
         </div>
 
     </div>
     <!-- /.container-fluid -->
 
+    <div class="container-fluid">
+        <div class="row">
 
-    <div class="row m-0">
-
-        <div class="col-md-5 col-sm-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title"><i class="fa fa-chart-line"></i> Monthly Orders</h5>
-
-                    <div class="card-tools">
-                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                            <i class="fas fa-minus"></i>
-                        </button>
-                        <div class="btn-group show">
-
-                        </div>
-                        <button type="button" class="btn btn-tool" data-card-widget="remove">
-                            <i class="fas fa-times"></i>
-                        </button>
+            <!-- REVENUE TREND -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="card-title"><i class="fa fa-wallet"></i> Revenue Trend</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="revenueTrend"></canvas>
                     </div>
                 </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-12">
-                            <!-- <p class="text-center">
-                                <strong>Sales: 1 Jan, 2014 - 30 Jul, 2014</strong>
-                            </p> -->
-                            <canvas id="ordersChart" style="height:520px;"></canvas>
+            </div>
 
-                        </div>
+            <!-- ORDERS ANALYTICS -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="card-title"><i class="fa fa-boxes"></i> Orders Analytics</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="ordersAnalytics"></canvas>
                     </div>
                 </div>
-                <!-- <div class="overlay dark container1">
-                    <i style="font-size:100px;color:#fff;" class="fa fa-circle-notch fa-spin"></i>
-                </div> -->
             </div>
 
         </div>
+        <div class="row">
+            <?php 
+                $query_produce = "SELECT p.id,  CASE WHEN p.img_path IS NOT NULL THEN p.img_path ELSE pc.img_path END AS img_path , p.\"name\", SUM(mcfp.qty) sum_qty FROM my_cart_farm_produce mcfp 
+                                    LEFT JOIN \"transaction\" t ON mcfp.transaction_id =t.id 
+                                    LEFT JOIN transaction_cancel tc ON t.id= tc.transaction_id 
+                                    LEFT JOIN farm_produce fp ON mcfp.farm_produce_id = fp.id
+                                    LEFT JOIN produce p ON fp.produce_id = p.id
+                                    LEFT JOIN produce_classification pc ON p.produce_classification_id = pc.id
+                                    WHERE tc.id IS NULL
+                                    GROUP BY p.id, p.name,pc.img_path ";
+                $fast_moving_produce = $this->db->query($query_produce . "ORDER BY SUM(mcfp.qty) DESC LIMIT 10")->result_array();
+                $slow_moving_produce = $this->db->query($query_produce . "ORDER BY SUM(mcfp.qty) ASC LIMIT 10")->result_array();
+                $counter_fast = 1;
+                $counter_slow = 1;
 
-        <div class="col-md-5 col-sm-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title"><i class="fa fa-chart-bar"></i> Produce Sales Volume</h5>
-
-                    <div class="card-tools">
-                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                            <i class="fas fa-minus"></i>
-                        </button>
-                        <div class="btn-group show">
-
-                        </div>
-                        <button type="button" class="btn btn-tool" data-card-widget="remove">
-                            <i class="fas fa-times"></i>
-                        </button>
+            ?>
+            <!-- REVENUE TREND -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="card-title"><i class="fa fa-wallet"></i> Fast moving produce</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Image</th>
+                                    <th>Produce</th>
+                                    <th>Quantity</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($fast_moving_produce as $produce): ?>
+                                    <tr>
+                                        <td><?php echo $counter_fast++; ?></td>
+                                        <td><img src="<?php echo base_url() . $produce['img_path']; ?>" alt="<?php echo $produce['name']; ?>" style="width: 50px; height: 50px;"></td>
+                                        <td><?php echo $produce['name']; ?></td>
+                                        <td><?php echo $produce['sum_qty']; ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-12">
+            </div>
 
-                            <canvas id="produceChart" style="height:520px;"></canvas>
-                        </div>
+            <!-- ORDERS ANALYTICS -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-warning text-white">
+                        <h5 class="card-title"><i class="fa fa-boxes"></i> Slow moving produce</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-striped p-0">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Image</th>
+                                    <th>Produce</th>
+                                    <th>Quantity</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($slow_moving_produce as $produce): ?>
+                                    <tr>
+                                        <td><?php echo $counter_slow++; ?></td>
+                                        <td><img src="<?php echo base_url() . $produce['img_path']; ?>" alt="<?php echo $produce['name']; ?>" style="width: 50px; height: 50px;"></td>
+                                        <td><?php echo $produce['name']; ?></td>
+                                        <td><?php echo $produce['sum_qty']; ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-                <!-- <div class="overlay dark container2">
-                    <i style="font-size:100px;color:#fff;" class="fa fa-circle-notch fa-spin"></i>
-                </div> -->
             </div>
+
         </div>
 
 
-        <div class="col-md-2 col-sm-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title">
-                        <i class="fa fa-pie-chart"></i> Sold Products
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="wholesaleVsRetail"></canvas>
-                </div>
-            </div>
-        </div>
+        <div class="row" hidden>
 
-        <div class="col-md-8 col-sm-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title">
-                        📊 Orders vs Revenue Trend
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="revenueOrdersChart" height="138"></canvas>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4 col-sm-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title">
-                        <i class="fa fa-pie-chart"></i> Product Classification
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="buyingTrendChart" height="90"></canvas>
+            <!-- SUBSCRIPTION GROWTH -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header bg-warning">
+                        <h5 class="card-title"><i class="fa fa-crown"></i> Subscription Growth</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="subscriptionChart"></canvas>
+                    </div>
                 </div>
             </div>
-        </div>
 
+            <!-- FARMER EARNINGS -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title"><i class="fa fa-truck"></i> Farmer Earnings</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="farmerEarnings"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ORDER STATUS -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="card-title"><i class="fa fa-chart-pie"></i> Order Status</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="orderStatusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+        </div>
     </div>
 
 </section>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<script type="text/javascript">
-    const ordersCtx = document.getElementById('ordersChart').getContext('2d');
-    const ordersData = <?php echo $dashboard['ordersGraph']; ?>;
-    new Chart(ordersCtx, {
+<script>
+    /* ================= MOCK DATA ================= */
+
+    const ordersData = [120, 180, 150, 220, 260, 310];
+    const subscriptions = [20, 45, 70, 95, 140, 210];
+
+    const farmerNames = ["Juan", "Alfredo", "Marcelo", "Danielo"];
+    const farmerIncome = [52000, 44200, 39800, 32500];
+
+    const revenueData = <?php echo $dashboard['revnue_trendGraph']; ?>;
+    const orderAnalyticsGraph = <?php echo $dashboard['orderAnalyticsGraph']; ?>;
+
+    /* ================= REVENUE TREND ================= */
+    new Chart(document.getElementById('revenueTrend'), {
         type: 'line',
         data: {
-            labels: ordersData.map(item => item.mon),
+            labels: revenueData.map(item => item.month),
             datasets: [{
-                label: 'Orders',
-                data: ordersData.map(item => item.qty),
-                fill: true,
+                label: 'Revenue',
+                data: revenueData.map(item => item.revenue),
                 borderWidth: 3,
-                tension: 0.4,
+                fill: true,
+                tension: .4
             }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    enabled: true
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
         }
     });
 
-    const produceCtx = document.getElementById('produceChart').getContext('2d');
-    const p_selling = <?php echo $dashboard["p_selling"]; ?>;
 
-    // get top 5 once (cleaner)
-    const topSelling = p_selling.slice(0, 5);
-
-    new Chart(produceCtx, {
+    /* ================= ORDERS ANALYTICS ================= */
+    new Chart(document.getElementById('ordersAnalytics'), {
         type: 'bar',
         data: {
-            // short label for display
-            labels: topSelling.map(item => item.name.substring(0, 3)),
-
+            labels: orderAnalyticsGraph.map(item => item.month),
             datasets: [{
-                label: 'Units Sold',
-                data: topSelling.map(item => item.qty),
+                label: 'Orders',
+                data: orderAnalyticsGraph.map(item => item.orders),
                 borderWidth: 1
             }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    display: false
-                },
-
-                // ⭐ THIS PART — show full name on hover
-                tooltip: {
-                    callbacks: {
-                        title: function(context) {
-                            return topSelling[context[0].dataIndex].name;
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
         }
     });
 
 
-    new Chart(document.getElementById('revenueOrdersChart'), {
+    /* ================= SUBSCRIPTION GROWTH ================= */
+    new Chart(document.getElementById('subscriptionChart'), {
         type: 'line',
         data: {
-            labels: ordersData.map(item => item.mon),
+            labels: months,
             datasets: [{
-                    label: 'Orders',
-                    data: ordersData.map(item => item.qty),
-                    borderWidth: 3,
-                    tension: 0.4
-                },
-                {
-                    label: 'Revenue (₱)',
-                    data: ordersData.map(item => item.revenue),
-                    borderWidth: 3,
-                    tension: 0.4
-                }
-            ]
-        },
-        options: {
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            }
+                label: 'New Subscribers',
+                data: subscriptions,
+                borderWidth: 3,
+                fill: true,
+                tension: .4
+            }]
         }
     });
 
 
-    const trendCtx = document.getElementById('buyingTrendChart').getContext('2d');
-    const classificationData = <?php echo $dashboard["classificationGraph"]; ?>;
+    /* ================= FARMER EARNINGS ================= */
+    new Chart(document.getElementById('farmerEarnings'), {
+        type: 'bar',
+        data: {
+            labels: farmerNames,
+            datasets: [{
+                label: 'Earnings',
+                data: farmerIncome
+            }]
+        }
+    });
 
-    // get all counts
-    const counts = classificationData.map(item => item.count);
 
-    // ⭐ sum all item.count
-    const total = counts.reduce((sum, value) => sum + Number(value), 0);
-
-    new Chart(trendCtx, {
+    /* ================= ORDER STATUS DOUGHNUT ================= */
+    new Chart(document.getElementById('orderStatusChart'), {
         type: 'doughnut',
         data: {
-            labels: classificationData.map(item => item.class_name),
+            labels: ["Pending", "Processing", "Shipped", "Delivered"],
             datasets: [{
-                data: counts,
-                cutout: '60%'
+                data: [45, 32, 18, 120]
             }]
-        },
-        options: {
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                },
-
-                // ⭐ show percentage in tooltip
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            let value = context.raw;
-                            let percentage = ((value / total) * 100).toFixed(1);
-
-                            return ` ${context.label}: ${value} (${percentage}%)`;
-                        }
-                    }
-                }
-            }
-        }
-    });
-
-
-    const trendCtx2 = document.getElementById('wholesaleVsRetail').getContext('2d');
-    const wholesaleRetailData = <?php echo $dashboard["wholesale_retail_graph"]; ?>;
-
-    // get qty
-    const counts_wr = wholesaleRetailData.map(item => Number(item.qty));
-
-    // get revenue
-    const revenue_wr = wholesaleRetailData.map(item => Number(item.revenue));
-
-    // total qty
-    const total_wr = counts_wr.reduce((sum, value) => sum + value, 0);
-
-    // total revenue (optional if needed later)
-    const total_revenue_wr = revenue_wr.reduce((sum, value) => sum + value, 0);
-
-    new Chart(trendCtx2, {
-        type: 'pie',
-        data: {
-            labels: wholesaleRetailData.map(item => item.w_r),
-            datasets: [{
-                data: counts_wr
-            }]
-        },
-        options: {
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                },
-
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-
-                            let index = context.dataIndex;
-
-                            let qty = counts_wr[index];
-                            let revenue = revenue_wr[index];
-
-                            let percentage = ((qty / total_wr) * 100).toFixed(1);
-
-                            return [
-                                `Qty Sold: ${qty}`,
-                                `Revenue: ₱${revenue.toLocaleString()}`,
-                                `Share: ${percentage}%`
-                            ];
-                        }
-                    }
-                }
-            }
         }
     });
 </script>

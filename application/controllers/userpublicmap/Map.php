@@ -6,6 +6,7 @@ class Map extends MY_Controller
     public function __construct()
     {
         parent::__construct();
+        $this->db->query('SET SQL_BIG_SELECTS=1');
         //$this->redirect();
 
         $this->load->model('mainModel');
@@ -17,62 +18,62 @@ class Map extends MY_Controller
     {
         $data =  [];
         $value = $this->input->post("value");
+        $price_qty_left = $this->price_qty_left();
         foreach ($this->db->query("SELECT
-                                        fp.farm_id,
-                                        ff.img_path,
-                                        ff.farm_name,
-                                        p.img_path AS farmer_img_path,
-                                        CONCAT(p.first_name,' ',p.last_name) AS farmer_name,
-                                        ff.barangay_id,
-                                        ff.lat,
-                                        ff.lon,
-                                        p.email_address,
-                                        p.contact_num,
-                                        json_agg(
-                                            json_build_object(
-                                                'id', fp.produce_id,
-                                                'img_path', fp.produce_img_path,
-                                                'name', fp.produce_name,
-                                                'harvest_at', fp.harvest_schedule,
-                                                'price', fp.price,
-                                                'uom', fp.uom,
-                                                'qty_left', fp.qty_left,
-                                                'price_wholesale', fp.price_wholesale,
-                                                'wholesale_at_qty', fp.wholesale_at_qty
-                                            )
-                                            ORDER BY fp.harvest_schedule
-                                        ) AS produce
-                                    FROM (
-                                        SELECT
-                                            t11.*,
-                                            t22.img_path AS produce_img_path,
-                                            t22.name AS produce_name,
-                                            ROW_NUMBER() OVER (
-                                                PARTITION BY t11.farm_id
-                                                ORDER BY t11.harvest_schedule DESC
-                                            ) AS rn
-                                        FROM price_qty_left t11
-                                        JOIN produce t22 ON t11.produce_id = t22.id
-                                        WHERE
-                                            -- t11.qty_left > 0
-                                            -- AND 
-                                            CONCAT(t22.name, t22.tags) ILIKE '%$value%'
-                                    ) fp
-                                    LEFT JOIN farmer_farm ff ON fp.farm_id = ff.id
-                                    LEFT JOIN farmer f ON ff.farmer_id = f.id
-                                    LEFT JOIN person p ON f.person_id = p.id
-                                    WHERE fp.rn <= 2   -- 🔥 LIMIT PER FARM
-                                    GROUP BY
-                                        fp.farm_id,
-                                        ff.img_path,
-                                        ff.farm_name,
-                                        p.img_path,
-                                        p.contact_num,
-                                        p.email_address,
-                                        CONCAT(p.first_name,' ',p.last_name),
-                                        ff.barangay_id,
-                                        ff.lat,
-                                        ff.lon")->result() as $key => $value) {
+                                    fp.farm_id,
+                                    ff.img_path,
+                                    ff.farm_name,
+                                    p.img_path AS farmer_img_path,
+                                    CONCAT(p.first_name,' ',p.last_name) AS farmer_name,
+                                    ff.barangay_id,
+                                    ff.lat,
+                                    ff.lon,
+                                    p.email_address,
+                                    p.contact_num,
+                                    CONCAT('[', GROUP_CONCAT(
+                                        JSON_OBJECT(
+                                            'id', fp.produce_id,
+                                            'img_path', fp.produce_img_path,
+                                            'name', fp.produce_name,
+                                            'harvest_at', fp.harvest_schedule,
+                                            'price', fp.price,
+                                            'uom', fp.uom,
+                                            'qty_left', fp.qty_left,
+                                            'price_wholesale', fp.price_wholesale,
+                                            'wholesale_at_qty', fp.wholesale_at_qty
+                                        )
+                                        ORDER BY fp.harvest_schedule
+                                    ), ']') AS produce
+                                FROM (
+                                    SELECT
+                                        t11.*,
+                                        t22.img_path AS produce_img_path,
+                                        t22.name AS produce_name,
+                                        ROW_NUMBER() OVER (
+                                            PARTITION BY t11.farm_id
+                                            ORDER BY t11.harvest_schedule DESC
+                                        ) AS rn
+                                    FROM ($price_qty_left) t11
+                                    JOIN produce t22 ON t11.produce_id = t22.id
+                                    WHERE
+                                        CONCAT(t22.name, t22.tags) COLLATE utf8mb4_general_ci LIKE '%$value%'
+                                ) fp
+                                LEFT JOIN farmer_farm ff ON fp.farm_id = ff.id
+                                LEFT JOIN farmer f ON ff.farmer_id = f.id
+                                LEFT JOIN person p ON f.person_id = p.id
+                                WHERE fp.rn <= 2
+                                GROUP BY
+                                    fp.farm_id,
+                                    ff.img_path,
+                                    ff.farm_name,
+                                    p.img_path,
+                                    p.contact_num,
+                                    p.email_address,
+                                    CONCAT(p.first_name,' ',p.last_name),
+                                    ff.barangay_id,
+                                    ff.lat,
+                                    ff.lon
+                                ORDER BY fp.harvest_schedule")->result() as $key => $value) {
             $farm_address = $this->getAddress2($value->barangay_id);
             $farm_image = $value->img_path ? base_url($value->img_path) : base_url('dist/img/media/icons/1x1.png');
             $farmer_image = $value->farmer_img_path ? base_url($value->farmer_img_path) : base_url('dist/img/media/icons/1x1.png');
@@ -106,23 +107,24 @@ class Map extends MY_Controller
         list($limit, $offset) = $this->calculatePagination($requestData);
 
         // Query to get total record count
-        $thisQuery = $this->db->query("SELECT count(1) AS total FROM public.farm_produce fp
-                                    LEFT JOIN public.produce p ON fp.produce_id = p.id
-                                    LEFT JOIN public.produce_classification pc ON p.produce_classification_id = pc.id
-                                    LEFT JOIN price_qty_left pql ON fp.farm_id = pql.farm_id AND fp.produce_id = pql.produce_id
+        $price_qty_left = $this->price_qty_left();
+        $thisQuery = $this->db->query("SELECT count(1) AS total FROM farm_produce fp
+                                    LEFT JOIN produce p ON fp.produce_id = p.id
+                                    LEFT JOIN produce_classification pc ON p.produce_classification_id = pc.id
+                                    LEFT JOIN ($price_qty_left) pql ON fp.farm_id = pql.farm_id AND fp.produce_id = pql.produce_id
                                     WHERE fp.farm_id = $farm_id AND CONCAT(p.name,p.tags,pc.class_name,p.description,(CASE WHEN p.is_seasonal = true THEN 'SEASONAL' ELSE 'NON-SEASONAL' END),(CASE WHEN p.is_active = true THEN 'ACTIVE' ELSE 'INACTIVE' END)) 
-                                    ILIKE '%$searchValue%'");
+                                    LIKE '%$searchValue%'");
 
         $totalRecords = $thisQuery->row()->total;
 
         $query = $this->db->query("SELECT ROW_NUMBER() OVER (ORDER BY fp.id DESC) AS row_num, fp.id as fp_id,p.id,p.name as produce,p.tags,pql.harvest_schedule,pql.uom,pql.price,pql.qty_left,pql.latest_price_id,pc.class_name,p.description,
                                     p.is_seasonal,p.is_active,p.created_at, p.img_path,pc.img_path as default_img_path, fp.farm_id, pql.wholesale_at_qty,pql.price_wholesale
-                                    FROM public.farm_produce fp
-                                    LEFT JOIN public.produce p ON fp.produce_id = p.id
-                                    LEFT JOIN public.produce_classification pc ON p.produce_classification_id = pc.id
-                                    LEFT JOIN price_qty_left pql ON fp.farm_id = pql.farm_id AND fp.produce_id = pql.produce_id
+                                    FROM farm_produce fp
+                                    LEFT JOIN produce p ON fp.produce_id = p.id
+                                    LEFT JOIN produce_classification pc ON p.produce_classification_id = pc.id
+                                    LEFT JOIN ($price_qty_left) pql ON fp.farm_id = pql.farm_id AND fp.produce_id = pql.produce_id
                                     WHERE fp.farm_id = $farm_id AND CONCAT(p.name,p.tags,pc.class_name,p.description,(CASE WHEN p.is_seasonal = true THEN 'SEASONAL' ELSE 'NON-SEASONAL' END),(CASE WHEN p.is_active = true THEN 'ACTIVE' ELSE 'INACTIVE' END)) 
-                                    ILIKE '%$searchValue%'
+                                    LIKE '%$searchValue%'
                                     ORDER BY p.created_at DESC
                                     LIMIT $limit OFFSET $offset
                                     ");
@@ -146,65 +148,64 @@ class Map extends MY_Controller
              width='60'
              height='60'
              class='rounded shadow-sm border'
-             style='object-fit:cover;'>
-    ";
+             style='object-fit:cover;'>";
 
             // ---------- STOCK COLOR ----------
             $stockColor = ($value->qty_left <= 10) ? "text-danger font-weight-bold" : "text-success font-weight-bold";
 
             $stock_display = "
-        <span class='{$stockColor}' style='font-size:1.1rem;'>
-            {$value->qty_left}
-        </span>
-    ";
+                <span class='{$stockColor}' style='font-size:1.1rem;'>
+                    {$value->qty_left}
+                </span>
+            ";
 
             // ---------- PRICE DISPLAY ----------
             $price_display = "
-        <div class='font-weight-bold text-primary' style='font-size:1.1rem;'>
-            ₱" . number_format($value->price, 2) . "
-        </div>
-        <small class='text-muted' style='display: block;'>per {$uom}</small>
-    " . ($value->wholesale_at_qty ? "<small class='badge bg-gray'>Wholesale:<br/> ₱" . number_format($value->price_wholesale, 2) . " per {$uom}<br/> @min {$value->wholesale_at_qty} qty</small>" : "") . "
-    ";
+                <div class='font-weight-bold text-primary' style='font-size:1.1rem;'>
+                    ₱" . number_format($value->price, 2) . "
+                </div>
+                <small class='text-muted' style='display: block;'>per {$uom}</small>
+            " . ($value->wholesale_at_qty ? "<small class='badge bg-gray'>Wholesale:<br/> ₱" . number_format($value->price_wholesale, 2) . " per {$uom}<br/> @min {$value->wholesale_at_qty} qty</small>" : "") . "
+            ";
 
             // ---------- QTY INPUT ----------
             $q_id = $value->row_num;
 
             $qty_input = "
-        <input type='number'
-               style='width:90px;text-align:center;'
-               id='qty{$q_id}'
-               min='1'
-               max='{$value->qty_left}'
-               value='1'
-               class='form-control form-control-sm border-success font-weight-bold'>
-    ";
+                <input type='number'
+                    style='width:90px;text-align:center;'
+                    id='qty{$q_id}'
+                    min='1'
+                    max='{$value->qty_left}'
+                    value='1'
+                    class='form-control form-control-sm border-success font-weight-bold'>
+            ";
 
             // ---------- ADD TO CART BUTTON ----------
             $add_to_cart = "
-        <button class='btn btn-sm btn-warning shadow-sm'
-            onclick='add_to_cart({
-                id: \"{$value->fp_id}\",
-                id_: \"{$value->row_num}\",
-                img_path: \"{$img}\",
-                produce: \"{$produce}\",
-                harvest_schedule: \"{$value->harvest_schedule}\",
-                qty_left: \"{$value->qty_left}\",
-                price: \"{$value->price}\",
-                uom: \"{$uom}\",
-                class_name: \"{$value->class_name}\",
-                is_seasonal: \"{$value->is_seasonal}\",
-                is_active: \"{$value->is_active}\",
-                farm_id: \"{$value->farm_id}\",
-                latest_price_id: \"{$value->latest_price_id}\"
-            })'>Add to cart
-        </button>
-    ";
+                <button class='btn btn-sm btn-warning shadow-sm'
+                    onclick='add_to_cart({
+                        id: \"{$value->fp_id}\",
+                        id_: \"{$value->row_num}\",
+                        img_path: \"{$img}\",
+                        produce: \"{$produce}\",
+                        harvest_schedule: \"{$value->harvest_schedule}\",
+                        qty_left: \"{$value->qty_left}\",
+                        price: \"{$value->price}\",
+                        uom: \"{$uom}\",
+                        class_name: \"{$value->class_name}\",
+                        is_seasonal: \"{$value->is_seasonal}\",
+                        is_active: \"{$value->is_active}\",
+                        farm_id: \"{$value->farm_id}\",
+                        latest_price_id: \"{$value->latest_price_id}\"
+                    })'><b><i class='fa fa-shopping-cart'></i> Add</b>
+                </button>
+            ";
 
             // ---------- PRODUCE NAME ----------
             $produce_display = "
-        <div class='font-weight-bold'>{$produce}</div>
-        " . ($tags ? "<small class='text-muted' style='display: block;'>({$tags})</small>" : "");
+            <div class='font-weight-bold'>{$produce}</div>
+            " . ($tags ? "<small class='text-muted' style='display: block;'>({$tags})</small>" : "");
 
             // ---------- FINAL DATA ----------
             $data[] = array(
@@ -212,7 +213,7 @@ class Map extends MY_Controller
                 $qty_input,
                 $image_path,
                 $produce_display,
-                '<span class="badge bg-white">'. $value->harvest_schedule .'</span>',
+                '<span class="badge bg-white">' . $value->harvest_schedule . '</span>',
                 $stock_display,
                 $price_display
             );
@@ -235,7 +236,7 @@ class Map extends MY_Controller
         $qty = $this->input->post("qty");
         //  id,img_path,produce,harvest_schedule,qty_left,price,uom,class_name,is_seasonal,is_active,farm_id
         $farm_id = $item['farm_id'];
-        parse_str($this->input->post("c"), $filter);
+        parse_str($this->input->post("c") ?? '', $filter);
         $person_id = $this->session->agrishop_person_id;
         $farm_produce_id = $item['id'];
         $latest_price_id = $item['latest_price_id'];
@@ -244,8 +245,8 @@ class Map extends MY_Controller
         $transaction_status = '';
         $true = ["success"   => true];
         $false = ["success"   => false];
-
-        $check_qty_left = $this->db->query("SELECT pql.qty_left, name FROM price_qty_left pql
+        $price_qty_left = $this->price_qty_left();
+        $check_qty_left = $this->db->query("SELECT pql.qty_left, name FROM ($price_qty_left) pql
                                             LEFT JOIN produce p on pql.produce_id = p.id
                                             WHERE pql.id = $farm_produce_id LIMIT 1")->row();
         if ($check_qty_left->qty_left < $qty) {
@@ -255,7 +256,7 @@ class Map extends MY_Controller
         }
 
 
-        $check = $this->db->query("SELECT * FROM transaction WHERE person_id = $person_id AND is_done is FALSE AND farm_id = $farm_id LIMIT 1")->row();
+        $check = $this->db->query("SELECT * FROM transaction WHERE person_id = $person_id AND is_done = false AND farm_id = $farm_id LIMIT 1")->row();
 
         if ($check) {
             $transaction_id = $check->id;
@@ -285,7 +286,7 @@ class Map extends MY_Controller
             'created_by_person_id' => $person_id,
         ];
 
-        $this->db->insert("transaction_status", $data_transaction_status);
+        $this->transaction_status($data_transaction_status);
 
         // $check_exist_cart = $this->db->query("SELECT * FROM my_cart_farm_produce WHERE transaction_id = $transaction_id 
         //                                         AND farm_produce_id = $farm_produce_id 
@@ -335,8 +336,7 @@ class Map extends MY_Controller
             'created_at' => $dateNow
         ];
 
-
-        $check_qty_left = $this->db->query("SELECT * FROM price_qty_left pql WHERE id = $farm_produce_id AND pql.wholesale_at_qty <= $qty")->row();
+        $check_qty_left = $this->db->query("SELECT * FROM ($price_qty_left) pql WHERE id = $farm_produce_id AND pql.wholesale_at_qty <= $qty")->row();
         if ($check_qty_left) {
             $data_my_cart += [
                 'is_wholesale' => true,
@@ -350,7 +350,7 @@ class Map extends MY_Controller
 
         if ($this->db->insert("my_cart_farm_produce", $data_my_cart)) {
             $cp = $this->getTransactionPeding($person_id, 'PENDING', 'client');
-            $true += ["message"   => "Added to cart!", "cart_pending"   => $cp];
+            $true += ["message"   => "Added to cart!", "cart_pending"   => $cp,"cart"=>$data_my_cart,"transaction"=>$check];
             $ret = $true;
         } else {
             $false += ["message"   => "Failed to add to cart!"];
@@ -417,17 +417,17 @@ class Map extends MY_Controller
 		                                    LEFT JOIN (SELECT transaction_id, sum(sub_total) AS payable FROM my_cart_farm_produce mcfp
 		                                    GROUP BY transaction_id) t3 ON t1.id = t3.transaction_id
                                     LEFT JOIN farmer_farm t4 ON t1.farm_id = t4.id
-                                    WHERE t1.person_id = $person_id AND CONCAT(t4.farm_name,t2.status,t3.payable) ILIKE '%$searchValue%'");
+                                    WHERE t2.status = 'PENDING' AND t1.person_id = $person_id AND CONCAT(t4.farm_name,t2.status,t3.payable) COLLATE utf8mb4_general_ci LIKE '%$searchValue%'");
 
         $totalRecords = $thisQuery->row()->total;
 
-        $query = $this->db->query("SELECT t1.id AS transaction_id, t4.img_path, to_char(t1.transaction_date,'mm/dd/yy') date_, t4.farm_name,t2.status,t3.payable FROM transaction t1 
+        $query = $this->db->query("SELECT t1.id AS transaction_id, t4.img_path, DATE_FORMAT(t1.transaction_date,'%m/%d/%y') date_, t4.farm_name,t2.status,t3.payable FROM transaction t1 
                                     JOIN (SELECT * FROM transaction_status WHERE is_latest IS TRUE) t2 ON t1.id = t2.transaction_id
 		                                    LEFT JOIN (SELECT transaction_id, sum(sub_total) AS payable FROM my_cart_farm_produce mcfp
 		                                    GROUP BY transaction_id) t3 ON t1.id = t3.transaction_id
                                     LEFT JOIN farmer_farm t4 ON t1.farm_id = t4.id
-                                    WHERE t1.person_id = $person_id AND CONCAT(t4.farm_name,t2.status,t3.payable) ILIKE '%$searchValue%'
-                                    ORDER BY (t2.status = 'PENDING') DESC, t1.id DESC
+                                    WHERE t2.status = 'PENDING' AND t1.person_id = $person_id AND CONCAT(t4.farm_name,t2.status,t3.payable) COLLATE utf8mb4_general_ci LIKE '%$searchValue%'
+                                    ORDER BY t1.id DESC
                                     LIMIT $limit OFFSET $offset
                                     ");
 
@@ -488,6 +488,410 @@ class Map extends MY_Controller
             'data' => $data,
         );
         echo json_encode($response);
+    }
+
+    public function getOrderListing()
+    {
+        $person_id  = $this->session->agrishop_person_id;
+        $requestData = $_REQUEST;
+        $farm_id = $requestData['search']['farm_id'];
+        $searchValue = isset($requestData['search']['value']) ? $requestData['search']['value'] : '';
+
+        // Calculate pagination parameters using the separate function
+        list($limit, $offset) = $this->calculatePagination($requestData);
+
+        // Query to get total record count
+        $thisQuery = $this->db->query("SELECT count(1) AS total FROM transaction t1 
+                                    JOIN (SELECT * FROM transaction_status WHERE is_latest IS TRUE) t2 ON t1.id = t2.transaction_id
+		                                    LEFT JOIN (SELECT transaction_id, sum(sub_total) AS payable FROM my_cart_farm_produce mcfp
+		                                    GROUP BY transaction_id) t3 ON t1.id = t3.transaction_id
+                                    LEFT JOIN farmer_farm t4 ON t1.farm_id = t4.id
+                                    WHERE (t2.status != 'PENDING' AND t2.status != 'COMPLETED' AND t2.status != 'CANCELLED') AND t1.person_id = $person_id AND CONCAT(t4.farm_name,t2.status,t3.payable) COLLATE utf8mb4_general_ci LIKE '%$searchValue%'");
+
+        $totalRecords = $thisQuery->row()->total;
+
+        $query = $this->db->query("SELECT t1.id AS transaction_id, t4.img_path, DATE_FORMAT(t1.transaction_date,'%m/%d/%y') date_, t4.farm_name,t2.status,t3.payable FROM transaction t1 
+                                    JOIN (SELECT * FROM transaction_status WHERE is_latest IS TRUE) t2 ON t1.id = t2.transaction_id
+		                                    LEFT JOIN (SELECT transaction_id, sum(sub_total) AS payable FROM my_cart_farm_produce mcfp
+		                                    GROUP BY transaction_id) t3 ON t1.id = t3.transaction_id
+                                    LEFT JOIN farmer_farm t4 ON t1.farm_id = t4.id
+                                    WHERE (t2.status != 'PENDING' AND t2.status != 'COMPLETED' AND t2.status != 'CANCELLED') AND t1.person_id = $person_id AND CONCAT(t4.farm_name,t2.status,t3.payable) COLLATE utf8mb4_general_ci LIKE '%$searchValue%'
+                                    ORDER BY t1.id DESC
+                                    LIMIT $limit OFFSET $offset
+                                    ");
+
+        $data = array();
+        foreach ($query->result() as $value) {
+            $total = $value->payable + ($value->payable * 0.01);
+            $img = $value->img_path ? base_url($value->img_path) : base_url('dist/img/media/icons/1x1.png');
+            $image_path = "<img src='$img' width='50' height='50' class='rounded' data-toggle='tooltip' data-placement='top' title=''>";
+            $status_badge = $this->statusBadge($value->status);
+            $data[] = array(
+                '<div class="d-flex align-items-start p-2" style="gap:10px; width:100%; line-height:1.15">
+
+                    <!-- IMAGE -->
+                    <div>
+                        ' . $image_path . '
+                    </div>
+
+                    <!-- INFO -->
+                    <div class="flex-grow-1">
+
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div style="font-size:12px; color:#777;">
+                                    ' . $value->date_ . '
+                                </div>
+
+                                <div style="font-size:14px; font-weight:600; color:#000;">
+                                    ' . $value->farm_name . '
+                                </div>
+                            </div>
+
+                            <span class="badge bg-success" style="font-size:14px;">
+                                ₱ ' . $this->format_price($total) . '
+                            </span>
+                        </div>
+
+                        <div class="d-flex align-items-center mt-1" style="gap:6px;">
+                            <span class="badge bg-black"
+                                style="cursor:pointer; font-size:11px;"
+                                onclick="viewTransactionDetails(' . $value->transaction_id . ')">
+                                <i class="fa fa-eye"></i> view details
+                            </span>
+
+                            ' . $status_badge . '
+                        </div>
+
+                    </div>
+                </div>
+                <hr style="margin:4px 0;">
+                '
+            );
+        } // Prepare the response data in the required format
+
+        $response = array(
+            'draw' => intval($requestData['draw']),
+            'recordsTotal' => intval($totalRecords),
+            'recordsFiltered' => intval($totalRecords), // For simplicity, assuming no filtering is applied
+            'data' => $data,
+        );
+        echo json_encode($response);
+    }
+
+    public function getCompletedOrderListing()
+    {
+        $person_id  = $this->session->agrishop_person_id;
+        $requestData = $_REQUEST;
+        $farm_id = $requestData['search']['farm_id'];
+        $searchValue = isset($requestData['search']['value']) ? $requestData['search']['value'] : '';
+
+        // Calculate pagination parameters using the separate function
+        list($limit, $offset) = $this->calculatePagination($requestData);
+
+        // Query to get total record count
+        $thisQuery = $this->db->query("SELECT count(1) AS total FROM transaction t1 
+                                    JOIN (SELECT * FROM transaction_status WHERE is_latest IS TRUE) t2 ON t1.id = t2.transaction_id
+		                                    LEFT JOIN (SELECT transaction_id, sum(sub_total) AS payable FROM my_cart_farm_produce mcfp
+		                                    GROUP BY transaction_id) t3 ON t1.id = t3.transaction_id
+                                    LEFT JOIN farmer_farm t4 ON t1.farm_id = t4.id
+                                    WHERE (t2.status = 'COMPLETED') AND t1.person_id = $person_id AND CONCAT(t4.farm_name,t2.status,t3.payable) COLLATE utf8mb4_general_ci LIKE '%$searchValue%'");
+
+        $totalRecords = $thisQuery->row()->total;
+
+        $query = $this->db->query("SELECT t1.id AS transaction_id, tr.rating, t4.img_path, DATE_FORMAT(t1.transaction_date,'%m/%d/%y') date_, t4.farm_name,t2.status,t3.payable FROM transaction t1 
+                                    JOIN (SELECT * FROM transaction_status WHERE is_latest IS TRUE) t2 ON t1.id = t2.transaction_id
+		                                    LEFT JOIN (SELECT transaction_id, sum(sub_total) AS payable FROM my_cart_farm_produce mcfp
+		                                    GROUP BY transaction_id) t3 ON t1.id = t3.transaction_id
+                                    LEFT JOIN farmer_farm t4 ON t1.farm_id = t4.id
+                                    LEFT JOIN transaction_ratings tr ON t1.id = tr.transaction_id
+                                    WHERE (t2.status = 'COMPLETED') AND t1.person_id = $person_id AND CONCAT(t4.farm_name,t2.status,t3.payable) COLLATE utf8mb4_general_ci LIKE '%$searchValue%'
+                                    ORDER BY t1.id DESC
+                                    LIMIT $limit OFFSET $offset
+                                    ");
+
+        $data = array();
+        foreach ($query->result() as $value) {
+            $total = $value->payable + ($value->payable * 0.01);
+            $img = $value->img_path ? base_url($value->img_path) : base_url('dist/img/media/icons/1x1.png');
+            $image_path = "<img src='$img' width='50' height='50' class='rounded' data-toggle='tooltip' data-placement='top' title=''>";
+            $status_badge = $this->statusBadge($value->status);
+            $stars = $this->renderStars($value->rating);
+            $data[] = array(
+                '<div class="d-flex align-items-start p-2" style="gap:10px; width:100%; line-height:1.15">
+
+                    <!-- IMAGE -->
+                    <div>
+                        ' . $image_path . '
+                    </div>
+
+                    <!-- INFO -->
+                    <div class="flex-grow-1">
+
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div style="font-size:12px; color:#777;">
+                                    ' . $value->date_ . '
+                                </div>
+
+                                <div style="font-size:14px; font-weight:600; color:#000;">
+                                    ' . $value->farm_name . '
+                                </div>
+                                <div style="font-size:12px;">
+                                    ' . $stars . '
+                                </div>
+                            </div>
+
+                            <span class="badge bg-success" style="font-size:14px;">
+                                ₱ ' . $this->format_price($total) . '
+                            </span>
+                        </div>
+
+                        <div class="d-flex align-items-center mt-1" style="gap:6px;">
+                            <span class="badge bg-black"
+                                style="cursor:pointer; font-size:11px;"
+                                onclick="viewTransactionDetails(' . $value->transaction_id . ')">
+                                <i class="fa fa-eye"></i> view details
+                            </span>
+
+                            ' . $status_badge . '
+                        </div>
+
+                    </div>
+                </div>
+                <hr style="margin:4px 0;">
+                '
+            );
+        } // Prepare the response data in the required format
+
+        $response = array(
+            'draw' => intval($requestData['draw']),
+            'recordsTotal' => intval($totalRecords),
+            'recordsFiltered' => intval($totalRecords), // For simplicity, assuming no filtering is applied
+            'data' => $data,
+        );
+        echo json_encode($response);
+    }
+
+    public function getCancelledOrderListing()
+    {
+        $person_id  = $this->session->agrishop_person_id;
+        $requestData = $_REQUEST;
+        $farm_id = $requestData['search']['farm_id'];
+        $searchValue = isset($requestData['search']['value']) ? $requestData['search']['value'] : '';
+
+        // Calculate pagination parameters using the separate function
+        list($limit, $offset) = $this->calculatePagination($requestData);
+
+        // Query to get total record count
+        $thisQuery = $this->db->query("SELECT count(1) AS total FROM transaction t1 
+                                    JOIN (SELECT * FROM transaction_status WHERE is_latest IS TRUE) t2 ON t1.id = t2.transaction_id
+		                                    LEFT JOIN (SELECT transaction_id, sum(sub_total) AS payable FROM my_cart_farm_produce mcfp
+		                                    GROUP BY transaction_id) t3 ON t1.id = t3.transaction_id
+                                    LEFT JOIN farmer_farm t4 ON t1.farm_id = t4.id
+                                    WHERE (t2.status = 'CANCELLED') AND t1.person_id = $person_id AND CONCAT(t4.farm_name,t2.status,t3.payable) COLLATE utf8mb4_general_ci LIKE '%$searchValue%'");
+
+        $totalRecords = $thisQuery->row()->total;
+
+        $query = $this->db->query("SELECT t1.id AS transaction_id, t4.img_path, DATE_FORMAT(t1.transaction_date,'%m/%d/%y') date_, t4.farm_name,t2.status,t3.payable FROM transaction t1 
+                                    JOIN (SELECT * FROM transaction_status WHERE is_latest IS TRUE) t2 ON t1.id = t2.transaction_id
+		                                    LEFT JOIN (SELECT transaction_id, sum(sub_total) AS payable FROM my_cart_farm_produce mcfp
+		                                    GROUP BY transaction_id) t3 ON t1.id = t3.transaction_id
+                                    LEFT JOIN farmer_farm t4 ON t1.farm_id = t4.id
+                                    WHERE (t2.status = 'CANCELLED') AND t1.person_id = $person_id AND CONCAT(t4.farm_name,t2.status,t3.payable) COLLATE utf8mb4_general_ci LIKE '%$searchValue%'
+                                    ORDER BY t1.id DESC
+                                    LIMIT $limit OFFSET $offset
+                                    ");
+
+        $data = array();
+        foreach ($query->result() as $value) {
+            $total = $value->payable + ($value->payable * 0.01);
+            $img = $value->img_path ? base_url($value->img_path) : base_url('dist/img/media/icons/1x1.png');
+            $image_path = "<img src='$img' width='50' height='50' class='rounded' data-toggle='tooltip' data-placement='top' title=''>";
+            $status_badge = $this->statusBadge($value->status);
+            $data[] = array(
+                '<div class="d-flex align-items-start p-2" style="gap:10px; width:100%; line-height:1.15">
+
+                    <!-- IMAGE -->
+                    <div>
+                        ' . $image_path . '
+                    </div>
+
+                    <!-- INFO -->
+                    <div class="flex-grow-1">
+
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div style="font-size:12px; color:#777;">
+                                    ' . $value->date_ . '
+                                </div>
+
+                                <div style="font-size:14px; font-weight:600; color:#000;">
+                                    ' . $value->farm_name . '
+                                </div>
+                            </div>
+
+                            <span class="badge bg-success" style="font-size:14px;">
+                                ₱ ' . $this->format_price($total) . '
+                            </span>
+                        </div>
+
+                        <div class="d-flex align-items-center mt-1" style="gap:6px;">
+                            <span class="badge bg-black"
+                                style="cursor:pointer; font-size:11px;"
+                                onclick="viewTransactionDetails(' . $value->transaction_id . ')">
+                                <i class="fa fa-eye"></i> view details
+                            </span>
+
+                            ' . $status_badge . '
+                        </div>
+
+                    </div>
+                </div>
+                <hr style="margin:4px 0;">
+                '
+            );
+        } // Prepare the response data in the required format
+
+        $response = array(
+            'draw' => intval($requestData['draw']),
+            'recordsTotal' => intval($totalRecords),
+            'recordsFiltered' => intval($totalRecords), // For simplicity, assuming no filtering is applied
+            'data' => $data,
+        );
+        echo json_encode($response);
+    }
+
+    public function getRateOrderListing()
+    {
+        $person_id  = $this->session->agrishop_person_id;
+        $requestData = $_REQUEST;
+        $farm_id = $requestData['search']['farm_id'];
+        $searchValue = isset($requestData['search']['value']) ? $requestData['search']['value'] : '';
+
+        // Calculate pagination parameters using the separate function
+        list($limit, $offset) = $this->calculatePagination($requestData);
+
+        // Query to get total record count
+        $thisQuery = $this->db->query("SELECT count(1) AS total FROM transaction t1 
+                                    JOIN (SELECT * FROM transaction_status WHERE is_latest IS TRUE) t2 ON t1.id = t2.transaction_id
+		                                    LEFT JOIN (SELECT transaction_id, sum(sub_total) AS payable FROM my_cart_farm_produce mcfp
+		                                    GROUP BY transaction_id) t3 ON t1.id = t3.transaction_id
+                                    LEFT JOIN farmer_farm t4 ON t1.farm_id = t4.id
+                                    LEFT JOIN transaction_ratings tr ON tr.transaction_id = t1.id
+                                    WHERE (t2.status = 'COMPLETED' AND tr.rating IS NULL) AND t1.person_id = $person_id AND CONCAT(t4.farm_name,t2.status,t3.payable) COLLATE utf8mb4_general_ci LIKE '%$searchValue%'");
+
+        $totalRecords = $thisQuery->row()->total;
+
+        $query = $this->db->query("SELECT t1.id AS transaction_id, tr.rating, t4.img_path, DATE_FORMAT(t1.transaction_date,'%m/%d/%y') date_, t4.farm_name,t2.status,t3.payable FROM transaction t1 
+                                    JOIN (SELECT * FROM transaction_status WHERE is_latest IS TRUE) t2 ON t1.id = t2.transaction_id
+		                                    LEFT JOIN (SELECT transaction_id, sum(sub_total) AS payable FROM my_cart_farm_produce mcfp
+		                                    GROUP BY transaction_id) t3 ON t1.id = t3.transaction_id
+                                    LEFT JOIN farmer_farm t4 ON t1.farm_id = t4.id
+                                    LEFT JOIN transaction_ratings tr ON tr.transaction_id = t1.id
+                                    WHERE (t2.status = 'COMPLETED' AND tr.rating IS NULL) AND t1.person_id = $person_id AND CONCAT(t4.farm_name,t2.status,t3.payable) COLLATE utf8mb4_general_ci LIKE '%$searchValue%'
+                                    ORDER BY t1.id DESC
+                                    LIMIT $limit OFFSET $offset
+                                    ");
+
+        $data = array();
+        foreach ($query->result() as $value) {
+            $total = $value->payable + ($value->payable * 0.01);
+            $img = $value->img_path ? base_url($value->img_path) : base_url('dist/img/media/icons/1x1.png');
+            $image_path = "<img src='$img' width='50' height='50' class='rounded' data-toggle='tooltip' data-placement='top' title=''>";
+            $status_badge = $this->statusBadge($value->status);
+            if ($value->rating > 0) {
+                $stars = $this->renderStars($value->rating);
+            } else {
+                $stars = '<span style="cursor:pointer;color:#007bff;font-size:12px"
+                onclick="rateTransaction(' . $value->transaction_id . ')">
+                ⭐ Rate Now
+              </span>';
+            }
+            $data[] = array(
+                '<div class="d-flex align-items-start p-2" style="gap:10px; width:100%; line-height:1.15">
+
+                    <!-- IMAGE -->
+                    <div>
+                        ' . $image_path . '
+                    </div>
+
+                    <!-- INFO -->
+                    <div class="flex-grow-1">
+
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div style="font-size:12px; color:#777;">
+                                    ' . $value->date_ . '
+                                </div>
+
+                                <div style="font-size:14px; font-weight:600; color:#000;">
+                                    ' . $value->farm_name . '
+                                </div>
+                            </div>
+
+                            <span class="badge bg-success" style="font-size:14px;">
+                                ₱ ' . $this->format_price($total) . '
+                            </span>
+                        </div>
+
+                        <div class="d-flex align-items-center mt-1" style="gap:6px;">
+                            <span class="badge bg-black"
+                                style="cursor:pointer; font-size:11px;"
+                                onclick="viewTransactionDetails(' . $value->transaction_id . ')">
+                                <i class="fa fa-eye"></i> view details
+                            </span>
+                            <div style="font-size:12px;">
+                                ' . $stars . '
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                <hr style="margin:4px 0;">
+                '
+            );
+        } // Prepare the response data in the required format
+
+        $response = array(
+            'draw' => intval($requestData['draw']),
+            'recordsTotal' => intval($totalRecords),
+            'recordsFiltered' => intval($totalRecords), // For simplicity, assuming no filtering is applied
+            'data' => $data,
+        );
+        echo json_encode($response);
+    }
+
+    public function save_rating()
+    {
+        $person_id = $this->session->agrishop_person_id;
+        $data = [
+            'transaction_id' => $this->input->post('transaction_id'),
+            'rating' => $this->input->post('rating_value'),
+            'comment' => $this->input->post('review_comment'),
+            'created_at' => date('Y-m-d H:i:s'),
+            'created_by_person_id' => $person_id,
+        ];
+
+        $this->db->insert('transaction_ratings', $data);
+
+        echo json_encode(['status' => true]);
+    }
+
+
+    private function renderStars($rating)
+    {
+        $html = '';
+
+        for ($i = 1; $i <= 5; $i++) {
+            if ($i <= $rating) {
+                $html .= '<i class="fa fa-star text-warning"></i>';
+            } else {
+                $html .= '<i class="fa fa-star text-secondary"></i>';
+            }
+        }
+
+        return $html;
     }
 
     public function getCartDetails()
@@ -854,8 +1258,8 @@ class Map extends MY_Controller
         // $check_qty_left = $this->db->query("SELECT pql.qty_left, name FROM price_qty_left pql
         //                                     LEFT JOIN produce p on pql.produce_id = p.id
         //                                     WHERE pql.id = $farm_produce_id LIMIT 1")->row();
-
-        $check_qty_left = $this->db->query("SELECT pql.id,pql.qty_left,qq.qty_to_be_checkout,p.name FROM price_qty_left pql 
+        $price_qty_left = $this->price_qty_left();
+        $check_qty_left = $this->db->query("SELECT pql.id,pql.qty_left,qq.qty_to_be_checkout,p.name FROM ($price_qty_left) pql 
             JOIN  (SELECT mcfp.farm_produce_id, sum(mcfp.qty) AS qty_to_be_checkout FROM my_cart_farm_produce mcfp  
                     WHERE mcfp.transaction_id = $transaction_id
                     GROUP BY farm_produce_id) qq ON pql.id=qq.farm_produce_id AND qq.qty_to_be_checkout>pql.qty_left
@@ -908,7 +1312,7 @@ class Map extends MY_Controller
             'status' => $delivery_status,
             'created_by_person_id' => $person_id,
         ];
-        $this->db->insert("transaction_delivery_status", $data_delivery_status);
+        $this->transaction_delivery_status($data_delivery_status);
 
         // 🧾 PAYMENT STATUS
         $data_payment_status = [
@@ -916,7 +1320,7 @@ class Map extends MY_Controller
             'status' => $payment_status,
             'created_by_person_id' => $person_id,
         ];
-        $this->db->insert("transaction_payment_status", $data_payment_status);
+        $this->transaction_payment_status($data_payment_status);
 
         // 🧾 TRANSACTION STATUS
         $data_transaction_status = [
@@ -924,7 +1328,7 @@ class Map extends MY_Controller
             'status' => 'RESERVED',
             'created_by_person_id' => $person_id,
         ];
-        $this->db->insert("transaction_status", $data_transaction_status);
+        $this->transaction_status($data_transaction_status);
 
         // 🧾 TRANSACTION DONE
         $data_transaction = [
@@ -991,7 +1395,7 @@ class Map extends MY_Controller
             'status' => 'CANCELLED',
             'created_by_person_id' => $person_id,
         ];
-        $this->db->insert("transaction_status", $data_transaction_status);
+        $this->transaction_status($data_transaction_status);
 
 
         $data_transaction_cancel_details = [
@@ -1039,7 +1443,7 @@ class Map extends MY_Controller
         // Split the keyword into individual words
         $words = explode(' ', $keyword);
 
-        // Build dynamic "ILIKE" filters
+        // Build dynamic "LIKE" filters
         $conditions = "";
         foreach ($words as $w) {
             $w = trim($w);
@@ -1049,7 +1453,7 @@ class Map extends MY_Controller
                 t2.description,', ',
                 t3.description,', ',
                 t4.region
-            ) ILIKE '%" . $this->db->escape_like_str($w) . "%' ";
+            ) COLLATE utf8mb4_general_ci LIKE '%" . $this->db->escape_like_str($w) . "%' ";
             }
         }
 
@@ -1093,7 +1497,7 @@ class Map extends MY_Controller
         // Split the keyword into individual words
         $words = explode(' ', $keyword);
 
-        // Build dynamic "ILIKE" filters
+        // Build dynamic "LIKE" filters
         $conditions = "";
         foreach ($words as $w) {
             $w = trim($w);
@@ -1103,7 +1507,7 @@ class Map extends MY_Controller
                 t2.description,', ',
                 t3.description,', ',
                 t4.region
-            ) ILIKE '%" . $this->db->escape_like_str($w) . "%' ";
+            ) COLLATE utf8mb4_general_ci LIKE '%" . $this->db->escape_like_str($w) . "%' ";
             }
         }
 

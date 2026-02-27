@@ -41,20 +41,6 @@ $uri = $this->session->agrishop_login_uri;
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script> -->
 
 <script type="text/javascript">
-    let transaction_id_ = null;
-    let status_ = null;
-
-
-
-    $('#modalFarmInfo').on('shown.bs.modal', function() {
-        map.invalidateSize(); // <-- this tells Leaflet to recalc the map size
-        map.setView([8.7, 125.6], 9); // optional: recenter map if needed
-    });
-
-    $(".close-sidebar-btn").click(function() {
-        // $(".sidebar").slideToggle();
-        // $(".main-sidebar").slideToggle();
-    })
 
     $(document).on('click', '.barangay-item', function() {
         let id = $(this).data('id');
@@ -162,217 +148,6 @@ $uri = $this->session->agrishop_login_uri;
         });
     });
 
-    // when clicking a suggestion
-    $(document).on("click", ".produce-item", function() {
-        let id = $(this).data("id");
-        let name = $(this).data("name");
-        let img = $(this).data("img");
-        let farm_id = $("#farmList").val();
-
-
-        $('[name=farmId]').val(farm_id);
-        $("#produce_id").val(id);
-        $(".produceInput").val(name);
-        $(".produceList").hide();
-        $("[name=produceSelectedId]").val(id);
-        $(".produceImg").html(`<img src="${img}" 
-                                 width="100" height="100" 
-                                 class="rounded mr-2">`);
-    });
-
-    // initial count from PHP session
-    let lastReservedCount = <?= (int) $this->session->agrishop_reserved_trans_count ?>;
-
-    // start polling
-    setInterval(function() {
-        getReservedCount();
-    }, 3000);
-
-    function getReservedCount() {
-        $.post("<?= base_url('userfarmer/FarmProduce/getReservedCount') ?>", function(res) {
-
-            // convert safely → default to 0
-            let currentCount = parseInt(res, 10);
-            currentCount = isNaN(currentCount) ? 0 : currentCount;
-
-            // console.log("Current:", currentCount, "Last:", lastReservedCount);
-
-            // notify only if INCREASED
-            if (currentCount > lastReservedCount) {
-                let newCount = currentCount - lastReservedCount;
-                notifyNewReservation(newCount);
-            }
-
-            // update last count
-            lastReservedCount = currentCount;
-
-            b = currentCount == 0 ? '' : currentCount;
-
-            $('.countOrders').text(b);
-        });
-    }
-
-    /* -------------------------------
-   GLOBAL AUDIO SETUP
---------------------------------*/
-    window.notifAudio = window.notifAudio || new Audio("<?= base_url('dist/notification/notify.wav') ?>");
-    notifAudio.volume = 1.0;
-    window.audioUnlocked = false;
-
-    // unlock audio on first user gesture (click anywhere)
-    document.addEventListener('click', function unlockAudio() {
-        notifAudio.play()
-            .then(() => {
-                notifAudio.pause();
-                notifAudio.currentTime = 0;
-                window.audioUnlocked = true;
-                console.log('🔓 Audio unlocked, notifications ready');
-            })
-            .catch(() => console.warn('❌ Audio blocked until user interacts'));
-
-        document.removeEventListener('click', unlockAudio);
-    }, {
-        once: true
-    });
-
-
-    /* -------------------------------
-       SAFE AUDIO PLAY FUNCTION
-    --------------------------------*/
-    function notifySound() {
-        if (!window.audioUnlocked) return;
-
-        if (!notifAudio.paused) {
-            notifAudio.pause();
-            notifAudio.currentTime = 0;
-        }
-
-        notifAudio.play().catch(err => console.warn('❌ Sound failed:', err));
-    }
-
-
-    /* -------------------------------
-       NOTIFICATION HANDLER
-    --------------------------------*/
-    function notifyNewReservation(newCount) {
-        notifySound(); // play sound
-        toastr.info('You have ' + newCount + ' new reservation(s)'); // show toast
-
-        if (typeof getTable === 'function') {
-            getTable('CartListing', 0, 5); // refresh table safely
-        }
-    }
-
-    function getPrice(id) {
-        $('#aiSuggestedPrice').text('...');
-        $('#aiPriceReason').text('Calculating suggested price...');
-        $.ajax({
-            url: "<?= base_url('userfarmer/FarmProduce/getPrice') ?>",
-            method: "POST",
-            dataType: "json",
-            data: {
-                produce_id: id
-            },
-            success: function(res) {
-
-                if (!res || !res.suggested_price) {
-                    $('#aiSuggestedPrice').text('--');
-                    $('#aiPriceReason').text('No price data available yet.');
-                    return;
-                }
-
-                // Update AI price UI
-                $('#aiSuggestedPrice').text(res.suggested_price);
-                $('#aiPriceReason').text(res.reason);
-
-                // Optional: store for reuse
-                $('#btnUseAiPrice').data('price', res.suggested_price);
-            },
-            error: function() {
-                $('#aiSuggestedPrice').text('--');
-                $('#aiPriceReason').text('Unable to calculate price right now.');
-            }
-        });
-    }
-
-    $('#btnUseAiPrice').on('click', function() {
-        const price = $(this).data('price');
-
-        if (price) {
-            $('input[name="price"]').val(price).focus();
-        }
-    });
-
-    $('.produceInput').on('keyup', function() {
-        let keyword = $(this).val();
-
-        if (keyword.length < 2) {
-            $(".produceList").hide();
-            return;
-        }
-
-        $.ajax({
-            url: "<?= base_url('userfarmer/FarmProduce/search_produce_list') ?>",
-            method: "POST",
-            data: {
-                keyword: keyword
-            },
-            success: function(response) {
-                let data = JSON.parse(response);
-
-                if (data.length === 0) {
-                    $(".produceList").hide();
-                    return;
-                }
-
-                let list = "";
-                data.forEach(item => {
-                    let img = item.image_url ? item.image_url : "default.png";
-
-                    list += `
-                        <li class="list-group-item produce-item"
-                            onclick="getPrice(${item.id})"
-                            data-id="${item.id}"
-                            data-img="${img}"
-                            data-name="${item.name}">
-                            <img src="${img}" 
-                                 width="35" height="35" 
-                                 class="rounded mr-2">
-                            ${item.name}
-                        </li>
-                    `;
-                });
-
-                $(".produceList").html(list).show();
-            }
-        });
-    });
-
-    var confirmP = "";
-    var rmvP = "";
-    var refrmvP = "";
-    var stq = "";
-    var pwd = "";
-    var entryId = 0;
-    var addItemId = 0;
-    var validatorC = 0;
-    var valid = 0;
-    var grdlvl = 0;
-    var rmid = 0;
-    $(function() {
-        $('.select2').select2()
-        $('.select2bs4').select2({
-            theme: 'bootstrap4'
-        });
-        $('[data-toggle="tooltip"]').tooltip()
-        $('.select2').each(function() {
-            let $parent = $(this).closest('.modal');
-            $(this).select2({
-                dropdownParent: $parent.length ? $parent : $('body') // fallback if not inside a modal
-            });
-        });
-    });
-
     function clear_form(b) {
         let f1 = "PersonnelInfo";
         let a = "form_save_data" + b;
@@ -399,23 +174,6 @@ $uri = $this->session->agrishop_login_uri;
         defaultImg('pic', 'previewPic', 'imgtargetLink', 'MALE');
 
     }
-
-    function delay(form, a, b) {
-        setTimeout(function() {
-            $("#form_save_data" + form + " [name='" + b + "']").val(a);
-            $("#form_save_data" + form + " [name='" + b + "']").trigger("change");
-        }, 1000)
-    }
-
-    $('#enableWholesale').change(function() {
-        if ($(this).is(':checked')) {
-            $('#wholesaleFields').slideDown();
-            $('.wholesale-input').removeAttr('nr');
-        } else {
-            $('#wholesaleFields').slideUp();
-            $('.wholesale-input').attr('nr', '1');
-        }
-    });
 
 
     function validate(form_id) {
@@ -464,6 +222,9 @@ $uri = $this->session->agrishop_login_uri;
         });
         valid = invalid;
     }
+
+    saveForm("UpdateProfile", [null], null)
+    saveForm("UpdateGcash", [null], null)
 
     function saveForm(formId, tblId, tbl, dtd, pl) {
         let a = "";
@@ -518,8 +279,6 @@ $uri = $this->session->agrishop_login_uri;
         $("#form_save_data" + formId).ajaxForm(saveData);
     }
 
-    saveForm("UpdateGcash", [null], null);
-
     function getTable(tableId, dtd, pl) {
         var drawCounter = 0;
         $("#tbl" + tableId).DataTable().destroy();
@@ -548,8 +307,6 @@ $uri = $this->session->agrishop_login_uri;
                     d.length = pl;
                     d.draw = drawCounter;
                     d.search.value = $('#tbl' + tableId + '_filter input').val();
-                    d.search.farm_id = $("#farmList").val();;
-                    d.search.transaction_id = transaction_id_;
                 }
             },
 
@@ -566,34 +323,6 @@ $uri = $this->session->agrishop_login_uri;
         $("#tbl" + tableId + "_filter label").css("width", "97%");
         $("#tbl" + tableId + "_filter .form-control-sm").css("width", "97%");
         dtd == 1 ? $("#tbl" + tableId).DataTable().destroy() : "";
-
-    }
-
-    function add_qty(data) {
-        // Hidden fields
-        $('[name=fp_id]').val(data.id);
-
-        // Visible display-only text
-        $('[name=show_produceName]').text(data.produce);
-        $('[name=show_classification]').text(data.class_name);
-        $('[name=show_uom]').text(data.uom);
-        $('[name=show_seasonal]').text(data.is_seasonal === 't' ? 'Seasonal' : 'Non-Seasonal');
-        $('[name=show_qty_left]').text(data.qty_left);
-        $('[name=price]').text(data.price);
-
-        // Image
-        $('[name=previewPicProduce]').attr("src", data.img_path);
-
-        // Wholesale price
-        if (data.wholesale_price){
-            $('.wholesale-price').show();
-            $('[name=wholesale_price]').text(data.wholesale_price);
-            $('[name=wholesale_qty]').text(data.wholesale_qty);
-        } else {
-            $('.wholesale-price').hide();
-            $('[name=wholesale_price]').text("");
-            $('[name=wholesale_qty]').text("");
-        }
 
     }
 
@@ -637,45 +366,6 @@ $uri = $this->session->agrishop_login_uri;
 
 
     }
-
-    function getLocation(a, b, c, e) {
-        for (var i = 0; i < a.length; i++) {
-            clearLoc(b[i], c);
-            let form = 'form_save_data' + c;
-            let d = $('#' + form + ' .select' + a[i]).val();
-            let ab = d == '' || d == null ? 0 : d;
-            getFetchList(c, b[i], null, 1, {
-                v: ab
-            }, 1, 1);
-            // getFetchList(c, b[i], null, 1, e);
-        }
-    }
-
-    function clearLoc(a, b) {
-        let form = 'form_save_data' + b;
-        $("#" + form + " .select" + a).empty();
-    }
-
-    function getFetchList(formId, getList, getQ, s2, where, sel, e) {
-        var q = getQ ? getQ : getList;
-        $("#form_save_data" + formId + " .select" + getList).empty();
-        $.post("<?= base_url($uri . '/getdata/get') ?>" + q, where,
-            function(data) {
-                var result = JSON.parse(data);
-                (sel == 0 || e == 0) ? $("#form_save_data" + formId + " .select" + getList).append("<option value=''>SELECT</option>"): "";
-                for (var i = 0; i < result["data"].length; i++) {
-                    $("#form_save_data" + formId + " .select" + getList).append("<option value='" + result["data"][i]['id'] + "'>" + result["data"][i]['item'] + "</option>");
-                }
-            }
-        ).then(function() {
-            s2 == 1 ? $("#form_save_data" + formId + " .select" + getList).select2() : "";
-        });
-    }
-
-    $('#form_save_dataGradeSubject .selectSubjectList').on("select2:select", function(e) {
-        var unselected_value = $(this).val();
-    }).trigger('change');
-
 
     function clean(a) {
         var str = a;
@@ -723,88 +413,4 @@ $uri = $this->session->agrishop_login_uri;
             title: '  ' + a,
         })
     }
-
-    // -------------------
-    // 1️⃣ Initialize map
-    // -------------------
-    var map = L.map('map').setView([8.915726, 125.562744], 11);
-
-    var street = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
-
-    // -------------------
-    // 2️⃣ Global marker variable
-    // -------------------
-    var marker = null;
-
-    // -------------------
-    // 3️⃣ Function to pin centroid by ID
-    // -------------------
-    function pinCentroidById(brgyId) {
-        fetch("<?php echo base_url(); ?>dist/map/caraga_center.geojson")
-            .then(res => res.json())
-            .then(data => {
-                var feature = data.features.find(f => f.properties.id == brgyId);
-                if (!feature) {
-                    alert("Barangay not found!");
-                    return;
-                }
-
-                var center = feature.geometry.coordinates; // [lng, lat]
-                var latlng = [center[1], center[0]]; // Leaflet [lat, lng]
-
-                // Remove old marker if exists
-                if (marker) map.removeLayer(marker);
-
-                // Add new marker for centroid
-                marker = L.marker(latlng).addTo(map)
-                    .bindPopup(feature.properties.barangay || "Barangay")
-                    .openPopup();
-
-                // Zoom map to marker
-                map.setView(latlng, 15);
-
-                // Update form inputs
-                $('#farmCoordinates').val(latlng.join(','));
-                $('#farmCoordinates').text('Lat: ' + latlng[0] + ', Lng: ' + latlng[1]);
-                $('#farmLat').val(latlng[0]);
-                $('#farmLon').val(latlng[1]);
-            })
-            .catch(err => {
-                console.error(err);
-                alert("Failed to load GeoJSON");
-            });
-    }
-
-    // -------------------
-    // 4️⃣ Pin example barangay initially
-    // -------------------
-
-    // -------------------
-    // 5️⃣ Click anywhere to replace marker
-    // -------------------
-    map.on('click', function(e) {
-        var latlng = e.latlng;
-
-        // Remove old marker (whether it was pinned or previous click)
-        if (marker) map.removeLayer(marker);
-
-        // Add new marker at click location
-        marker = L.marker(latlng).addTo(map)
-            // .bindPopup('Selected Location')
-            .openPopup();
-
-        map.panTo(latlng);
-
-        var lat = latlng.lat.toFixed(6);
-        var lng = latlng.lng.toFixed(6);
-
-
-        $('#farmCoordinates').val(`${lat},${lng}`);
-        $('#farmCoordinates').text(`Lat: ${lat}, Lng: ${lng}`);
-        $('#farmLat').val(lat);
-        $('#farmLon').val(lng);
-    });
 </script>

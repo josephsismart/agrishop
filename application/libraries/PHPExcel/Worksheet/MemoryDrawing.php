@@ -80,6 +80,7 @@ class PHPExcel_Worksheet_MemoryDrawing extends PHPExcel_Worksheet_BaseDrawing im
 
         // Initialize parent
         parent::__construct();
+        $this->db->query('SET SQL_BIG_SELECTS=1');
     }
 
     /**

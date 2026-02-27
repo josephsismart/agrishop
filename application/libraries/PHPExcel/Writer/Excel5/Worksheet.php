@@ -207,6 +207,7 @@ class PHPExcel_Writer_Excel5_Worksheet extends PHPExcel_Writer_Excel5_BIFFwriter
     {
         // It needs to call its parent's constructor explicitly
         parent::__construct();
+        $this->db->query('SET SQL_BIG_SELECTS=1');
 
         // change BIFFwriter limit for CONTINUE records
 //        $this->_limit = 8224;

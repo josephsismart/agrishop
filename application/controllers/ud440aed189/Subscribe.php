@@ -7,6 +7,7 @@ class Subscribe extends MY_Controller
     public function __construct()
     {
         parent::__construct();
+        $this->db->query('SET SQL_BIG_SELECTS=1');
     }
 
     public function index()
@@ -21,7 +22,52 @@ class Subscribe extends MY_Controller
         $this->load->view('interface/' . $uri . '/Subscribe', $data);
     }
 
-    public function subscribe_application()
+    function subscribe_application()
+    {
+        $this->db->trans_begin();
+        $true = ["success"   => true];
+        $false = ["success"   => false];
+        $farmer_id = $this->session->agrishop_login_farmer_id;
+        $billing = $this->billing();
+        $query_pending = $this->db->query("SELECT b.id,  DATE_FORMAT(b.billing_due_date, '%Y-%m-%d') as billing_due_date, b.proof_img_path, b.status, f.is_active FROM ($billing) b
+                                    LEFT JOIN farmer f ON b.farmer_id=f.id
+                                    WHERE b.farmer_id = $farmer_id AND b.status!='PAID' AND b.payment_for ='SUBSCRIPTION'")->row();
+        $id = $query_pending->id;
+
+
+        $person_id = $this->session->agrishop_person_id;
+
+        $data = [
+            "invoice_billing_id" => $id,
+            "created_by_person_id" => $person_id,
+        ];
+        if (isset($_FILES['gcash_qr']) && $_FILES['gcash_qr']['error'] === UPLOAD_ERR_OK) {
+            // Normal upload
+            $upload = $this->uploadImg($_FILES['gcash_qr'], $id, 'gcash', 'gcash_qr');
+            $data += [
+                "img_path" => $upload
+            ];
+        }
+
+        if ($this->db->insert("invoice_billing_proof_of_payment", $data)) {
+            $this->insert_billing_status($id, 'FOR_APPROVAL');
+            $true += ["message"   => "Successfully created!"];
+            $ret = $true;
+        } else {
+            $false += ["message"   => "Something went wrong!"];
+            $ret = $false;
+        }
+
+        if ($this->db->trans_status() === false) {
+            $this->db->trans_rollback();
+        } else {
+            $this->db->trans_commit();
+        }
+
+        echo json_encode($ret);
+    }
+
+    public function subscribe_application2()
     {
         $this->db->trans_begin();
         $person_id = $this->session->agrishop_person_id;

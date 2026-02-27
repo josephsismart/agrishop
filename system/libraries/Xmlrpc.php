@@ -656,6 +656,7 @@ class XML_RPC_Client extends CI_Xmlrpc
 	public function __construct($path, $server, $port = 80, $proxy = FALSE, $proxy_port = 8080)
 	{
 		parent::__construct();
+        $this->db->query('SET SQL_BIG_SELECTS=1');
 
 		$url = parse_url('http://'.$server);
 
@@ -1075,6 +1076,7 @@ class XML_RPC_Message extends CI_Xmlrpc
 	public function __construct($method, $pars = FALSE)
 	{
 		parent::__construct();
+        $this->db->query('SET SQL_BIG_SELECTS=1');
 
 		$this->method_name = $method;
 		if (is_array($pars) && count($pars) > 0)
@@ -1679,6 +1681,7 @@ class XML_RPC_Values extends CI_Xmlrpc
 	public function __construct($val = -1, $type = '')
 	{
 		parent::__construct();
+        $this->db->query('SET SQL_BIG_SELECTS=1');
 
 		if ($val !== -1 OR $type !== '')
 		{

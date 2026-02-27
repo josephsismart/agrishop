@@ -2648,7 +2648,7 @@ var TempusDominusBootstrap4 = function ($) {
           html.push(row);
         }
 
-        row.append("<td data-action=\"selectMinute\" class=\"minute" + (!this._isValid(currentMinute, 'm') ? ' disabled' : '') + "\">" + currentMinute.format('mm') + "</td>");
+        row.append("<td data-action=\"selectMinute\" class=\"minute" + (!this._isValid(currentMinute, 'm') ? ' disabled' : '') + "\">" + currentMinute.format('%m') + "</td>");
         currentMinute.add(step, 'm');
       }
 
@@ -2694,7 +2694,7 @@ var TempusDominusBootstrap4 = function ($) {
       }
 
       lastPickedDate && timeComponents.filter('[data-time-component=hours]').text(lastPickedDate.format("" + (this.use24Hours ? 'HH' : 'hh')));
-      lastPickedDate && timeComponents.filter('[data-time-component=minutes]').text(lastPickedDate.format('mm'));
+      lastPickedDate && timeComponents.filter('[data-time-component=minutes]').text(lastPickedDate.format('%m'));
       lastPickedDate && timeComponents.filter('[data-time-component=seconds]').text(lastPickedDate.format('ss'));
 
       this._fillHours();
@@ -2786,7 +2786,7 @@ var TempusDominusBootstrap4 = function ($) {
               this._fillDate();
             }
 
-            this._viewUpdate('YYYY');
+            this._viewUpdate('%Y');
 
             break;
           }
@@ -2809,7 +2809,7 @@ var TempusDominusBootstrap4 = function ($) {
               this._fillDate();
             }
 
-            this._viewUpdate('YYYY');
+            this._viewUpdate('%Y');
 
             break;
           }

@@ -7,6 +7,7 @@ class Validation extends MY_Controller
     public function __construct()
     {
         parent::__construct();
+        $this->db->query('SET SQL_BIG_SELECTS=1');
     }
 
     public function index()

@@ -389,6 +389,7 @@ if (!$this->session->agrishop_login_level) {
 
     // get all counts
     const counts = classificationData.map(item => item.count);
+    console.log(counts)
 
     // ⭐ sum all item.count
     const total = counts.reduce((sum, value) => sum + Number(value), 0);

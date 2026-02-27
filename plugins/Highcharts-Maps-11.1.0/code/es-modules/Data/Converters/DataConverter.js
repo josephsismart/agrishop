@@ -304,11 +304,11 @@ class DataConverter {
                 if (stable[j] !== false) {
                     if (max[j] > 12 &&
                         guessedFormat[j] !== 'YY' &&
-                        guessedFormat[j] !== 'YYYY') {
+                        guessedFormat[j] !== '%Y') {
                         guessedFormat[j] = 'YY';
                     }
                 }
-                else if (max[j] > 12 && guessedFormat[j] === 'mm') {
+                else if (max[j] > 12 && guessedFormat[j] === '%m') {
                     guessedFormat[j] = 'dd';
                 }
             }

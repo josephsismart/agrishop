@@ -6,6 +6,7 @@ class Dashboard extends MY_Controller {
     public function __construct()
     {
         parent::__construct();
+        $this->db->query('SET SQL_BIG_SELECTS=1');
         $this->redirect();
     }
 
@@ -42,7 +43,7 @@ class Dashboard extends MY_Controller {
                                         GROUP BY t1.grade,t1.sex_bool 
                                     )t1
                                     GROUP BY t1.grade
-                                    ORDER BY t1.grade::integer");
+                                    ORDER BY t1.grade");
 
         foreach ($query->result() as $key => $value) {
             $dc["male"][]=(int) $value->male;

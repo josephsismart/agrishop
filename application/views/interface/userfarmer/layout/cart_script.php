@@ -1,5 +1,6 @@
 <script>
     getTable('CartListing', 0, 5);
+    console.log('a')
     getTable('CartListingCompleted', 0, 5);
     getTable('CartListingCancelled', 0, 3);
 

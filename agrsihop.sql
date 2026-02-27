@@ -20,7 +20,7 @@ SET row_security = off;
 -- Name: fn_newtable_prevent_all_false(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.fn_newtable_prevent_all_false() RETURNS trigger
+CREATE FUNCTION fn_newtable_prevent_all_false() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 
@@ -40,7 +40,7 @@ BEGIN
 
         SELECT COUNT(*) INTO v_count_true
 
-        FROM public.newtable
+        FROM newtable
 
         WHERE transaction_id = OLD.transaction_id
 
@@ -73,13 +73,13 @@ END;
 $$;
 
 
-ALTER FUNCTION public.fn_newtable_prevent_all_false() OWNER TO postgres;
+ALTER FUNCTION fn_newtable_prevent_all_false() OWNER TO postgres;
 
 --
 -- Name: fn_price_monitoring_prevent_zero_latest(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.fn_price_monitoring_prevent_zero_latest() RETURNS trigger
+CREATE FUNCTION fn_price_monitoring_prevent_zero_latest() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 
@@ -97,7 +97,7 @@ BEGIN
 
         SELECT COUNT(*) INTO v_count_latest
 
-        FROM public.price_monitoring_farm_produce
+        FROM price_monitoring_farm_produce
 
         WHERE farm_produce_id = OLD.farm_produce_id
 
@@ -126,13 +126,13 @@ END;
 $$;
 
 
-ALTER FUNCTION public.fn_price_monitoring_prevent_zero_latest() OWNER TO postgres;
+ALTER FUNCTION fn_price_monitoring_prevent_zero_latest() OWNER TO postgres;
 
 --
 -- Name: fn_price_monitoring_set_latest(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.fn_price_monitoring_set_latest() RETURNS trigger
+CREATE FUNCTION fn_price_monitoring_set_latest() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 
@@ -140,7 +140,7 @@ BEGIN
 
     -- Set all previous prices for the same farm_produce_id to false
 
-    UPDATE public.price_monitoring_farm_produce
+    UPDATE price_monitoring_farm_produce
 
     SET is_latest = false
 
@@ -161,38 +161,62 @@ END;
 $$;
 
 
-ALTER FUNCTION public.fn_price_monitoring_set_latest() OWNER TO postgres;
+ALTER FUNCTION fn_price_monitoring_set_latest() OWNER TO postgres;
 
 --
 -- Name: fn_transaction_delivery_status_set_latest(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.fn_transaction_delivery_status_set_latest() RETURNS trigger
+CREATE FUNCTION fn_transaction_delivery_status_set_latest() RETURNS trigger
     LANGUAGE plpgsql
-    AS $$
-
-BEGIN
-
-    -- Set all existing rows to false for this transaction_id
-
-    UPDATE public.transaction_delivery_status
-
-    SET is_latest = false
-
-    WHERE transaction_id = NEW.transaction_id;
-
-
-
-    -- Always make the new row the latest
-
-    NEW.is_latest := true;
-
-
-
-    RETURN NEW;
-
-END;
-
+    AS $$
+
+
+
+BEGIN
+
+
+
+    -- Set all existing rows to false for this transaction_id
+
+
+
+    UPDATE public.transaction_delivery_status
+
+
+
+    SET is_latest = false
+
+
+
+    WHERE transaction_id = NEW.transaction_id;
+
+
+
+
+
+
+
+    -- Always make the new row the latest
+
+
+
+    NEW.is_latest := true;
+
+
+
+
+
+
+
+    RETURN NEW;
+
+
+
+END;
+
+
+
 $$;
 
 
@@ -204,30 +228,54 @@ ALTER FUNCTION public.fn_transaction_delivery_status_set_latest() OWNER TO postg
 
 CREATE FUNCTION public.fn_transaction_payment_status_set_latest() RETURNS trigger
     LANGUAGE plpgsql
-    AS $$
-
-BEGIN
-
-    -- Set all existing rows to false for this transaction_id
-
-    UPDATE public.transaction_payment_status
-
-    SET is_latest = false
-
-    WHERE transaction_id = NEW.transaction_id;
-
-
-
-    -- Always make the new row the latest
-
-    NEW.is_latest := true;
-
-
-
-    RETURN NEW;
-
-END;
-
+    AS $$
+
+
+
+BEGIN
+
+
+
+    -- Set all existing rows to false for this transaction_id
+
+
+
+    UPDATE public.transaction_payment_status
+
+
+
+    SET is_latest = false
+
+
+
+    WHERE transaction_id = NEW.transaction_id;
+
+
+
+
+
+
+
+    -- Always make the new row the latest
+
+
+
+    NEW.is_latest := true;
+
+
+
+
+
+
+
+    RETURN NEW;
+
+
+
+END;
+
+
+
 $$;
 
 
@@ -238,7 +286,7 @@ ALTER FUNCTION public.fn_transaction_payment_status_set_latest() OWNER TO postgr
 --
 
 CREATE FUNCTION public.fn_transaction_status_set_latest() RETURNS trigger
-    LANGUAGE plpgsql
+    LANGUAGE pl
     AS $$
 
 BEGIN
@@ -255,7 +303,7 @@ BEGIN
 
     -- Always make the new row the latest
 
-    NEW.is_latest := true;
+    NEW.is_laterue;
 
 
 
@@ -286,7 +334,7 @@ BEGIN
 
         
 
-        UPDATE public."user"
+        UPDAic."user"
 
         SET role_id = 3
 
@@ -325,7 +373,7 @@ ALTER TABLE public.attachment OWNER TO postgres;
 -- Name: attachment_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public.attachment_id_seq
+CREATE SEQUElic.attachment_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -349,13 +397,13 @@ ALTER SEQUENCE public.attachment_id_seq OWNED BY public.attachment.id;
 
 CREATE TABLE public.checkout (
     id bigint NOT NULL,
-    transaction_id integer NOT NULL,
+    transactinteger NOT NULL,
     customer_person_id integer NOT NULL,
     delivery_method character varying,
     payment_method character varying,
     created_at timestamp without time zone DEFAULT now() NOT NULL,
     delivery_address character varying,
-    payment_attachment character varying
+    payment_attacharacter varying
 );
 
 
@@ -376,7 +424,7 @@ CREATE SEQUENCE public.checkout_id_seq
 ALTER TABLE public.checkout_id_seq OWNER TO postgres;
 
 --
--- Name: checkout_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: chec_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.checkout_id_seq OWNED BY public.checkout.id;
@@ -391,7 +439,7 @@ CREATE TABLE public.crop_production_forecast (
     farm_id integer NOT NULL,
     product_id integer NOT NULL,
     planting_date date NOT NULL,
-    expected_harvest_date date NOT NULL,
+    expected__date date NOT NULL,
     forecasted_volume numeric(10,2) NOT NULL,
     updated_by_user_id integer
 );
@@ -403,7 +451,7 @@ ALTER TABLE public.crop_production_forecast OWNER TO postgres;
 -- Name: crop_production_forecast_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public.crop_production_forecast_id_seq
+CREATE SEQUElic.crop_production_forecast_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -424,7 +472,7 @@ ALTER SEQUENCE public.crop_production_forecast_id_seq OWNED BY public.crop_produ
 -- Name: farm_geo_data; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.farm_geo_data (
+CREATE TABLE pubm_geo_data (
     farm_id integer NOT NULL,
     wkt_boundary text NOT NULL,
     centroid_lat numeric(10,8),
@@ -433,20 +481,20 @@ CREATE TABLE public.farm_geo_data (
 );
 
 
-ALTER TABLE public.farm_geo_data OWNER TO postgres;
+ALTER TABLE farm_geo_data OWNER TO postgres;
 
 --
 -- Name: farm_produce; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.farm_produce (
+CREATE TABLE purm_produce (
     id bigint NOT NULL,
     farm_id integer NOT NULL,
     produce_id integer,
     expected_volume numeric(10,2),
     harvest_schedule date,
     uom character varying(30) NOT NULL,
-    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    created_at tp without time zone DEFAULT now() NOT NULL,
     created_by_person_id integer NOT NULL
 );
 
@@ -454,13 +502,13 @@ CREATE TABLE public.farm_produce (
 ALTER TABLE public.farm_produce OWNER TO postgres;
 
 --
--- Name: farm_produce_supply; Type: TABLE; Schema: public; Owner: postgres
+-- Name: farce_supply; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.farm_produce_supply (
     id integer NOT NULL,
     farm_produce_id integer NOT NULL,
-    qty integer NOT NULL,
+    qty integerLL,
     created_at timestamp without time zone DEFAULT now() NOT NULL,
     created_by_person_id character varying
 );
@@ -477,7 +525,7 @@ CREATE SEQUENCE public.farm_produce_supply_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
-    NO MAXVALUE
+    NO MAXVA
     CACHE 1;
 
 
@@ -491,7 +539,7 @@ ALTER SEQUENCE public.farm_produce_supply_id_seq OWNED BY public.farm_produce_su
 
 
 --
--- Name: farm_products_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: farcts_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.farm_products_id_seq
@@ -518,7 +566,7 @@ ALTER SEQUENCE public.farm_products_id_seq OWNED BY public.farm_produce.id;
 CREATE TABLE public.farm_soil_data (
     id bigint NOT NULL,
     farm_id integer NOT NULL,
-    soil_type_id smallint NOT NULL,
+    soil_typallint NOT NULL,
     ph_level numeric(3,1),
     nutrient_status_jsonb jsonb,
     sampling_date date
@@ -533,13 +581,13 @@ ALTER TABLE public.farm_soil_data OWNER TO postgres;
 
 CREATE SEQUENCE public.farm_soil_data_id_seq
     START WITH 1
-    INCREMENT BY 1
+    INCREMEN
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
 
 
-ALTER TABLE public.farm_soil_data_id_seq OWNER TO postgres;
+ALTER TABLE pubm_soil_data_id_seq OWNER TO postgres;
 
 --
 -- Name: farm_soil_data_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
@@ -560,13 +608,13 @@ CREATE TABLE public.farm_to_market_roads (
     road_line_geom text,
     length_km numeric(8,2) NOT NULL,
     surface_type character varying(50),
-    condition character varying(50),
+    conditiocter varying(50),
     barangay_id bigint,
     last_survey_date date
 );
 
 
-ALTER TABLE public.farm_to_market_roads OWNER TO postgres;
+ALTER TABLE parm_to_market_roads OWNER TO postgres;
 
 --
 -- Name: farm_to_market_roads_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
@@ -596,13 +644,13 @@ ALTER SEQUENCE public.farm_to_market_roads_id_seq OWNED BY public.farm_to_market
 
 CREATE TABLE public.farmer (
     id integer NOT NULL,
-    person_id integer NOT NULL,
+    person_ier NOT NULL,
     date_registered timestamp without time zone,
     is_active boolean DEFAULT true NOT NULL,
     application_date timestamp without time zone DEFAULT now() NOT NULL,
     approved_by_person_id integer,
     approved_at timestamp without time zone,
-    id_img_path text,
+    id_img_path 
     presented_valid_id text,
     organization text
 );
@@ -611,20 +659,20 @@ CREATE TABLE public.farmer (
 ALTER TABLE public.farmer OWNER TO postgres;
 
 --
--- Name: farmer_farm; Type: TABLE; Schema: public; Owner: postgres
+-- Name: farm; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.farmer_farm (
     id integer NOT NULL,
     farmer_id integer NOT NULL,
-    farm_name character varying(255) NOT NULL,
+    farm_name cr varying(255) NOT NULL,
     total_area_sqm numeric(10,2),
     barangay_id bigint,
     geo_polygon text,
     soil_type character varying(100),
     is_active boolean DEFAULT true NOT NULL,
     created_at timestamp(6) without time zone DEFAULT now(),
-    img_path text,
+    img_path 
     created_by_person_id integer DEFAULT 1 NOT NULL,
     lat character varying,
     lon character varying
@@ -638,7 +686,7 @@ ALTER TABLE public.farmer_farm OWNER TO postgres;
 --
 
 CREATE TABLE public.farmer_group (
-    id smallint NOT NULL,
+    id smallint L,
     name character varying NOT NULL,
     description text
 );
@@ -647,13 +695,13 @@ CREATE TABLE public.farmer_group (
 ALTER TABLE public.farmer_group OWNER TO postgres;
 
 --
--- Name: farmer_group_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: farup_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.farmer_group_id_seq
     AS smallint
     START WITH 1
-    INCREMENT BY 1
+    INCREMENT B
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
@@ -673,7 +721,7 @@ ALTER SEQUENCE public.farmer_group_id_seq OWNED BY public.farmer_group.id;
 --
 
 CREATE TABLE public.farmer_id_attachments (
-    id smallint NOT NULL,
+    id smallint L,
     farmer_id smallint NOT NULL,
     id_type smallint NOT NULL,
     attachment_id smallint NOT NULL
@@ -688,14 +736,14 @@ ALTER TABLE public.farmer_id_attachments OWNER TO postgres;
 
 CREATE SEQUENCE public.farmer_id_id_seq
     AS smallint
-    START WITH 1
+    START WITH 
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
 
 
-ALTER TABLE public.farmer_id_id_seq OWNER TO postgres;
+ALTER TABLE parmer_id_id_seq OWNER TO postgres;
 
 --
 -- Name: farmer_id_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
@@ -722,7 +770,7 @@ ALTER TABLE public.farmer_organization_member OWNER TO postgres;
 --
 
 CREATE SEQUENCE public.farmer_organization_member_id_seq
-    AS integer
+    AS integ
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -745,13 +793,13 @@ ALTER SEQUENCE public.farmer_organization_member_id_seq OWNED BY public.farmer_o
 
 CREATE TABLE public.farmer_payment_method (
     id integer NOT NULL,
-    person_id integer NOT NULL,
+    person_ier NOT NULL,
     type character varying NOT NULL,
     number character varying,
     qr character varying,
     created_at timestamp without time zone DEFAULT now() NOT NULL,
     is_active boolean DEFAULT true NOT NULL,
-    account_name character varying
+    account_nameter varying
 );
 
 
@@ -787,7 +835,7 @@ CREATE TABLE public.farmer_subscription (
     id bigint NOT NULL,
     farmer_id integer NOT NULL,
     tier_id smallint NOT NULL,
-    start_date timestamp without time zone NOT NULL,
+    start_date mp without time zone NOT
     end_date timestamp without time zone,
     is_active boolean NOT NULL
 );
@@ -803,7 +851,7 @@ CREATE SEQUENCE public.farmer_subscription_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
-    NO MAXVALUE
+    NO MAXVA
     CACHE 1;
 
 
@@ -822,7 +870,7 @@ ALTER SEQUENCE public.farmer_subscription_id_seq OWNED BY public.farmer_subscrip
 
 CREATE SEQUENCE public.farmers_id_seq
     AS integer
-    START WITH 1
+    START WI
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
@@ -861,7 +909,7 @@ ALTER SEQUENCE public.farms_id_seq OWNED BY public.farmer_farm.id;
 
 
 --
--- Name: id_type; Type: TABLE; Schema: public; Owner: postgres
+-- Name: id_ype: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.id_type (
@@ -876,7 +924,7 @@ ALTER TABLE public.id_type OWNER TO postgres;
 -- Name: id_type_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public.id_type_id_seq
+CREATE SEQUElic.id_type_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -899,13 +947,13 @@ ALTER SEQUENCE public.id_type_id_seq OWNED BY public.id_type.id;
 --
 
 CREATE TABLE public.my_cart_farm_produce (
-    id integer NOT NULL,
+    id integNULL,
     transaction_id integer NOT NULL,
     farm_produce_id smallint NOT NULL,
     qty real NOT NULL,
     sub_total real NOT NULL,
     price_id_during_transact smallint DEFAULT 1 NOT NULL,
-    created_at timestamp without time zone DEFAULT now() NOT NULL
+    created_at tp without time zone DEFAULT now() NOT NULL
 );
 
 
@@ -927,7 +975,7 @@ CREATE SEQUENCE public.my_cart_farm_produce_id_seq
 ALTER TABLE public.my_cart_farm_produce_id_seq OWNER TO postgres;
 
 --
--- Name: my_cart_farm_produce_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: my_cm_produce_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.my_cart_farm_produce_id_seq OWNED BY public.my_cart_farm_produce.id;
@@ -942,7 +990,7 @@ CREATE TABLE public.transaction_status (
     transaction_id integer,
     status character varying,
     is_latest boolean DEFAULT true NOT NULL,
-    create_at timestamp without time zone DEFAULT now() NOT NULL,
+    create_at ti without time zone DEFAULT now() NOT NULL,
     created_by_person_id integer NOT NULL
 );
 
@@ -999,20 +1047,20 @@ CREATE SEQUENCE public.organization_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.organization_id_seq OWNER TO postgres;
+ALTER TABLE organization_id_seq OWNER TO postgres;
 
 --
 -- Name: organization_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
-ALTER SEQUENCE public.organization_id_seq OWNED BY public.organization.id;
+ALTER SEQUENCE organization_id_seq OWNublic.organization.id;
 
 
 --
 -- Name: person; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.person (
+CREATE TABLE person (
     id bigint NOT NULL,
     first_name character varying(100) NOT NULL,
     middle_name character varying(100),
@@ -1022,13 +1070,13 @@ CREATE TABLE public.person (
     sex boolean DEFAULT true NOT NULL,
     barangay_id bigint,
     address_info character varying(255),
-    email_address character varying(255),
+    email_adharacter varying(255),
     contact_num character varying(255),
     nationality bigint,
     marital_status bigint,
     religion bigint,
     img_path character varying(1000),
-    created_at timestamp(6) without time zone DEFAULT now(),
+    created_at tp(6) without time zone DEFAULT now(),
     created_by_person_id integer
 );
 
@@ -1050,7 +1098,7 @@ CREATE SEQUENCE public.person_id_seq
 ALTER TABLE public.person_id_seq OWNER TO postgres;
 
 --
--- Name: person_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: perseq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.person_id_seq OWNED BY public.person.id;
@@ -1063,7 +1111,7 @@ ALTER SEQUENCE public.person_id_seq OWNED BY public.person.id;
 CREATE TABLE public.price_monitoring_farm_produce (
     id integer NOT NULL,
     farm_produce_id integer NOT NULL,
-    price real NOT NULL,
+    price reNULL,
     is_latest boolean DEFAULT true NOT NULL,
     created_at timestamp without time zone DEFAULT now() NOT NULL,
     created_by_person_id integer NOT NULL
@@ -1080,7 +1128,7 @@ CREATE SEQUENCE public.price_monitoring_farm_produce_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
-    NO MINVALUE
+    NO MINV
     NO MAXVALUE
     CACHE 1;
 
@@ -1091,11 +1139,11 @@ ALTER TABLE public.price_monitoring_farm_produce_id_seq OWNER TO postgres;
 -- Name: price_monitoring_farm_produce_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
-ALTER SEQUENCE public.price_monitoring_farm_produce_id_seq OWNED BY public.price_monitoring_farm_produce.id;
+ALTER SEQUENCE price_monitoring_farm_produce_id_seq OWNED BY public.price_monitoring_farm_produce.id;
 
 
 --
--- Name: transaction; Type: TABLE; Schema: public; Owner: postgres
+-- Name: transactie: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.transaction (
@@ -1103,7 +1151,7 @@ CREATE TABLE public.transaction (
     person_id integer NOT NULL,
     total_sale_amount numeric(10,2) NOT NULL,
     transaction_date timestamp without time zone DEFAULT now() NOT NULL,
-    admin_percentage smallint,
+    admin_percentage sma
     admin_sale_amount numeric(10,2),
     is_done boolean DEFAULT false NOT NULL,
     done_at timestamp without time zone,
@@ -1130,13 +1178,13 @@ CREATE VIEW public.price_qty_left AS
     ((tt1.total_qty)::double precision - COALESCE(t2.qty_sold, (0)::real)) AS qty_left
    FROM (((public.farm_produce fp
      LEFT JOIN ( SELECT farm_produce_supply.farm_produce_id,
-            sum(farm_produce_supply.qty) AS total_qty
+            m_produce_supply.qty) AS total_qty
            FROM public.farm_produce_supply
           GROUP BY farm_produce_supply.farm_produce_id) tt1 ON ((fp.id = tt1.farm_produce_id)))
      LEFT JOIN ( SELECT price_monitoring_farm_produce.id,
             price_monitoring_farm_produce.farm_produce_id,
             price_monitoring_farm_produce.price,
-            price_monitoring_farm_produce.is_latest,
+            pnitoring_farm_produce.is_latest,
             price_monitoring_farm_produce.created_at,
             price_monitoring_farm_produce.created_by_person_id
            FROM public.price_monitoring_farm_produce
@@ -1145,13 +1193,13 @@ CREATE VIEW public.price_qty_left AS
             sum(mcfp.qty) AS qty_sold
            FROM ((public.my_cart_farm_produce mcfp
              LEFT JOIN public.transaction t ON ((mcfp.transaction_id = t.id)))
-             LEFT JOIN ( SELECT ts.id,
+            OIN ( SELECT ts.id,
                     ts.transaction_id,
                     ts.status,
                     ts.is_latest,
                     ts.create_at,
                     ts.created_by_person_id
-                   FROM public.transaction_status ts
+             ROM public.transaction_status ts
                   WHERE (ts.is_latest IS TRUE)) t1 ON ((t.id = t1.transaction_id)))
           WHERE ((t1.status)::text = 'SUCCESS'::text)
           GROUP BY mcfp.farm_produce_id) t2 ON ((fp.id = t2.farm_produce_id)));
@@ -1165,13 +1213,13 @@ ALTER TABLE public.price_qty_left OWNER TO postgres;
 
 CREATE TABLE public.produce (
     id integer NOT NULL,
-    name character varying(200) NOT NULL,
+    name chavarying(200) NOT NULL,
     produce_classification_id integer,
     description text,
     is_active boolean DEFAULT true NOT NULL,
     is_seasonal boolean DEFAULT true NOT NULL,
     img_path text,
-    created_by_person_id integer,
+    created_by_pd integer,
     created_at timestamp without time zone DEFAULT now() NOT NULL,
     tags text,
     is_customized boolean DEFAULT false NOT NULL
@@ -1186,14 +1234,14 @@ ALTER TABLE public.produce OWNER TO postgres;
 
 CREATE TABLE public.produce_classification (
     id smallint NOT NULL,
-    class_name character varying(50) NOT NULL,
+    class_name er varying(50) NOT NULL,
     description text,
     img_path character varying,
     order_by integer DEFAULT 1
 );
 
 
-ALTER TABLE public.produce_classification OWNER TO postgres;
+ALTER TABLE publuce_classification OWNER TO postgres;
 
 --
 -- Name: produce_customize; Type: TABLE; Schema: public; Owner: postgres
@@ -1202,13 +1250,13 @@ ALTER TABLE public.produce_classification OWNER TO postgres;
 CREATE TABLE public.produce_customize (
     id integer NOT NULL,
     name character varying(200) NOT NULL,
-    produce_classification_id integer,
+    produce_ication_id integer,
     description text,
     is_active boolean DEFAULT true NOT NULL,
     is_seasonal boolean DEFAULT true NOT NULL,
     img_path text,
     created_by_person_id integer NOT NULL,
-    created_at timestamp without time zone DEFAULT now() NOT NULL,
+    created_at mp without time zone DEFAULT now() NOT 
     tags text
 );
 
@@ -1223,7 +1271,7 @@ CREATE SEQUENCE public.produce_customize_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
-    NO MINVALUE
+    NO MINVA
     NO MAXVALUE
     CACHE 1;
 
@@ -1245,7 +1293,7 @@ CREATE SEQUENCE public.product_classification_id_seq
     AS smallint
     START WITH 1
     INCREMENT BY 1
-    NO MINVALUE
+    NO MINVA
     NO MAXVALUE
     CACHE 1;
 
@@ -1265,13 +1313,13 @@ ALTER SEQUENCE public.product_classification_id_seq OWNED BY public.produce_clas
 
 CREATE SEQUENCE public.product_transaction_id_seq
     START WITH 1
-    INCREMENT BY 1
+    INCREMEN
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
 
 
-ALTER TABLE public.product_transaction_id_seq OWNER TO postgres;
+ALTER TABLE publuct_transaction_id_seq OWNER TO postgres;
 
 --
 -- Name: product_transaction_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
@@ -1286,14 +1334,14 @@ ALTER SEQUENCE public.product_transaction_id_seq OWNED BY public.transaction.id;
 
 CREATE SEQUENCE public.products_id_seq
     AS integer
-    START WITH 1
+    START WITH 
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
 
 
-ALTER TABLE public.products_id_seq OWNER TO postgres;
+ALTER TABLE products_id_seq OWNER TO postgres;
 
 --
 -- Name: products_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
@@ -1307,7 +1355,7 @@ ALTER SEQUENCE public.products_id_seq OWNED BY public.produce.id;
 --
 
 CREATE TABLE public.role (
-    id smallint NOT NULL,
+    id smallint L,
     description character varying,
     level smallint NOT NULL
 );
@@ -1316,13 +1364,13 @@ CREATE TABLE public.role (
 ALTER TABLE public.role OWNER TO postgres;
 
 --
--- Name: role_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: rolq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.role_id_seq
     AS smallint
     START WITH 1
-    INCREMENT BY 1
+    INCREMENT B
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
@@ -1367,7 +1415,7 @@ CREATE SEQUENCE public.soil_type_lookup_id_seq
 ALTER TABLE public.soil_type_lookup_id_seq OWNER TO postgres;
 
 --
--- Name: soil_type_lookup_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: soilookup_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.soil_type_lookup_id_seq OWNED BY public.soil_type_lookup.id;
@@ -1378,13 +1426,13 @@ ALTER SEQUENCE public.soil_type_lookup_id_seq OWNED BY public.soil_type_lookup.i
 --
 
 CREATE TABLE public.subscription_payment (
-    id bigint NOT NULL,
+    id biginULL,
     farmer_subscription_id bigint NOT NULL,
     payment_date timestamp without time zone DEFAULT now() NOT NULL,
     amount_paid numeric(8,2) NOT NULL,
     payment_method character varying(50),
     transaction_ref character varying(100),
-    payment_status character varying(20) NOT NULL
+    payment_statacter varying(20) NOT NULL
 );
 
 
@@ -1415,13 +1463,13 @@ ALTER SEQUENCE public.subscription_payment_id_seq OWNED BY public.subscription_p
 -- Name: subscription_tier; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.subscription_tier (
+CREATE TABLE.subscription_tier (
     id smallint NOT NULL,
     tier_name character varying(50) NOT NULL,
     price_php numeric(8,2) NOT NULL,
     duration_days smallint NOT NULL,
     description text,
-    features_jsonb jsonb,
+    features_sonb,
     is_active boolean DEFAULT true NOT NULL
 );
 
@@ -1451,14 +1499,14 @@ ALTER SEQUENCE public.subscription_tier_id_seq OWNED BY public.subscription_tier
 
 
 --
--- Name: tbl_barangay; Type: TABLE; Schema: public; Owner: postgres
+-- Name: tbl_ba Type: TABLE; Schema: publer: postgres
 --
 
 CREATE TABLE public.tbl_barangay (
     id bigint NOT NULL,
     citymun_id bigint NOT NULL,
     description character varying(250) NOT NULL,
-    barangay_index uuid,
+    barangay_uid,
     orig_desc character varying(250)
 );
 
@@ -1469,13 +1517,13 @@ ALTER TABLE public.tbl_barangay OWNER TO postgres;
 -- Name: tbl_barangay_2; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.tbl_barangay_2 (
+CREATE TABLE.tbl_barangay_2 (
     id numeric(18,0),
     adm3_psgc numeric(18,0),
     description character varying(80),
     barangay_index uuid,
     orig_desc text,
-    gid integer NOT NULL
+    gid integer L
 );
 
 
@@ -1496,7 +1544,7 @@ CREATE SEQUENCE public.tbl_barangay_seq
 ALTER TABLE public.tbl_barangay_seq OWNER TO postgres;
 
 --
--- Name: tbl_barangay_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: tbl_y_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.tbl_barangay_seq OWNED BY public.tbl_barangay.id;
@@ -1506,13 +1554,13 @@ ALTER SEQUENCE public.tbl_barangay_seq OWNED BY public.tbl_barangay.id;
 -- Name: tbl_citymun; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.tbl_citymun (
+CREATE TABLE.tbl_citymun (
     id bigint NOT NULL,
     province_id bigint NOT NULL,
     description character varying(250) NOT NULL,
     code integer NOT NULL,
     zipcode character varying(255) DEFAULT NULL::character varying,
-    citymun_index uuid,
+    citymun_inde
     ref_id integer
 );
 
@@ -1520,7 +1568,7 @@ CREATE TABLE public.tbl_citymun (
 ALTER TABLE public.tbl_citymun OWNER TO postgres;
 
 --
--- Name: tbl_citymun_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: tbln_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.tbl_citymun_seq
@@ -1546,7 +1594,7 @@ ALTER SEQUENCE public.tbl_citymun_seq OWNED BY public.tbl_citymun.id;
 
 CREATE TABLE public.tbl_province (
     id bigint NOT NULL,
-    region_id smallint NOT NULL,
+    region_iint NOT NULL,
     description character varying(250) NOT NULL,
     code integer DEFAULT 0 NOT NULL,
     abbr character varying(255),
@@ -1560,7 +1608,7 @@ ALTER TABLE public.tbl_province OWNER TO postgres;
 -- Name: tbl_province_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public.tbl_province_seq
+CREATE SEQUElic.tbl_province_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -1582,13 +1630,13 @@ ALTER SEQUENCE public.tbl_province_seq OWNED BY public.tbl_province.id;
 --
 
 CREATE TABLE public.tbl_region (
-    id bigint NOT NULL,
+    id biginULL,
     region character varying(250) NOT NULL,
     regional_designation character varying(255) DEFAULT ''::character varying NOT NULL,
     island_group character varying(255) DEFAULT ''::character varying NOT NULL,
     regional_center character varying(255) DEFAULT ''::character varying NOT NULL,
     code integer DEFAULT 0 NOT NULL,
-    region_index uuid,
+    region_index
     order_by smallint,
     is_active boolean DEFAULT true NOT NULL
 );
@@ -1597,7 +1645,7 @@ CREATE TABLE public.tbl_region (
 ALTER TABLE public.tbl_region OWNER TO postgres;
 
 --
--- Name: tbl_region_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: tbl_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
 CREATE SEQUENCE public.tbl_region_seq
@@ -1626,7 +1674,7 @@ CREATE TABLE public.transaction_cancel (
     transaction_id bigint NOT NULL,
     reason text NOT NULL,
     created_at character varying DEFAULT now() NOT NULL,
-    created_by integer NOT NULL
+    created_by iNOT NULL
 );
 
 
@@ -1648,7 +1696,7 @@ CREATE SEQUENCE public.transaction_cancel_id_seq
 ALTER TABLE public.transaction_cancel_id_seq OWNER TO postgres;
 
 --
--- Name: transaction_cancel_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: tran_cancel_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.transaction_cancel_id_seq OWNED BY public.transaction_cancel.id;
@@ -1661,7 +1709,7 @@ ALTER SEQUENCE public.transaction_cancel_id_seq OWNED BY public.transaction_canc
 CREATE TABLE public.transaction_delivery_status (
     id integer NOT NULL,
     transaction_id integer,
-    status character varying,
+    status cr varying,
     is_latest boolean DEFAULT true NOT NULL,
     create_at timestamp without time zone DEFAULT now() NOT NULL,
     created_by_person_id integer NOT NULL
@@ -1675,7 +1723,7 @@ ALTER TABLE public.transaction_delivery_status OWNER TO postgres;
 --
 
 CREATE SEQUENCE public.transaction_delivery_status_id_seq
-    AS integer
+    AS integ
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -1698,13 +1746,13 @@ ALTER SEQUENCE public.transaction_delivery_status_id_seq OWNED BY public.transac
 
 CREATE TABLE public.transaction_details (
     id bigint NOT NULL,
-    transaction_id integer NOT NULL,
+    transactinteger NOT NULL,
     checkout_at timestamp without time zone DEFAULT now() NOT NULL,
     payment_method character varying NOT NULL,
     delivery_method character varying NOT NULL,
     total_payment numeric NOT NULL,
     to_admin numeric NOT NULL,
-    to_farmer numeric NOT NULL,
+    to_farmer nuOT NULL,
     to_admin_percent numeric
 );
 
@@ -1726,7 +1774,7 @@ CREATE SEQUENCE public.transaction_details_id_seq
 ALTER TABLE public.transaction_details_id_seq OWNER TO postgres;
 
 --
--- Name: transaction_details_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: tran_details_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.transaction_details_id_seq OWNED BY public.transaction_details.id;
@@ -1736,13 +1784,13 @@ ALTER SEQUENCE public.transaction_details_id_seq OWNED BY public.transaction_det
 -- Name: transaction_payment_status; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.transaction_payment_status (
+CREATE TABLE.transaction_payment_status (
     id integer NOT NULL,
     transaction_id integer,
     status character varying,
     is_latest boolean DEFAULT true NOT NULL,
     create_at timestamp without time zone DEFAULT now() NOT NULL,
-    created_by_person_id integer NOT NULL
+    created_by_pd integer NOT NULL
 );
 
 
@@ -1764,7 +1812,7 @@ CREATE SEQUENCE public.transaction_payment_status_id_seq
 ALTER TABLE public.transaction_payment_status_id_seq OWNER TO postgres;
 
 --
--- Name: transaction_payment_status_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: tran_payment_status_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.transaction_payment_status_id_seq OWNED BY public.transaction_payment_status.id;
@@ -1778,13 +1826,13 @@ CREATE TABLE public.transaction_proof_of_payment (
     id integer NOT NULL,
     transaction_id integer NOT NULL,
     img character varying NOT NULL,
-    total_amount numeric,
+    total_ammeric,
     contact_number character varying,
     name character varying
 );
 
 
-ALTER TABLE public.transaction_proof_of_payment OWNER TO postgres;
+ALTER TABLE publsaction_proof_of_payment OWNER TO postgres;
 
 --
 -- Name: transaction_proof_of_payment_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
@@ -1793,13 +1841,13 @@ ALTER TABLE public.transaction_proof_of_payment OWNER TO postgres;
 CREATE SEQUENCE public.transaction_proof_of_payment_id_seq
     AS integer
     START WITH 1
-    INCREMENT BY 1
+    INCREMEN
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
 
 
-ALTER TABLE public.transaction_proof_of_payment_id_seq OWNER TO postgres;
+ALTER TABLE pubnsaction_proof_of_pay_seq OWNER TO postgres;
 
 --
 -- Name: transaction_proof_of_payment_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
@@ -1813,14 +1861,14 @@ ALTER SEQUENCE public.transaction_proof_of_payment_id_seq OWNED BY public.transa
 --
 
 CREATE TABLE public."user" (
-    id integer NOT NULL,
+    id integer NO
     person_id integer NOT NULL,
     role_id smallint NOT NULL,
     username character varying,
     password character varying,
     change_pwd boolean DEFAULT false NOT NULL,
     is_active boolean DEFAULT true NOT NULL,
-    created_at timestamp without time zone DEFAULT now(),
+    created_at ti without time zone DEFAULT now(),
     created_by_person_id smallint,
     created_by integer
 );
@@ -1841,7 +1889,7 @@ CREATE SEQUENCE public.user_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.user_id_seq OWNER TO postgres;
+ALTER TABLE publiid_seq OWNER TO postgres;
 
 --
 -- Name: user_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
@@ -2096,7 +2144,7 @@ ALTER TABLE ONLY public.transaction_payment_status ALTER COLUMN id SET DEFAULT n
 
 
 --
--- Name: transaction_proof_of_payment id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Nansaction_proof_of_payment id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.transaction_proof_of_payment ALTER COLUMN id SET DEFAULT nextval('public.transaction_proof_of_payment_id_seq'::regclass);
@@ -2221,7 +2269,7 @@ COPY public.farm_produce_supply (id, farm_produce_id, qty, created_at, created_b
 26	11	20	2025-12-07 17:58:50.494394	1
 27	12	1	2025-12-07 17:58:50.496329	1
 28	13	2	2025-12-07 17:58:50.498023	1
-29	7	3	2025-12-07 17:58:50.499429	1
+29	7	12-07 17:58:50.499429	1
 30	5	30	2025-12-07 17:58:50.500748	1
 31	8	40	2025-12-07 17:58:50.5021	1
 32	9	20	2025-12-07 17:58:50.503546	1
@@ -2229,7 +2277,7 @@ COPY public.farm_produce_supply (id, farm_produce_id, qty, created_at, created_b
 34	15	20	2025-12-07 17:58:50.506279	1
 35	16	20	2025-12-07 17:58:50.50791	1
 36	19	30	2025-12-07 17:58:50.509219	1
-37	20	40	2025-12-07 17:58:50.510443	1
+37	205-12-07 17:58:50.510443	1
 38	21	50	2025-12-07 17:58:50.512146	1
 39	22	20	2025-12-07 17:58:50.513928	1
 40	23	2	2025-12-07 17:58:50.515791	1
@@ -2237,7 +2285,7 @@ COPY public.farm_produce_supply (id, farm_produce_id, qty, created_at, created_b
 42	25	50	2025-12-07 17:58:50.519065	1
 43	26	20	2025-12-07 17:58:50.520628	1
 44	27	1	2025-12-07 17:58:50.521938	1
-45	28	2	2025-12-07 17:58:50.523218	1
+45	28-12-07 17:58:50.523218	1
 46	29	3	2025-12-07 17:58:50.524542	1
 47	30	30	2025-12-07 17:58:50.525363	1
 48	7	40	2025-12-07 17:58:50.526702	1
@@ -2261,7 +2309,7 @@ COPY public.farm_produce_supply (id, farm_produce_id, qty, created_at, created_b
 64	40	21	2025-12-11 19:07:10.595309	51
 96	72	122	2025-12-21 14:10:57.173752	2
 97	73	100	2025-12-21 14:11:06.490714	2
-98	74	12	2025-12-22 08:55:43.503362	56
+98	745-12-22 08:55:43.503362	56
 \.
 
 
@@ -2333,7 +2381,7 @@ COPY public.farmer_farm (id, farmer_id, farm_name, total_area_sqm, barangay_id, 
 29	3	DURIAN HILLS PLANTATION	123.00	1630400084	\N	\N	t	2025-11-28 10:30:34.336761	dist/img/media/farm/far_1764896302.jpg	2	8.853609	125.713806
 32	3	TATAY BEN’S URBAN GARDEN	123.00	1630400084	\N	\N	t	2025-11-28 10:30:34.341231	dist/img/media/farm/far_1764896302.jpg	2	8.853609	125.713806
 33	3	SARI-SARI GULAYAN	123.00	1630400084	\N	\N	t	2025-11-28 10:30:34.343004	dist/img/media/farm/far_1764896302.jpg	2	8.853609	125.713806
-34	3	LITTLE SUNSHINE MICRO FARM	123.00	1630400084	\N	\N	t	2025-11-28 10:30:34.344529	dist/img/media/farm/far_1764896302.jpg	2	8.853609	125.713806
+34	3	SUNSHINE MICRO FARM	123.00	1630400084	\N	\N	t	2025-11-28 10:30:34.344529	dist/img/media/farm/far_1764896302.jpg	2	8.853609	125.713806
 36	3	URBAN GREENS POTTED FARM	123.00	1630400084	\N	\N	t	2025-11-28 10:30:34.347045	dist/img/media/farm/far_1764896302.jpg	2	8.894442	125.338898
 37	3	BAHAY KUBO MINI FARM	123.00	1630400084	\N	\N	t	2025-11-28 10:30:34.348483	dist/img/media/farm/far_1764896302.jpg	2	9.314120	125.579910
 38	3	LITTLE VALLEY VEGGIE PATCH	123.00	1630400084	\N	\N	t	2025-11-28 10:30:34.349922	dist/img/media/farm/far_1764896302.jpg	2	9.341900	125.502319
@@ -2341,7 +2389,7 @@ COPY public.farmer_farm (id, farmer_id, farm_name, total_area_sqm, barangay_id, 
 40	3	NATIVE SEED HAVEN	123.00	1630400084	\N	\N	t	2025-11-28 10:30:34.352583	\N	2	9.035922	125.640335
 43	3	MASAGANANG ANI FARM 2	300.00	1630400084	\N	1	t	2025-11-28 17:51:40.409068	\N	2	8.853609	125.713806
 44	3	BAGONG BUKAS ECO FARM 2	300.00	1630400084	\N	1	t	2025-11-28 18:39:05.701306	\N	2	8.853609	125.713806
-45	3	BARANGAY HARVEST FARM 2	300.00	1630400084	\N	1	t	2025-11-28 20:20:46.636694	\N	2	8.853609	125.713806
+45	3	Y HARVEST FARM 2	300.00	1630400084	\N	1	t	2025-11-28 20:20:46.636694	\N	2	8.853609	125.713806
 46	3	KAUNLARAN FARMERS' ESTATE 2	300.00	1630400084	\N	1	t	2025-11-28 20:20:57.048462	\N	2	8.853609	125.713806
 47	3	ALAGANG PROBINSYA FARM 2	300.00	1630400084	\N	1	t	2025-11-29 17:16:58.450216	\N	2	8.853609	125.713806
 48	3	TALON-TALON AGRICULTURAL FARM 2	2311.00	1630400084	\N	1	t	2025-11-29 17:20:06.150902	\N	2	8.666667	125.666667
@@ -2349,7 +2397,7 @@ COPY public.farmer_farm (id, farmer_id, farm_name, total_area_sqm, barangay_id, 
 51	3	SWEET MANGO VALLEY FARM 2	11.00	1630400084	\N	1	t	2025-12-05 08:58:22.963453	dist/img/media/farm/far_1764896302.jpg	2	8.853609	125.713806
 52	3	RIVERSIDE TILAPIA & VEGGIE FARM 2	2221.00	1630400084	\N	1	t	2025-12-05 09:03:20.187373	\N	2	9.035922	125.640335
 53	3	GOLDEN PINEAPPLE ESTATE 2	1232.00	1630400084	\N	1	t	2025-12-05 09:05:25.938219	dist/img/media/farm/farm2market_1764896725.jpg	2	9.120953	125.552444
-54	3	COCONUT GROVE PLANTATION 2	2213.00	1630400084	\N	1	t	2025-12-05 09:05:58.268957	dist/img/media/farm/farming_1764896758.jpg	2	9.341900	125.502319
+54	3	 GROVE PLANTATION 2	2213.00	1630400084	\N	1	t	2025-12-05 09:05:58.268957	dist/img/media/farm/farming_1764896758.jpg	2	9.341900	125.502319
 55	3	HIGHLAND STRAWBERRY FARM 2	12321.00	1630400084	\N	1	t	2025-12-05 09:54:20.004923	\N	2	9.314120	125.579910
 56	3	BANANA RIDGE FARM 2	10002.00	1630400084	\N	1	t	2025-12-07 21:34:59.675743	\N	2	8.938548	125.513390
 57	3	FRESHLEAF LETTUCE FARM 2	1255.00	1630400084	\N	1	t	2025-12-11 05:40:10.435964	\N	2	8.716596	125.776975
@@ -2357,7 +2405,7 @@ COPY public.farmer_farm (id, farmer_id, farm_name, total_area_sqm, barangay_id, 
 59	3	SIBAGAT FARM	2123.00	160314001	\N	1	t	2025-12-11 18:49:50.860354	\N	51	8.820745	125.694923
 60	3	FARM 2 GO	232.00	1600203002	\N	1	t	2025-12-18 16:15:30.11178	\N	2	9.081801909701262	125.58874570427112
 61	3	FARM1	1232.00	1630400084	\N	1	t	2025-12-19 23:08:55.585545	\N	2	8.937480677540599	125.63737981429048
-62	3	CABADBARAN FARM1	12321.00	1600203005	\N	1	t	2025-12-19 23:22:43.288833	\N	2	9.105441	125.593753
+62	3	RAN FARM1	12321.00	1600203005	\N	1	t	2025-12-19 23:22:43.288833	\N	2	9.105441	125.593753
 63	3	SURIGAO	123123.00	1606816001	\N	1	t	2025-12-21 14:10:34.398967	\N	2	9.032686189911908	125.96709027864661
 64	3	NASIPIT	23211.20	1600209012	\N	1	t	2025-12-22 08:36:00.480889	\N	56	8.987265276967916	125.34374993346535
 65	3	FARM2	222.00	1606721001	\N	1	t	2025-12-22 09:07:00.875039	\N	56	9.990536	126.044780
@@ -2367,7 +2415,7 @@ COPY public.farmer_farm (id, farmer_id, farm_name, total_area_sqm, barangay_id, 
 50	3	GULAYAN SA BAHAY FARM 2	1234.00	1630400084	\N	1	t	2025-12-01 23:06:29.906107	\N	2	8.894442	125.338898
 2	3	GREEN VALLEY AGRIFARM	123.00	1630400084	\N	\N	t	2025-11-27 00:33:18.148073	dist/img/media/farm/far_1764896302.jpg	2	8.853609	125.713806
 6	3	VALLEYVIEW ECO FARM	123.00	1630400084	\N	\N	t	2025-11-28 10:30:34.291537	dist/img/media/farm/far_1764896302.jpg	2	8.853609	125.713806
-10	3	FRESHSPROUT FARMS	123.00	1630400084	\N	\N	t	2025-11-28 10:30:34.309486	dist/img/media/farm/far_1764896302.jpg	2	9.314120	125.579910
+10	3	ROUT FARMS	123.00	1630400084	\N	\N	t	2025-11-28 10:30:34.309486	dist/img/media/farm/far_1764896302.jpg	2	9.314120	125.579910
 14	3	BAGONG BUKAS ECO FARM	123.00	1630400084	\N	\N	t	2025-11-28 10:30:34.315826	dist/img/media/farm/far_1764896302.jpg	2	8.853609	125.713806
 18	3	TALON-TALON AGRICULTURAL FARM	123.00	1630400084	\N	\N	t	2025-11-28 10:30:34.320631	dist/img/media/farm/far_1764896302.jpg	2	8.853609	125.713806
 22	3	RIVERSIDE TILAPIA & VEGGIE FARM	123.00	1630400084	\N	\N	t	2025-11-28 10:30:34.326321	dist/img/media/farm/far_1764896302.jpg	2	8.853609	125.713806
@@ -2440,7 +2488,7 @@ COPY public.my_cart_farm_produce (id, transaction_id, farm_produce_id, qty, sub_
 46	22	40	1	123	57	2026-01-23 12:53:01
 50	22	40	5	615	57	2026-01-23 21:56:53
 51	22	39	15	300	56	2026-01-23 21:56:57
-57	29	16	1	26	37	2026-01-25 14:26:53
+57	296	37	2026-01-25 14:26:53
 69	37	4	1	1	26	2026-01-25 21:53:54
 71	39	15	1	2	36	2026-01-26 13:48:05
 73	29	16	1	26	37	2026-01-27 13:53:47
@@ -2505,7 +2553,7 @@ COPY public.person (id, first_name, middle_name, last_name, extension_name, birt
 39	DFD	\N	DFD	\N	2025-12-31	t	137501001	\N	MARIEMICHELLELASPINAS@GMAIL.COM	12321	\N	\N	\N	\N	2025-12-09 19:45:53.731865	\N
 40	SDFD	\N	SDDS	\N	2025-12-31	f	112315001	\N	JOSEPHSISMART@GMAIL.COM	A2321	\N	\N	\N	\N	2025-12-09 19:49:08.639761	\N
 41	SS	\N	DDD	\N	2025-12-31	t	137602004	\N	ASDF@GMAIL.COM	123211	\N	\N	\N	\N	2025-12-09 19:53:46.99605	\N
-42	SS	\N	DDD	\N	2025-12-31	t	137602004	\N	ASDF@GMAIL.COM	123211	\N	\N	\N	\N	2025-12-09 19:53:47.002629	\N
+42	SS	\N	2025-12-31	t	137602004	\N	ASDF@GMAIL.COM	123211	\N	\N	\N	\N	2025-12-09 19:53:47.002629	\N
 43	FFF	\N	FF	\N	2025-12-31	t	71231001	\N	ASDF@MAIL.COM	123	\N	\N	\N	\N	2025-12-09 19:59:28.022174	\N
 44	FFF	\N	FF	\N	2025-12-31	t	71231001	\N	ASDF@MAIL.COM	123	\N	\N	\N	\N	2025-12-09 19:59:28.028487	\N
 45	CC	\N	CCC	\N	2025-12-31	f	124705001	\N	JOSEPHSISMART@GMAIL.COM	DFQQW	\N	\N	\N	\N	2025-12-09 20:04:22.952167	\N
@@ -2564,7 +2612,7 @@ COPY public.price_monitoring_farm_produce (id, farm_produce_id, price, is_latest
 20	11	26	f	2025-12-05 16:05:03.036075	1
 28	11	3	t	2025-12-07 17:56:29.331029	1
 21	12	199	f	2025-12-05 16:05:03.036953	1
-29	12	5	t	2025-12-07 17:56:29.332041	1
+29	1225-12-07 17:56:29.332041	1
 22	13	20	f	2025-12-05 16:05:03.037797	1
 30	13	10	t	2025-12-07 17:56:29.333389	1
 15	7	10	f	2025-12-05 16:05:03.027229	1
@@ -2750,7 +2798,7 @@ COPY public.produce (id, name, produce_classification_id, description, is_active
 78	WINGED BEANS	1	Sigarilyas, nutritious Philippines native bean.	t	t	\N	\N	2025-12-10 14:54:39.743019	winged beans, sigarilyas, wing beans	f
 168	BROWN RICE	3	Whole grain rice.	t	t	\N	\N	2025-12-10 14:54:39.743019	brown rice, whole grain rice	f
 73	BITTER GOURD	1	Ampalaya, well-known Filipino vegetable.	t	t	\N	\N	2025-12-10 14:54:39.743019	bitter gourd, ampalaya, bitter melon	f
-164	ARROWROOT	5	Root crop used in starch.	t	t	\N	\N	2025-12-10 14:54:39.743019	arrowroot, uraro, arrow root	f
+164	AT	5	Root crop used in starch.	t	t	\N	\N	2025-12-10 14:54:39.743019	arrowroot, uraro, arrow root	f
 182	CHICKPEAS	4	Garbanzo beans.	t	t	\N	\N	2025-12-10 14:54:39.743019	chickpeas, garbanzos, garbanzo beans	f
 163	DAIKON	5	Large white radish.	t	t	\N	\N	2025-12-10 14:54:39.743019	daikon, white radish, labanos	f
 179	KIDNEY BEANS	4	Dark red beans.	t	t	\N	\N	2025-12-10 14:54:39.743019	kidney beans, red beans	f
@@ -2767,7 +2815,7 @@ COPY public.produce (id, name, produce_classification_id, description, is_active
 64	CARROT (VARIETY B)	1	Alternative carrot variety with sweet flavor.	t	t	dist/img/media/produce/carrotsvariety2_1764973237.jpg	\N	2025-12-06 06:20:37.853382	carrot, carrot variety, orange carrot	f
 49	HEIRLOOM TOMATO	1	Specialty tomato variety with rich flavor.	t	t	dist/img/media/produce/tomato321b26944.png	\N	2025-12-01 01:39:38.557996	heirloom tomato, tomato heirloom, specialty tomato	f
 67	TOMATO	1	Common culinary vegetable used in salads and sauces.	t	t	\N	\N	2025-12-10 14:54:39.743019	tomato, kamatis, red tomato	f
-89	RADISH	1	Labanos root vegetable.	t	t	\N	\N	2025-12-10 14:54:39.743019	radish, labanos, red radish	f
+89	RALabanos root vegetable.	t	t	\N	\N	2025-12-10 14:54:39.743019	radish, labanos, red radish	f
 133	APPLE	2	Common edible fruit.	t	t	\N	\N	2025-12-10 14:54:39.743019	apple, mansanas	f
 161	BEETROOT	5	Dark red root vegetable.	t	t	\N	\N	2025-12-10 14:54:39.743019	beetroot, beet, red beet	f
 180	BLACK BEANS	4	Soft black legume.	t	t	\N	\N	2025-12-10 14:54:39.743019	black beans, black turtle beans	f
@@ -2777,7 +2825,7 @@ COPY public.produce (id, name, produce_classification_id, description, is_active
 170	CORN GRAIN	3	Dried corn kernels.	t	t	\N	\N	2025-12-10 14:54:39.743019	corn grain, mais grain, dried corn	f
 137	GRAPES	2	Small round fruits.	t	t	\N	\N	2025-12-10 14:54:39.743019	grapes, ubas, red grapes, green grapes	f
 95	GREEN CHILI	1	Siling haba, used in Filipino dishes.	t	t	\N	\N	2025-12-10 14:54:39.743019	green chili, siling haba, long chili	f
-183	LENTILS	4	Flat disk-like legume.	t	t	\N	\N	2025-12-10 14:54:39.743019	lentils, dal, lentil beans	f
+183	L4	Flat disk-like legume.	t	t	\N	\N	2025-12-10 14:54:39.743019	lentils, dal, lentil beans	f
 114	MANGO	2	National fruit of the Philippines.	t	t	\N	\N	2025-12-10 14:54:39.743019	mango, mangga, ripe mango	f
 187	NAVY BEANS	4	Soft white beans.	t	t	\N	\N	2025-12-10 14:54:39.743019	navy beans, white beans, haricot beans	f
 176	QUINOA	3	High-protein grain.	t	t	\N	\N	2025-12-10 14:54:39.743019	quinoa, super grain	f
@@ -2788,7 +2836,7 @@ COPY public.produce (id, name, produce_classification_id, description, is_active
 103	SNOW PEAS	1	Sitsaro, flat sweet pea pod.	t	t	\N	\N	2025-12-10 14:54:39.743019	snow peas, peas pod, snap peas	f
 142	TAMARIND	2	Sampalok fruit.	t	t	\N	\N	2025-12-10 14:54:39.743019	tamarind, sampalok	f
 99	TURNIP	1	Singkamas root vegetable.	t	t	\N	\N	2025-12-10 14:54:39.743019	turnip, singkamas, turnip root	f
-156	YAM	5	Ube purple yam.	t	t	\N	\N	2025-12-10 14:54:39.743019	yam, ube yam, root crop	f
+156	Ye purple yam.	t	t	\N	\N	2025-12-10 14:54:39.743019	yam, ube yam, root crop	f
 118	WATERMELON	2	Large refreshing fruit.	t	t	\N	\N	2025-12-10 14:54:39.743019	watermelon, pakwan, melon water	f
 110	ZUCCHINI	1	Soft-skinned gourd vegetable.	t	t	\N	\N	2025-12-10 14:54:39.743019	zucchini, courgette, green zucchini	f
 \.
@@ -2816,7 +2864,7 @@ COPY public.produce_classification (id, class_name, description, img_path, order
 --
 
 COPY public.produce_customize (id, name, produce_classification_id, description, is_active, is_seasonal, img_path, created_by_person_id, created_at, tags) FROM stdin;
-1	MALONGAY	3		t	f		2	2025-12-10 22:25:30.722889	kamongay, moringa
+1	MAL		t	f		2	2025-12-10 22:25:30.722889	kamongay, moringa
 3	MANGO (INDIAN)	2	mango	t	t	\N	2	2025-12-11 05:20:54.64839	MANGGA,INDIAN,MANGO
 \.
 
@@ -44869,7 +44917,7 @@ COPY public.tbl_barangay (id, citymun_id, description, barangay_index, orig_desc
 160202047	160201	HOLY REDEEMER	ea4a3a82-f0bc-11eb-b6e9-ffc4f87a54f1	Holy Redeemer Pob. (Bgy. 23)
 160202049	160201	KINAMLUTAN	ea3fb29c-f0bc-11eb-b663-cf9270ccd540	Kinamlutan
 160202051	160201	LAPU-LAPU	de779e49-f0bc-11eb-95e3-eb0a6bb8cc54	Lapu-lapu Pob. (Bgy. 8)
-160202052	160201	LEMON	ea1e91a2-f0bc-11eb-b4c2-fb3f5b919c62	Lemon
+160200201	LEMON	ea1e91a2-f0bc-11eb-b4c2-fb3f5b919c62	Lemon
 160202053	160201	LEON KILAT	e9f1bd6c-f0bc-11eb-b292-0f86ccf893c7	Leon Kilat Pob. (Bgy. 13)
 160202054	160201	LIBERTAD	ea52f7da-f0bc-11eb-b757-370bc0bf8561	Libertad
 160202055	160201	LIMAHA	ea28e9e1-f0bc-11eb-b545-a3e12d5e1796	Limaha Pob. (Bgy. 14)
@@ -86538,7 +86586,7 @@ COPY public.tbl_barangay_2 (id, adm3_psgc, description, barangay_index, orig_des
 1030500049	1030500000	Gusa	896689b7-0169-5624-97c7-4e1959788fa4		31417
 1600312005	1600312000	New Visayas	bfe9eb0d-15f1-55a4-9d0a-82bf114bfb18		37080
 1600312011	1600312000	San Roque	ae815564-c419-558b-bfc1-9336187ce11c		37086
-1600312015	1600312000	Manat	b1ec652e-e10c-522a-b963-578aac0b21ce		37090
+16003600312000	Manat	b1ec652e-e10c-522a-b963-578aac0b21ce		37090
 1600313014	1600313000	Bacay II	0dbfdd8f-74b7-5caa-90eb-b8411a8107be		37105
 402113001	402113000	Caingin Pob.	4011ad51-e884-51b8-88e4-5d389a2ab386		10259
 1705308007	1705308000	Mampio	28bfe048-db7d-5f1f-a7d7-223223c34700		38896
@@ -88193,7 +88241,7 @@ COPY public.tbl_citymun (id, province_id, description, code, zipcode, citymun_in
 142702	1427	HUNGDUAN	142702000		c9e13e26-f0bc-11eb-9548-7b8e8cc9fa81	\N
 153640	1536	SULTAN DUMALONDONG	153640000		c9e152a8-f0bc-11eb-9549-a76eed4db374	\N
 128001	1280	ALABEL (Capital)	128001000		c9e16748-f0bc-11eb-954a-937e2f7e9a51	\N
-144402	1444	BAUKO	144402000		c9e16749-f0bc-11eb-954b-336a769ec33a	\N
+14440BAUKO	144402000		c9e16749-f0bc-11eb-954b-336a769ec33a	\N
 35414	354	MINALIN	35414000		c9e18e58-f0bc-11eb-954c-5f1a246fae9d	\N
 143214	1432	TANUDAN	143214000		c9e18e59-f0bc-11eb-954d-dbfd04b337d7	\N
 133904	1339	SAN NICOLAS	133904000		c9e1b54a-f0bc-11eb-954e-2bf4bff4b3fa	\N
@@ -88288,7 +88336,7 @@ COPY public.tbl_province (id, region_id, description, code, abbr, province_index
 972	9	ZAMBOANGA DEL NORTE	97200000		a1eefe77-f0bc-11eb-8ec9-6fcae8558493
 973	9	ZAMBOANGA DEL SUR	97300000		a1ef2572-f0bc-11eb-8eca-1bcf8db1c54b
 983	9	ZAMBOANGA SIBUGAY	98300000		a1ef2573-f0bc-11eb-8ecb-c37297c413f6
-997	9	CITY OF ISABELA	99700000		a1ef4d68-f0bc-11eb-8ecc-77761cd0872e
+997	9F ISABELA	99700000		a1ef4d68-f0bc-11eb-8ecc-77761cd0872e
 1013	10	BUKIDNON	101300000		a1ef4d69-f0bc-11eb-8ecd-c3dde65a8ee9
 1018	10	CAMIGUIN	101800000		a1ef7360-f0bc-11eb-8ece-b34e5fce84d3
 1035	10	LANAO DEL NORTE	103500000		a1ef9a52-f0bc-11eb-8ecf-9fcae53a9631
@@ -88313,7 +88361,7 @@ COPY public.tbl_province (id, region_id, description, code, abbr, province_index
 1427	14	IFUGAO	142700000		a1f122b4-f0bc-11eb-8ee2-af7ba8f78864
 1432	14	KALINGA	143200000		a1f122b5-f0bc-11eb-8ee3-d39774beedac
 1444	14	MOUNTAIN PROVINCE	144400000		a1f153a6-f0bc-11eb-8ee4-5746730f8670
-1481	14	APAYAO	148100000		a1f168be-f0bc-11eb-8ee5-af5fae67e0e8
+1481	AO	148100000		a1f168be-f0bc-11eb-8ee5-af5fae67e0e8
 1507	15	BASILAN	150700000		a1f17de0-f0bc-11eb-8ee6-cb1a1df7ac20
 1536	15	LANAO DEL SUR	153600000		a1f192d0-f0bc-11eb-8ee7-1bbfee814e13
 1538	15	MAGUINDANAO	153800000		a1f1a82e-f0bc-11eb-8ee8-abbc5c2c2078
@@ -88333,7 +88381,7 @@ COPY public.tbl_province (id, region_id, description, code, abbr, province_index
 
 
 --
--- Data for Name: tbl_region; Type: TABLE DATA; Schema: public; Owner: postgres
+-- DaName: tbl_region; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.tbl_region (id, region, regional_designation, island_group, regional_center, code, region_index, order_by, is_active) FROM stdin;
@@ -88344,7 +88392,7 @@ COPY public.tbl_region (id, region, regional_designation, island_group, regional
 17	MIMAROPA	Region IV-B	Luzon	Calapan	170000000	77861319-f0bc-11eb-9b27-e78ce72e8010	5	f
 5	Bicol Region	Region V	Luzon	Legazpi	50000000	77850266-f0bc-11eb-9b1b-43c5479c4314	6	f
 6	Western Visayas	Region VI	Visayas	Iloilo City	60000000	77850267-f0bc-11eb-9b1c-5bfbdad736b6	7	f
-7	Central Visayas	Region VII	Visayas	Cebu City	70000000	77852aa2-f0bc-11eb-9b1d-179f30879b66	8	f
+7	Censayas	Region VII	Visayas	Cebu City	70000000	77852aa2-f0bc-11eb-9b1d-179f30879b66	8	f
 8	Eastern Visayas	Region VIII	Visayas	Tacloban	80000000	77852aa3-f0bc-11eb-9b1e-37f3d51f3ca9	9	f
 9	Zamboanga Peninsula	Region IX	Mindanao	Pagadian	90000000	7785504a-f0bc-11eb-9b1f-6b1c1e4b6639	10	f
 10	Northern Mindanao	Region X	Mindanao	Cagayan de Oro	100000000	77857746-f0bc-11eb-9b20-cfe9a94c1dc4	11	f
@@ -88436,7 +88484,7 @@ COPY public.transaction_details (id, transaction_id, checkout_at, payment_method
 
 
 --
--- Data for Name: transaction_payment_status; Type: TABLE DATA; Schema: public; Owner: postgres
+-- DaName: transaction_payment_status; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.transaction_payment_status (id, transaction_id, status, is_latest, create_at, created_by_person_id) FROM stdin;
@@ -88540,7 +88588,7 @@ COPY public.transaction_status (id, transaction_id, status, is_latest, create_at
 164	45	PENDING	f	2026-01-28 00:19:05.578559	58
 166	45	PENDING	f	2026-01-28 00:19:07.7906	58
 168	45	PENDING	f	2026-01-28 00:19:09.669579	58
-169	45	RESERVED	f	2026-01-28 09:05:02.567967	58
+169	4VED	f	2026-01-28 09:05:02.567967	58
 171	46	PENDING	f	2026-01-28 13:30:33.929811	58
 173	46	PENDING	f	2026-01-28 13:30:39.861598	58
 175	46	RESERVED	t	2026-01-28 13:31:03.154501	58
@@ -88592,42 +88640,42 @@ COPY public."user" (id, person_id, role_id, username, password, change_pwd, is_a
 9	11	1	abcc@gmail.com	f5bb0c8de146c67b44babbf4e6584cc0	f	t	2025-11-25 15:30:13.26737	\N	\N
 16	18	1	aaaa	f5bb0c8de146c67b44babbf4e6584cc0	f	t	2025-11-27 12:44:14.360624	\N	\N
 17	19	1	adfs	f5bb0c8de146c67b44babbf4e6584cc0	f	t	2025-11-27 22:06:21.203448	\N	\N
-20	22	1	juan123	f5bb0c8de146c67b44babbf4e6584cc0	f	t	2025-12-01 23:01:54.580003	\N	\N
+20	22	1	juan123	f5bb0c8de14babbf4e6584cc0	f	t	2025-12-01 23:01:54.580003	\N	\N
 2	2	3	farmer1	f5bb0c8de146c67b44babbf4e6584cc0	f	t	\N	\N	\N
 3	3	3	farmer2	f5bb0c8de146c67b44babbf4e6584cc0	f	t	\N	\N	\N
 7	9	1	aa	f5bb0c8de146c67b44babbf4e6584cc0	f	t	2025-11-25 15:27:41.129035	\N	\N
 8	10	1	ab	f5bb0c8de146c67b44babbf4e6584cc0	f	t	2025-11-25 15:29:33.631549	\N	\N
 10	12	1	sdf	f5bb0c8de146c67b44babbf4e6584cc0	f	t	2025-11-25 16:50:33.413573	\N	\N
 11	13	1	asdf	f5bb0c8de146c67b44babbf4e6584cc0	f	t	2025-11-25 16:57:39.313526	\N	\N
-12	14	1	asdff	f5bb0c8de146c67b44babbf4e6584cc0	f	t	2025-11-26 01:49:54.330805	\N	\N
+12	14	1	asdff	f5bb0c8de146abbf4e6584cc0	f	t	2025-11-26 01:49:54.330805	\N	\N
 13	15	1	asdffs	f5bb0c8de146c67b44babbf4e6584cc0	f	t	2025-11-26 01:50:18.704963	\N	\N
 14	16	1	asdffsd	f5bb0c8de146c67b44babbf4e6584cc0	f	t	2025-11-26 01:52:05.852756	\N	\N
 15	17	1	sdfsd	f5bb0c8de146c67b44babbf4e6584cc0	f	t	2025-11-26 09:50:00.864058	\N	\N
 18	20	1	sdfd	f5bb0c8de146c67b44babbf4e6584cc0	f	t	2025-11-27 22:10:14.567693	\N	\N
 19	21	1	ddfd	f5bb0c8de146c67b44babbf4e6584cc0	f	t	2025-11-27 22:12:28.125018	\N	\N
 21	23	1	juancruz	f5bb0c8de146c67b44babbf4e6584cc0	f	t	2025-12-03 12:30:38.81986	\N	\N
-22	24	1	tigercruz	f5bb0c8de146c67b44babbf4e6584cc0	f	t	2025-12-07 18:00:50.251686	\N	\N
+22	24	1	tigercruz	f5bb0c8db44babbf4e6584cc0	f	t	2025-12-07 18:00:50.251686	\N	\N
 23	25	1	cocomartin	f5bb0c8de146c67b44babbf4e6584cc0	f	t	2025-12-07 21:32:35.842655	\N	\N
 24	26	1	testtest	6a204bd89f3c8348afd5c77c717a097a	f	t	2025-12-09 10:34:42.549119	\N	\N
 25	27	1	micheclle.laspi	6a204bd89f3c8348afd5c77c717a097a	f	t	2025-12-09 19:01:03.885819	\N	\N
 26	28	1	asdfasdf	6a204bd89f3c8348afd5c77c717a097a	f	t	2025-12-09 19:12:26.932099	\N	\N
 27	31	3	dsfddd	6a204bd89f3c8348afd5c77c717a097a	f	t	2025-12-09 19:33:38.64869	\N	\N
 28	33	3	dfdfdfdfd	6a204bd89f3c8348afd5c77c717a097a	f	t	2025-12-09 19:35:39.694184	\N	\N
-29	35	3	asdfasdfdfd	6a204bd89f3c8348afd5c77c717a097a	f	t	2025-12-09 19:37:40.963411	\N	\N
+29	35	3	asdfasdfdfd	6a204b348afd5c77c717a097a	f	t	2025-12-09 19:37:40.963411	\N	\N
 30	37	3	test	6a204bd89f3c8348afd5c77c717a097a	f	t	2025-12-09 19:43:46.685531	\N	\N
 31	39	3	ssdds	6a204bd89f3c8348afd5c77c717a097a	f	t	2025-12-09 19:45:53.732591	\N	\N
 32	40	2	sdfddddddd	6a204bd89f3c8348afd5c77c717a097a	f	t	2025-12-09 19:49:08.644159	\N	\N
 33	42	3	dfdfdfd	6a204bd89f3c8348afd5c77c717a097a	f	t	2025-12-09 19:53:47.003442	\N	\N
 34	44	3	dfdfd	6a204bd89f3c8348afd5c77c717a097a	f	t	2025-12-09 19:59:28.028983	\N	\N
 35	45	2	dfdf	6a204bd89f3c8348afd5c77c717a097a	f	t	2025-12-09 20:04:22.957358	\N	\N
-36	46	2	dfdfdfdsssss	6a204bd89f3c8348afd5c77c717a097a	f	t	2025-12-09 20:05:10.691202	\N	\N
+36	46	2	dfdfdfdsssss	6a2048348afd5c77c717a097a	f	t	2025-12-09 20:05:10.691202	\N	\N
 37	48	3	saaa	6a204bd89f3c8348afd5c77c717a097a	f	t	2025-12-09 20:14:28.258817	\N	\N
 38	49	2	ddfdf	6a204bd89f3c8348afd5c77c717a097a	f	t	2025-12-09 20:18:44.733339	\N	\N
 39	50	3	dfddddaaa	6a204bd89f3c8348afd5c77c717a097a	f	t	2025-12-09 20:19:33.275308	\N	\N
 40	51	3	farmer22	f5bb0c8de146c67b44babbf4e6584cc0	f	t	2025-12-11 18:49:13.702088	\N	\N
 1	1	2	user1	f5bb0c8de146c67b44babbf4e6584cc0	f	t	\N	\N	\N
 41	52	2	albert	f5bb0c8de146c67b44babbf4e6584cc0	f	t	2025-12-21 13:18:33.831717	\N	\N
-42	53	3	aaa	f5bb0c8de146c67b44babbf4e6584cc0	f	t	2025-12-21 13:36:50.791021	\N	\N
+42	53	3	aaa	f5bb0c8de146c6bf4e6584cc0	f	t	2025-12-21 13:36:50.791021	\N	\N
 43	54	2	gaga	f5bb0c8de146c67b44babbf4e6584cc0	f	t	2025-12-21 13:48:28.762202	\N	\N
 44	55	3	testest	f5bb0c8de146c67b44babbf4e6584cc0	f	t	2025-12-22 08:31:07.917761	\N	\N
 45	56	3	fdfdfd	6a204bd89f3c8348afd5c77c717a097a	f	t	2025-12-22 08:35:10.363765	\N	\N
@@ -88882,7 +88930,7 @@ SELECT pg_catalog.setval('public.transaction_details_id_seq', 19, true);
 
 
 --
--- Name: transaction_payment_status_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: transactment_status_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.transaction_payment_status_id_seq', 28, true);
@@ -88906,7 +88954,7 @@ SELECT pg_catalog.setval('public.user_id_seq', 47, true);
 -- Name: attachment attachment_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.attachment
+ALTER TABLE ONLY attachment
     ADD CONSTRAINT attachment_pk PRIMARY KEY (id);
 
 
@@ -88914,7 +88962,7 @@ ALTER TABLE ONLY public.attachment
 -- Name: checkout checkout_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.checkout
+ALTER TABLE ONLY checkout
     ADD CONSTRAINT checkout_pk PRIMARY KEY (id);
 
 
@@ -88922,7 +88970,7 @@ ALTER TABLE ONLY public.checkout
 -- Name: produce_classification classification_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.produce_classification
+ALTER TABLE ONLY produce_classification
     ADD CONSTRAINT classification_pk PRIMARY KEY (id);
 
 
@@ -88930,7 +88978,7 @@ ALTER TABLE ONLY public.produce_classification
 -- Name: produce_classification classification_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.produce_classification
+ALTER TABLE ONLY produce_classification
     ADD CONSTRAINT classification_unique UNIQUE (class_name);
 
 
@@ -88938,7 +88986,7 @@ ALTER TABLE ONLY public.produce_classification
 -- Name: farm_geo_data farm_geo_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.farm_geo_data
+ALTER TABLE ONLY farm_geo_data
     ADD CONSTRAINT farm_geo_pk PRIMARY KEY (farm_id);
 
 
@@ -88946,7 +88994,7 @@ ALTER TABLE ONLY public.farm_geo_data
 -- Name: farm_produce_supply farm_produce_supply_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.farm_produce_supply
+ALTER TABLE ONLY farm_produce_supply
     ADD CONSTRAINT farm_produce_supply_pk PRIMARY KEY (id);
 
 
@@ -88954,7 +89002,7 @@ ALTER TABLE ONLY public.farm_produce_supply
 -- Name: farm_produce farm_products_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.farm_produce
+ALTER TABLE ONLY farm_produce
     ADD CONSTRAINT farm_products_pk PRIMARY KEY (id);
 
 
@@ -88962,7 +89010,7 @@ ALTER TABLE ONLY public.farm_produce
 -- Name: farm_soil_data farm_soil_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.farm_soil_data
+ALTER TABLE ONLY farm_soil_data
     ADD CONSTRAINT farm_soil_pk PRIMARY KEY (id);
 
 
@@ -88970,7 +89018,7 @@ ALTER TABLE ONLY public.farm_soil_data
 -- Name: farmer_id_attachments farmer_attachments_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.farmer_id_attachments
+ALTER TABLE ONLY farmer_id_attachments
     ADD CONSTRAINT farmer_attachments_pk PRIMARY KEY (id);
 
 
@@ -88978,7 +89026,7 @@ ALTER TABLE ONLY public.farmer_id_attachments
 -- Name: farmer_group farmer_group_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.farmer_group
+ALTER TABLE ONLY farmer_group
     ADD CONSTRAINT farmer_group_pk PRIMARY KEY (id);
 
 
@@ -88986,7 +89034,7 @@ ALTER TABLE ONLY public.farmer_group
 -- Name: farmer_group farmer_group_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.farmer_group
+ALTER TABLE ONLY farmer_group
     ADD CONSTRAINT farmer_group_unique UNIQUE (name);
 
 
@@ -88994,7 +89042,7 @@ ALTER TABLE ONLY public.farmer_group
 -- Name: farmer_id_attachments farmer_id_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.farmer_id_attachments
+ALTER TABLE ONLY farmer_id_attachments
     ADD CONSTRAINT farmer_id_unique UNIQUE (farmer_id);
 
 
@@ -89002,7 +89050,7 @@ ALTER TABLE ONLY public.farmer_id_attachments
 -- Name: farmer_organization_member farmer_organization_member_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.farmer_organization_member
+ALTER TABLE ONLY farmer_organization_member
     ADD CONSTRAINT farmer_organization_member_pk PRIMARY KEY (id);
 
 
@@ -89010,7 +89058,7 @@ ALTER TABLE ONLY public.farmer_organization_member
 -- Name: farmer_payment_method farmer_payment_method_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.farmer_payment_method
+ALTER TABLE ONLY farmer_payment_method
     ADD CONSTRAINT farmer_payment_method_pk PRIMARY KEY (id);
 
 
@@ -89018,7 +89066,7 @@ ALTER TABLE ONLY public.farmer_payment_method
 -- Name: farmer_payment_method farmer_payment_method_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.farmer_payment_method
+ALTER TABLE ONLY farmer_payment_method
     ADD CONSTRAINT farmer_payment_method_unique UNIQUE (person_id, type);
 
 
@@ -89026,7 +89074,7 @@ ALTER TABLE ONLY public.farmer_payment_method
 -- Name: farmer_subscription farmer_subscription_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.farmer_subscription
+ALTER TABLE ONLY farmer_subscription
     ADD CONSTRAINT farmer_subscription_pk PRIMARY KEY (id);
 
 
@@ -89034,7 +89082,7 @@ ALTER TABLE ONLY public.farmer_subscription
 -- Name: farmer farmers_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.farmer
+ALTER TABLE ONLY farmer
     ADD CONSTRAINT farmers_pk PRIMARY KEY (id);
 
 
@@ -89042,7 +89090,7 @@ ALTER TABLE ONLY public.farmer
 -- Name: farmer farmers_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.farmer
+ALTER TABLE ONLY farmer
     ADD CONSTRAINT farmers_unique UNIQUE (person_id);
 
 
@@ -89050,7 +89098,7 @@ ALTER TABLE ONLY public.farmer
 -- Name: farmer_farm farms_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.farmer_farm
+ALTER TABLE ONLY farmer_farm
     ADD CONSTRAINT farms_pk PRIMARY KEY (id);
 
 
@@ -89058,7 +89106,7 @@ ALTER TABLE ONLY public.farmer_farm
 -- Name: farm_to_market_roads fmr_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.farm_to_market_roads
+ALTER TABLE ONLY farm_to_market_roads
     ADD CONSTRAINT fmr_pk PRIMARY KEY (id);
 
 
@@ -89066,7 +89114,7 @@ ALTER TABLE ONLY public.farm_to_market_roads
 -- Name: crop_production_forecast forecast_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.crop_production_forecast
+ALTER TABLE ONLY crop_production_forecast
     ADD CONSTRAINT forecast_pk PRIMARY KEY (id);
 
 
@@ -89074,7 +89122,7 @@ ALTER TABLE ONLY public.crop_production_forecast
 -- Name: id_type id_type_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.id_type
+ALTER TABLE ONLY id_type
     ADD CONSTRAINT id_type_pk PRIMARY KEY (id);
 
 
@@ -89082,7 +89130,7 @@ ALTER TABLE ONLY public.id_type
 -- Name: id_type id_type_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.id_type
+ALTER TABLE ONLY id_type
     ADD CONSTRAINT id_type_unique UNIQUE (name);
 
 
@@ -89090,7 +89138,7 @@ ALTER TABLE ONLY public.id_type
 -- Name: my_cart_farm_produce my_cart_farm_produce_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.my_cart_farm_produce
+ALTER TABLE ONLY my_cart_farm_produce
     ADD CONSTRAINT my_cart_farm_produce_pk PRIMARY KEY (id);
 
 
@@ -89098,7 +89146,7 @@ ALTER TABLE ONLY public.my_cart_farm_produce
 -- Name: transaction_status newtable_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.transaction_status
+ALTER TABLE ONLY transaction_status
     ADD CONSTRAINT newtable_pk PRIMARY KEY (id);
 
 
@@ -89106,7 +89154,7 @@ ALTER TABLE ONLY public.transaction_status
 -- Name: organization organization_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.organization
+ALTER TABLE ONLY organization
     ADD CONSTRAINT organization_pk PRIMARY KEY (id);
 
 
@@ -89114,7 +89162,7 @@ ALTER TABLE ONLY public.organization
 -- Name: subscription_payment payment_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.subscription_payment
+ALTER TABLE ONLY subscription_payment
     ADD CONSTRAINT payment_pk PRIMARY KEY (id);
 
 
@@ -89122,7 +89170,7 @@ ALTER TABLE ONLY public.subscription_payment
 -- Name: price_monitoring_farm_produce price_monitoring_farm_produce_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.price_monitoring_farm_produce
+ALTER TABLE ONLY price_monitoring_farm_produce
     ADD CONSTRAINT price_monitoring_farm_produce_pk PRIMARY KEY (id);
 
 
@@ -89130,7 +89178,7 @@ ALTER TABLE ONLY public.price_monitoring_farm_produce
 -- Name: produce_customize produce_costum_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.produce_customize
+ALTER TABLE ONLY produce_customize
     ADD CONSTRAINT produce_costum_pk PRIMARY KEY (id);
 
 
@@ -89138,7 +89186,7 @@ ALTER TABLE ONLY public.produce_customize
 -- Name: produce_customize produce_costum_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.produce_customize
+ALTER TABLE ONLY produce_customize
     ADD CONSTRAINT produce_costum_unique UNIQUE (created_by_person_id, name);
 
 
@@ -89146,7 +89194,7 @@ ALTER TABLE ONLY public.produce_customize
 -- Name: produce produce_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.produce
+ALTER TABLE ONLY produce
     ADD CONSTRAINT produce_unique UNIQUE (created_by_person_id, name);
 
 
@@ -89154,7 +89202,7 @@ ALTER TABLE ONLY public.produce
 -- Name: produce products_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.produce
+ALTER TABLE ONLY produce
     ADD CONSTRAINT products_pk PRIMARY KEY (id);
 
 
@@ -89162,7 +89210,7 @@ ALTER TABLE ONLY public.produce
 -- Name: role role_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.role
+ALTER TABLE ONLY role
     ADD CONSTRAINT role_pk PRIMARY KEY (id);
 
 
@@ -89170,7 +89218,7 @@ ALTER TABLE ONLY public.role
 -- Name: role role_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.role
+ALTER TABLE ONLY role
     ADD CONSTRAINT role_unique UNIQUE (level);
 
 
@@ -89178,7 +89226,7 @@ ALTER TABLE ONLY public.role
 -- Name: soil_type_lookup soil_lookup_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.soil_type_lookup
+ALTER TABLE ONLY soil_type_lookup
     ADD CONSTRAINT soil_lookup_pk PRIMARY KEY (id);
 
 
@@ -89186,7 +89234,7 @@ ALTER TABLE ONLY public.soil_type_lookup
 -- Name: subscription_tier subscription_tier_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.subscription_tier
+ALTER TABLE ONLY subscription_tier
     ADD CONSTRAINT subscription_tier_pk PRIMARY KEY (id);
 
 
@@ -89194,7 +89242,7 @@ ALTER TABLE ONLY public.subscription_tier
 -- Name: subscription_tier subscription_tier_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.subscription_tier
+ALTER TABLE ONLY subscription_tier
     ADD CONSTRAINT subscription_tier_unique UNIQUE (tier_name);
 
 
@@ -89202,7 +89250,7 @@ ALTER TABLE ONLY public.subscription_tier
 -- Name: tbl_barangay_2 tbl_barangay_2_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.tbl_barangay_2
+ALTER TABLE ONLY tbl_barangay_2
     ADD CONSTRAINT tbl_barangay_2_pkey PRIMARY KEY (gid);
 
 
@@ -89210,7 +89258,7 @@ ALTER TABLE ONLY public.tbl_barangay_2
 -- Name: tbl_barangay tbl_barangay_barangay_index_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.tbl_barangay
+ALTER TABLE ONLY tbl_barangay
     ADD CONSTRAINT tbl_barangay_barangay_index_key UNIQUE (barangay_index);
 
 
@@ -89218,7 +89266,7 @@ ALTER TABLE ONLY public.tbl_barangay
 -- Name: tbl_barangay tbl_barangay_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.tbl_barangay
+ALTER TABLE ONLY tbl_barangay
     ADD CONSTRAINT tbl_barangay_pkey PRIMARY KEY (id);
 
 
@@ -89226,7 +89274,7 @@ ALTER TABLE ONLY public.tbl_barangay
 -- Name: person tbl_basicinfo_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.person
+ALTER TABLE ONLY person
     ADD CONSTRAINT tbl_basicinfo_pkey PRIMARY KEY (id);
 
 
@@ -89234,7 +89282,7 @@ ALTER TABLE ONLY public.person
 -- Name: tbl_citymun tbl_cityMunicipality_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.tbl_citymun
+ALTER TABLE ONLY tbl_citymun
     ADD CONSTRAINT "tbl_cityMunicipality_pkey" PRIMARY KEY (id);
 
 
@@ -89242,7 +89290,7 @@ ALTER TABLE ONLY public.tbl_citymun
 -- Name: tbl_citymun tbl_citymun_citymun_index_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.tbl_citymun
+ALTER TABLE ONLY tbl_citymun
     ADD CONSTRAINT tbl_citymun_citymun_index_key UNIQUE (citymun_index);
 
 
@@ -89250,7 +89298,7 @@ ALTER TABLE ONLY public.tbl_citymun
 -- Name: tbl_province tbl_province_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.tbl_province
+ALTER TABLE ONLY tbl_province
     ADD CONSTRAINT tbl_province_pkey PRIMARY KEY (id);
 
 
@@ -89258,7 +89306,7 @@ ALTER TABLE ONLY public.tbl_province
 -- Name: tbl_province tbl_province_province_index_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.tbl_province
+ALTER TABLE ONLY tbl_province
     ADD CONSTRAINT tbl_province_province_index_key UNIQUE (province_index);
 
 
@@ -89266,7 +89314,7 @@ ALTER TABLE ONLY public.tbl_province
 -- Name: tbl_region tbl_region_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.tbl_region
+ALTER TABLE ONLY tbl_region
     ADD CONSTRAINT tbl_region_pkey PRIMARY KEY (id);
 
 
@@ -89274,7 +89322,7 @@ ALTER TABLE ONLY public.tbl_region
 -- Name: tbl_region tbl_region_region_index_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.tbl_region
+ALTER TABLE ONLY tbl_region
     ADD CONSTRAINT tbl_region_region_index_key UNIQUE (region_index);
 
 
@@ -89282,7 +89330,7 @@ ALTER TABLE ONLY public.tbl_region
 -- Name: transaction_cancel transaction_cancel_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.transaction_cancel
+ALTER TABLE ONLY transaction_cancel
     ADD CONSTRAINT transaction_cancel_pk PRIMARY KEY (id);
 
 
@@ -89290,7 +89338,7 @@ ALTER TABLE ONLY public.transaction_cancel
 -- Name: transaction_cancel transaction_cancel_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.transaction_cancel
+ALTER TABLE ONLY transaction_cancel
     ADD CONSTRAINT transaction_cancel_unique UNIQUE (transaction_id);
 
 
@@ -89298,7 +89346,7 @@ ALTER TABLE ONLY public.transaction_cancel
 -- Name: transaction_delivery_status transaction_delivery_status_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.transaction_delivery_status
+ALTER TABLE ONLY transaction_delivery_status
     ADD CONSTRAINT transaction_delivery_status_pk PRIMARY KEY (id);
 
 
@@ -89306,7 +89354,7 @@ ALTER TABLE ONLY public.transaction_delivery_status
 -- Name: transaction_details transaction_details_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.transaction_details
+ALTER TABLE ONLY public.transaction_deta
     ADD CONSTRAINT transaction_details_pk PRIMARY KEY (id);
 
 
@@ -89327,7 +89375,7 @@ ALTER TABLE ONLY public.transaction_payment_status
 
 
 --
--- Name: transaction transaction_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: transaction transaction_pk; Type: CONSTRAINT; Spublic; Owner: postgres
 --
 
 ALTER TABLE ONLY public.transaction
@@ -89379,14 +89427,14 @@ CREATE TRIGGER trg_after_farmer_approve AFTER UPDATE ON public.farmer FOR EACH R
 
 
 --
--- Name: price_monitoring_farm_produce trg_price_monitoring_set_latest; Type: TRIGGER; Schema: public; Owner: postgres
+-- Name: price_monitoring_farm_produce trg_price_monitoring_set_lates: TRIGGER; Schema: public; Owner: postgres
 --
 
 CREATE TRIGGER trg_price_monitoring_set_latest BEFORE INSERT ON public.price_monitoring_farm_produce FOR EACH ROW EXECUTE FUNCTION public.fn_price_monitoring_set_latest();
 
 
 --
--- Name: transaction_delivery_status trg_transaction_delivery_status_set_latest; Type: TRIGGER; Schema: public; Owner: postgres
+-- Name: transactivery_status trg_transaction_delivery_status_set_latest; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
 CREATE TRIGGER trg_transaction_delivery_status_set_latest BEFORE INSERT ON public.transaction_delivery_status FOR EACH ROW EXECUTE FUNCTION public.fn_transaction_delivery_status_set_latest();
@@ -89403,62 +89451,62 @@ CREATE TRIGGER trg_transaction_payment_status_set_latest BEFORE INSERT ON public
 -- Name: transaction_status trg_transaction_status_set_latest; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
-CREATE TRIGGER trg_transaction_status_set_latest BEFORE INSERT ON public.transaction_status FOR EACH ROW EXECUTE FUNCTION public.fn_transaction_status_set_latest();
+CREATE TRIGGER trg_transaction_status_set_latest BEFORE INSERT ON public.transacatus FOR EACH ROW EXECUTE FUNCTION public.fn_transaction_status_set_latest();
 
 
 --
 -- Name: checkout checkout_person_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.checkout
-    ADD CONSTRAINT checkout_person_fk FOREIGN KEY (customer_person_id) REFERENCES public.person(id);
+ALTER TABLE ONLY checkout
+    ADD CONSTRAINT checkout_person_fk FOREIGN KEY (customer_person_id)NCES public.person(id);
 
 
 --
 -- Name: checkout checkout_transaction_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.checkout
-    ADD CONSTRAINT checkout_transaction_fk FOREIGN KEY (transaction_id) REFERENCES public.transaction(id);
+ALTER TABLE ONLY checkout
+    ADD CONSTRAINT checkout_transaction_fk FOREIGN KEY (transaction_id) REF public.transaction(id);
 
 
 --
 -- Name: farm_geo_data farm_geo_farm_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.farm_geo_data
-    ADD CONSTRAINT farm_geo_farm_fk FOREIGN KEY (farm_id) REFERENCES public.farmer_farm(id);
+ALTER TABLE ONLY farm_geo_data
+    ADD CONSTRAINT farm_geo_farm_fk FOREIGN KEY (farm_id) REFERENCES public.farmerd);
 
 
 --
 -- Name: farm_produce_supply farm_produce_supply_farm_produce_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.farm_produce_supply
-    ADD CONSTRAINT farm_produce_supply_farm_produce_fk FOREIGN KEY (farm_produce_id) REFERENCES public.farm_produce(id);
+ALTER TABLE ONLY farm_produce_supply
+    ADD CONSTRAINT farm_produce_supply_farm_produce_fk FOREIGN KEY (farm_pid) REFERENCES public.farm_produce(id);
 
 
 --
 -- Name: farm_produce farm_products_farm_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.farm_produce
-    ADD CONSTRAINT farm_products_farm_fk FOREIGN KEY (farm_id) REFERENCES public.farmer_farm(id);
+ALTER TABLE ONLY farm_produce
+    ADD CONSTRAINT farm_products_farm_fk FOREIGN KEY (farm_id) REFERENCES.farmer_farm(id);
 
 
 --
 -- Name: farm_produce farm_products_product_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.farm_produce
-    ADD CONSTRAINT farm_products_product_fk FOREIGN KEY (produce_id) REFERENCES public.produce(id);
+ALTER TABLE ONLY farm_produce
+    ADD CONSTRAINT farm_products_product_fk FOREIGN KEY (produce_id) REFERENCES public.prod;
 
 
 --
 -- Name: farm_soil_data farm_soil_farm_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.farm_soil_data
+ALTER TABLE ONLY farm_soil_data
     ADD CONSTRAINT farm_soil_farm_fk FOREIGN KEY (farm_id) REFERENCES public.farmer_farm(id);
 
 
@@ -89466,55 +89514,55 @@ ALTER TABLE ONLY public.farm_soil_data
 -- Name: farm_soil_data farm_soil_type_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.farm_soil_data
-    ADD CONSTRAINT farm_soil_type_fk FOREIGN KEY (soil_type_id) REFERENCES public.soil_type_lookup(id);
+ALTER TABLE ONLY farm_soil_data
+    ADD CONSTRAINT farm_soil_type_fk FOREIGN KEY (soil_type_id) REFERENCic.soil_type_lookup(id);
 
 
 --
 -- Name: farmer_id_attachments farmer_id_attachment_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.farmer_id_attachments
-    ADD CONSTRAINT farmer_id_attachment_fk FOREIGN KEY (attachment_id) REFERENCES public.attachment(id);
+ALTER TABLE ONLY farmer_id_attachments
+    ADD CONSTRAINT farmer_id_attachment_fk FOREIGN KEY (attachment_id) CES public.attachment(id);
 
 
 --
 -- Name: farmer_id_attachments farmer_id_farmer_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.farmer_id_attachments
-    ADD CONSTRAINT farmer_id_farmer_fk FOREIGN KEY (farmer_id) REFERENCES public.farmer(id);
+ALTER TABLE ONLY farmer_id_attachments
+    ADD CONSTRAINT farmer_id_farmer_fk FOREIGN KEY (farmer_id) REFEpublic.farmer(id);
 
 
 --
 -- Name: farmer_id_attachments farmer_id_id_type_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.farmer_id_attachments
-    ADD CONSTRAINT farmer_id_id_type_fk FOREIGN KEY (id_type) REFERENCES public.id_type(id);
+ALTER TABLE ONLY farmer_id_attachments
+    ADD CONSTRAINT farmer_id_id_type_fk FOREIGN KEY (id_type) RES public.id_type(id);
 
 
 --
 -- Name: farmer_organization_member farmer_organization_member_farmer_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.farmer_organization_member
-    ADD CONSTRAINT farmer_organization_member_farmer_fk FOREIGN KEY (farmer_id) REFERENCES public.farmer(id);
+ALTER TABLE ONLY farmer_organization_member
+    ADD CONSTRAINT farmer_organization_member_farmer_fk FOREIGN KEY (farmer_id) REFERENCES public(id);
 
 
 --
 -- Name: farmer_organization_member farmer_organization_member_organization_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.farmer_organization_member
-    ADD CONSTRAINT farmer_organization_member_organization_fk FOREIGN KEY (organiztion_id) REFERENCES public.organization(id);
+ALTER TABLE ONLY farmer_organization_member
+    ADD CONSTRAINT farmer_organization_member_organization_fk FOREIGN KEY (organiztion_id) REFERENCES public.organization(i
 
 
 --
 -- Name: farmer farmers_person_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.farmer
+ALTER TABLE ONLY farmer
     ADD CONSTRAINT farmers_person_fk FOREIGN KEY (person_id) REFERENCES public.person(id);
 
 
@@ -89522,15 +89570,15 @@ ALTER TABLE ONLY public.farmer
 -- Name: farmer_farm farms_farmers_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.farmer_farm
-    ADD CONSTRAINT farms_farmers_fk FOREIGN KEY (farmer_id) REFERENCES public.farmer(id);
+ALTER TABLE ONLY farmer_farm
+    ADD CONSTRAINT farms_farmers_fk FOREIGN KEY (farmer_id) REFERENCES public.farme
 
 
 --
 -- Name: farmer_subscription fs_farmer_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.farmer_subscription
+ALTER TABLE ONLY farmer_subscription
     ADD CONSTRAINT fs_farmer_fk FOREIGN KEY (farmer_id) REFERENCES public.farmer(id);
 
 
@@ -89538,7 +89586,7 @@ ALTER TABLE ONLY public.farmer_subscription
 -- Name: farmer_subscription fs_tier_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.farmer_subscription
+ALTER TABLE ONLY farmer_subscription
     ADD CONSTRAINT fs_tier_fk FOREIGN KEY (tier_id) REFERENCES public.subscription_tier(id);
 
 
@@ -89546,80 +89594,80 @@ ALTER TABLE ONLY public.farmer_subscription
 -- Name: my_cart_farm_produce my_cart_farm_produce_farm_produce_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.my_cart_farm_produce
-    ADD CONSTRAINT my_cart_farm_produce_farm_produce_fk FOREIGN KEY (farm_produce_id) REFERENCES public.farm_produce(id);
+ALTER TABLE ONLY my_cart_farm_produce
+    ADD CONSTRAINT my_cart_farm_produce_farm_produce_fk FOREIGN KEY (farm_produce_id) REFERENCES public.farm_prd);
 
 
 --
 -- Name: my_cart_farm_produce my_cart_farm_produce_price_monitoring_farm_produce_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.my_cart_farm_produce
-    ADD CONSTRAINT my_cart_farm_produce_price_monitoring_farm_produce_fk FOREIGN KEY (price_id_during_transact) REFERENCES public.price_monitoring_farm_produce(id);
+ALTER TABLE ONLY my_cart_farm_produce
+    ADD CONSTRAINT my_cart_farm_produce_price_monitoring_farm_produce_fk FOREIGN KEY (price_id_during_traREFERENCES public.price_monitoring_farm_produce(id);
 
 
 --
 -- Name: my_cart_farm_produce my_cart_farm_produce_transaction_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.my_cart_farm_produce
-    ADD CONSTRAINT my_cart_farm_produce_transaction_fk FOREIGN KEY (transaction_id) REFERENCES public.transaction(id);
+ALTER TABLE ONLY my_cart_farm_produce
+    ADD CONSTRAINT my_cart_farm_produce_transaction_fk FOREIGN KEY (transaction_id) RES public.transaction(id);
 
 
 --
 -- Name: transaction_status newtable_transaction_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.transaction_status
-    ADD CONSTRAINT newtable_transaction_fk FOREIGN KEY (transaction_id) REFERENCES public.transaction(id);
+ALTER TABLE ONLY transaction_status
+    ADD CONSTRAINT newtable_transaction_fk FOREIGN KEY (transaction_id) REFERENCES transaction(id);
 
 
 --
 -- Name: subscription_payment payment_subscription_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.subscription_payment
-    ADD CONSTRAINT payment_subscription_fk FOREIGN KEY (farmer_subscription_id) REFERENCES public.farmer_subscription(id);
+ALTER TABLE ONLY subscription_payment
+    ADD CONSTRAINT payment_subscription_fk FOREIGN KEY (farmer_subscription_id) REFERENCES public.farmcription(id);
 
 
 --
 -- Name: price_monitoring_farm_produce price_monitoring_farm_produce_farm_produce_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.price_monitoring_farm_produce
-    ADD CONSTRAINT price_monitoring_farm_produce_farm_produce_fk FOREIGN KEY (farm_produce_id) REFERENCES public.farm_produce(id);
+ALTER TABLE ONLY price_monitoring_farm_produce
+    ADD CONSTRAINT price_monitoring_farm_produce_farm_produce_fk FOREIGN KEY (fduce_id) REFERENCES public.farm_produce(id);
 
 
 --
 -- Name: produce_customize produce_costum_product_classification_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.produce_customize
-    ADD CONSTRAINT produce_costum_product_classification_fk FOREIGN KEY (produce_classification_id) REFERENCES public.produce_classification(id);
+ALTER TABLE ONLY produce_customize
+    ADD CONSTRAINT produce_costum_product_classification_fk FOREIGN KEY (produce_classification_id) RES public.produce_classification(id);
 
 
 --
 -- Name: produce products_product_classification_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.produce
-    ADD CONSTRAINT products_product_classification_fk FOREIGN KEY (produce_classification_id) REFERENCES public.produce_classification(id);
+ALTER TABLE ONLY produce
+    ADD CONSTRAINT products_product_classification_fk FOREIGN KEY (produce_ccation_id) REFERENCES public.produce_classification(id);
 
 
 --
 -- Name: tbl_citymun tbl_citymun_province_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.tbl_citymun
-    ADD CONSTRAINT tbl_citymun_province_id_fkey FOREIGN KEY (province_id) REFERENCES public.tbl_province(id);
+ALTER TABLE ONLY tbl_citymun
+    ADD CONSTRAINT tbl_citymun_province_id_fkey FOREIGN KEY (province_id) REF public.tbl_province(id);
 
 
 --
 -- Name: tbl_province tbl_province_regionId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.tbl_province
-    ADD CONSTRAINT "tbl_province_regionId_fkey" FOREIGN KEY (region_id) REFERENCES public.tbl_region(id);
+ALTER TABLE ONLY tbl_province
+    ADD CONSTRAINT "tbl_province_regionId_fkey" FOREIGN KEY (regiREFERENCES public.tbl_region(id);
 
 
 --

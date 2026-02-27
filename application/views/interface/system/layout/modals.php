@@ -743,7 +743,7 @@
     <div class="modal-dialog modal-md modal-dialog-centered">
         <div class="modal-content rounded shadow">
             <!-- HEADER -->
-            <div class="modal-header bg-success py-2">
+            <div class="modal-header bg-warning py-2">
                 <h5 class="modal-title mb-0 text-white">
                     <i class="fas fa-shopping-basket mr-1"></i> Cart List
                 </h5>
@@ -752,6 +752,142 @@
 
             <div class="modal-body px-3 py-2">
                 <table id="tblCartListing" class="table table-sm table-hover table-striped table-bordered mb-0" width="100%">
+                    <thead class="small">
+                        <tr>
+                            <!-- <th width="1">Image</th> -->
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- dynamic rows -->
+                    </tbody>
+                </table>
+            </div>
+
+
+            <div class="modal-footer py-2">
+                <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalOrderListing">
+    <!-- <div class="modal fade show" id="modalCheckout" tabindex="-1" aria-labelledby="modalCheckoutLabel" aria-hidden="true" style="display: block; padding-left: 0px;"> -->
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content rounded shadow">
+            <!-- HEADER -->
+            <div class="modal-header bg-info py-2">
+                <h5 class="modal-title mb-0 text-white">
+                    <i class="fas fa-table mr-1"></i> Order List
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body px-3 py-2">
+                <table id="tblOrderListing" class="table table-sm table-hover table-striped table-bordered mb-0" width="100%">
+                    <thead class="small">
+                        <tr>
+                            <!-- <th width="1">Image</th> -->
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- dynamic rows -->
+                    </tbody>
+                </table>
+            </div>
+
+
+            <div class="modal-footer py-2">
+                <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalCompletedOrderListing">
+    <!-- <div class="modal fade show" id="modalCheckout" tabindex="-1" aria-labelledby="modalCheckoutLabel" aria-hidden="true" style="display: block; padding-left: 0px;"> -->
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content rounded shadow">
+            <!-- HEADER -->
+            <div class="modal-header bg-info py-2">
+                <h5 class="modal-title mb-0 text-white">
+                    <i class="fas fa-table mr-1"></i> Order List
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body px-3 py-2">
+                <table id="tblCompletedOrderListing" class="table table-sm table-hover table-striped table-bordered mb-0" width="100%">
+                    <thead class="small">
+                        <tr>
+                            <!-- <th width="1">Image</th> -->
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- dynamic rows -->
+                    </tbody>
+                </table>
+            </div>
+
+
+            <div class="modal-footer py-2">
+                <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalCancelledOrderListing">
+    <!-- <div class="modal fade show" id="modalCheckout" tabindex="-1" aria-labelledby="modalCheckoutLabel" aria-hidden="true" style="display: block; padding-left: 0px;"> -->
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content rounded shadow">
+            <!-- HEADER -->
+            <div class="modal-header bg-info py-2">
+                <h5 class="modal-title mb-0 text-white">
+                    <i class="fas fa-table mr-1"></i> Order List
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body px-3 py-2">
+                <table id="tblCancelledOrderListing" class="table table-sm table-hover table-striped table-bordered mb-0" width="100%">
+                    <thead class="small">
+                        <tr>
+                            <!-- <th width="1">Image</th> -->
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- dynamic rows -->
+                    </tbody>
+                </table>
+            </div>
+
+
+            <div class="modal-footer py-2">
+                <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalRateOrderListing">
+    <!-- <div class="modal fade show" id="modalCheckout" tabindex="-1" aria-labelledby="modalCheckoutLabel" aria-hidden="true" style="display: block; padding-left: 0px;"> -->
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content rounded shadow">
+            <!-- HEADER -->
+            <div class="modal-header bg-warning py-2">
+                <h5 class="modal-title mb-0 text-white">
+                    <i class="fas fa-star mr-1"></i> Rate Completed Orders
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body px-3 py-2">
+                <table id="tblRateOrderListing" class="table table-sm table-hover table-striped table-bordered mb-0" width="100%">
                     <thead class="small">
                         <tr>
                             <!-- <th width="1">Image</th> -->

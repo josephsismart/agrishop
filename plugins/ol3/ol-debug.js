@@ -1897,14 +1897,14 @@ goog.getMsgWithFallback = function(a, b) {
  *
  * Also handy for making public items that are defined in anonymous closures.
  *
- * ex. goog.exportSymbol('public.path.Foo', Foo);
+ * ex. goog.exportSymbol('path.Foo', Foo);
  *
- * ex. goog.exportSymbol('public.path.Foo.staticFunction', Foo.staticFunction);
- *     public.path.Foo.staticFunction();
+ * ex. goog.exportSymbol('path.Foo.staticFunction', Foo.staticFunction);
+ *     path.Foo.staticFunction();
  *
- * ex. goog.exportSymbol('public.path.Foo.prototype.myMethod',
+ * ex. goog.exportSymbol('path.Foo.prototype.myMethod',
  *                       Foo.prototype.myMethod);
- *     new public.path.Foo().myMethod();
+ *     new path.Foo().myMethod();
  *
  * @param {string} publicPath Unobfuscated name to export.
  * @param {*} object Object the name should point to.
@@ -89354,7 +89354,7 @@ goog.events.FileDropHandler.prototype.onDocDragEnter_ = function(e) {
   this.dndContainsFiles_ = !!(dt &&
       ((dt.types &&
           (goog.array.contains(dt.types, 'Files') ||
-          goog.array.contains(dt.types, 'public.file-url'))) ||
+          goog.array.contains(dt.types, 'file-url'))) ||
       (dt.files && dt.files.length > 0)));
   // If it does
   if (this.dndContainsFiles_) {

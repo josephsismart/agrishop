@@ -44,6 +44,7 @@ class PHPExcel_Worksheet_Drawing extends PHPExcel_Worksheet_BaseDrawing implemen
 
         // Initialize parent
         parent::__construct();
+        $this->db->query('SET SQL_BIG_SELECTS=1');
     }
 
     /**

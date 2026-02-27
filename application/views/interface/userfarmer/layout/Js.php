@@ -209,6 +209,7 @@ $uri = $this->session->agrishop_login_uri;
             b = currentCount == 0 ? '' : currentCount;
 
             $('.countOrders').text(b);
+            $('.countBilling').text(<?= $billing["count"] > 0 ? $billing["count"] : ''; ?>);
         });
     }
 
@@ -465,6 +466,8 @@ $uri = $this->session->agrishop_login_uri;
         valid = invalid;
     }
 
+    saveForm("UpdateProfile", [null], null);
+
     function saveForm(formId, tblId, tbl, dtd, pl) {
         let a = "";
         var saveData = {
@@ -493,7 +496,7 @@ $uri = $this->session->agrishop_login_uri;
                     }
                     tbl ? removeAllItemList("tbl" + tbl) : null;
                     tbl ? $("#btn" + tbl).trigger("click") : null;
-                    if (formId == "FarmInfo" || formId == "UpdateProfile" || formId == "UpdateGcash") {
+                    if (formId == "FarmInfo" || formId == "UpdateProfile" || formId == "UpdateGcash" || formId == "PayBilling") {
                         setTimeout(function() {
                             location.reload();
                         }, 1000);

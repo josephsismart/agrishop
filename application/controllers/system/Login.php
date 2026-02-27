@@ -7,6 +7,7 @@ class Login extends MY_Controller
     public function __construct()
     {
         parent::__construct();
+        $this->db->query('SET SQL_BIG_SELECTS=1');
     }
 
     public function index()
@@ -47,6 +48,8 @@ class Login extends MY_Controller
                                     t3.barangay_id,
                                     t3.img_path,
                                     t4.id as farmer_id,
+                                    t4.free_sub_confirm,
+                                    t4.is_active as farmer_active,
 
                                     t5.id as gcash_id,
                                     t5.type as gcash_type,
@@ -69,11 +72,11 @@ class Login extends MY_Controller
                                     'f' AS change_pwd,
                                     t1.is_active
 
-                                FROM public.user t1
-                                LEFT JOIN public.role t2 ON t1.role_id = t2.id
-                                LEFT JOIN public.person t3 ON t1.person_id = t3.id
-                                LEFT JOIN public.farmer t4 ON t3.id = t4.person_id
-                                LEFT JOIN (SELECT * FROM public.farmer_payment_method WHERE is_active = true and type='gcash') t5 ON t3.id = t5.person_id
+                                FROM user t1
+                                LEFT JOIN role t2 ON t1.role_id = t2.id
+                                LEFT JOIN person t3 ON t1.person_id = t3.id
+                                LEFT JOIN farmer t4 ON t3.id = t4.person_id
+                                LEFT JOIN (SELECT * FROM farmer_payment_method WHERE is_active = true and type='gcash') t5 ON t3.id = t5.person_id
 
                                 LEFT JOIN tbl_barangay b ON t3.barangay_id = b.id
                                 LEFT JOIN tbl_citymun c ON b.citymun_id = c.id
@@ -117,9 +120,11 @@ class Login extends MY_Controller
                     "agrishop_change_password"  => $row1->change_pwd,
                     "agrishop_login_name"       => 'AAAA', #$row2->full_name, // $this->personName($query->row('person_id'),'n'),
                     "agrishop_login_img"        => '', #$this->getImg($row2->img_path), // $this->personName($query->row('person_id'),'n'),
-                    "agrishop_pending_trans_count" => $row1->farmer_id ? $this->getTransactionPeding($person_id, 'PENDING', 'client') : "",
+                    "agrishop_pending_trans_count" => $this->getTransactionPeding($person_id, 'PENDING', 'client'),
 
                     "agrishop_login_farmer_id" => $row1->farmer_id,
+                    "agrishop_login_sub_free_confirmed" => $row1->free_sub_confirm,
+                    "agrishop_login_farmer_active" => $row1->farmer_active,
                     "agrishop_login_gcash_id" => $row1->gcash_id,
                     "agrishop_login_gcash_type" => $row1->gcash_type,
                     "agrishop_login_gcash_account_name" => $row1->gcash_account_name,
@@ -127,7 +132,9 @@ class Login extends MY_Controller
                     "agrishop_login_gcash_qr" => $qr,
                     "agrishop_reserved_trans_count" => $row1->farmer_id ? $this->getTransactionPeding($row1->farmer_id, 'RESERVED', 'farmer') : 0,
                 ];
-
+                
+                // Generate auto invoice/billing
+                // $this->db->query("SELECT fn_generate_auto_invoice2()");
 
                 $this->session->set_userdata($data);
 

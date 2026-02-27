@@ -172,7 +172,7 @@ $uri = $this->session->agrishop_login_uri;
                                     <select class="form-control border-primary text-uppercase" name="classification">
                                         <option value="">Select Classification</option>
                                         <?php
-                                        $query = $this->db->query("SELECT id, class_name FROM public.produce_classification ORDER BY id ASC");
+                                        $query = $this->db->query("SELECT id, class_name FROM produce_classification ORDER BY id ASC");
                                         $classifications = $query->result();
                                         foreach ($classifications as $classification) {
                                             echo '<option value="' . $classification->id . '"> ' . $classification->class_name . '</option>';
@@ -346,7 +346,7 @@ $uri = $this->session->agrishop_login_uri;
 
                                 <select class="form-control form-control-lg border-success" name="uom" style="font-size: 1.1rem;">
                                     <?php
-                                    $query = $this->db->query("SELECT id, name, abbr FROM public.uom ORDER BY order_by");
+                                    $query = $this->db->query("SELECT id, name, abbr FROM uom ORDER BY order_by");
                                     $uoms = $query->result();
                                     foreach ($uoms as $uom) {
                                         echo '<option value="' . $uom->abbr . '"> ' . $uom->name . '</option>';
@@ -699,10 +699,10 @@ $uri = $this->session->agrishop_login_uri;
             <!-- FOOTER -->
             <div class="modal-footer bg-light py-3 px-4 border-top">
                 <div class="d-flex w-100 gap-3">
-                    <button type="button" class="btn btn-outline-secondary btn-lg flex-fill rounded-pill" data-bs-dismiss="modal">
+                    <button type="button" class="btn btn-outline-secondary p-0 btn-lg flex-fill rounded-pill" data-bs-dismiss="modal" style="font-size: 1.2rem !important;">
                         <i class="fas fa-times me-2"></i>Cancel
                     </button>
-                    <button type="submit" class="btn btn-primary btn-lg flex-fill rounded-pill fw-bold shadow-sm update_profile">
+                    <button type="submit" class="btn btn-primary btn-lg p-0 flex-fill rounded-pill fw-bold shadow-sm update_profile" style="font-size: 1.2rem !important;">
                         <i class="fas fa-save me-2"></i>Update Profile
                     </button>
                 </div>
@@ -712,6 +712,96 @@ $uri = $this->session->agrishop_login_uri;
         </div>
     </div>
 </div>
+
+
+
+<!-- <div class="modal fade show" id="viewGcashModal" tabindex="-1" aria-labelledby="viewGcashModalLabel" aria-hidden="true" style="display: block; padding-left: 0px;"> -->
+<!-- PAY MODAL -->
+<div class="modal fade" id="payModal">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+
+            <!-- Header -->
+            <div class="modal-header border-0 pb-0">
+                <h5 class="fw-bold">Upload Payment Proof</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <!-- Body -->
+            <?= form_open(base_url($uri . '/Billing/savePayBilling'), 'id="form_save_dataPayBilling"'); ?>
+            <div class="modal-body text-center">
+                <input id="hidden_id" type="hidden" name="id">
+                <div class="card border-0 shadow-sm rounded-4 p-2 mb-3" style="background:#f8f9fa; font-size: 0.95rem;">
+
+                    <!-- QR Payment Section -->
+                    <div class="card border-0 shadow-sm rounded-4 p-0" style="background:#f8f9fa; align-items: center; font-size: 1.2rem;">
+                        <div>Number: <b>09123456789</b> <br>
+                            Account Name: <b>AgriShop Admin</b></div>
+                            <small>or Scan to Pay</small>
+
+                        <!-- QR IMAGE -->
+                        <img src="<?= base_url("dist/images/gcash_qr.jpg"); ?>" class="img-fluid rounded-3 shadow-sm mb-3" style="max-width:220px;" alt="GCash QR Code">
+                        <div style="display: flex; flex-direction: column; align-items: center; font-size: .95rem;">
+                            <div>Amount: <span class="badge bg-primary" id="amount" style="font-size: 1rem;"></span> <br>
+
+                                <div>Reference: <b id="reference"></b></div>
+                                <div>Payment for: <b id="paymentFor"></b></div>
+                            </div>
+                        </div><br/>
+                        <label class="text-muted" style="font-size: .95rem;">Note: <b style="color: #dc3545;">Please pay the exact amount for payment via GCash.</b></label>
+                    </div>
+
+                    <!-- Upload Proof -->
+                    <div class="text-start">
+                        <label class="fw-semibold mb-1">Upload Payment Proof</label>
+                        <input type="file" class="form-control rounded-3"  name="gcash_qr">
+                    </div>
+
+                </div>
+
+                <!-- Footer -->
+                <div class="modal-footer border-0">
+                    <button class="btn btn-success w-100 rounded-3 fw-semibold py-2" type="submit">
+                        Submit Payment
+                    </button>
+                </div>
+            </div>
+            </form>
+
+
+        </div>
+    </div>
+</div>
+
+
+<!-- VIEW PAYMENT DETAILS MODAL -->
+<div class="modal fade" id="viewPaymentDetailsModal">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+
+            <!-- Header -->
+            <div class="modal-header border-0 pb-0">
+                <h5 class="fw-bold">View Payment Details</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <!-- Body -->
+            <div class="modal-body text-center">
+
+                <!-- QR Payment Section -->
+                <div class="card border-0 shadow-sm rounded-4 p-0" style="background:#f8f9fa; align-items: center;">
+
+                    <!-- QR IMAGE -->
+                    <img src="" class="img-fluid rounded-3 shadow-sm mb-3" style="max-width:400px;" id="paymentProofImg" alt="Payment Proof">
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
 
 <!-- <div class="modal fade show" id="viewGcashModal" tabindex="-1" aria-labelledby="viewGcashModalLabel" aria-hidden="true" style="display: block; padding-left: 0px;"> -->
 <div class="modal fade" id="viewGcashModal" tabindex="-1" aria-labelledby="viewGcashModalLabel" aria-hidden="true">

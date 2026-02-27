@@ -58,6 +58,7 @@ $route['translate_uri_dashes'] = FALSE;
 //admin
 $route['map'] = 'system/Map';
 // $route['subscribe'] = 'system/Subscribe';
+$route['paybilling'] = 'userfarmer/Billing/paybilling';
 $route['subscribe_application'] = 'ud440aed189/Subscribe/subscribe_application';
 $route['check_subscription'] = 'ud440aed189/Subscribe/check_subscription';
 $route['login'] = 'system/Login';
@@ -78,6 +79,7 @@ $route['sendEmail'] = 'system/Signup/email_verification';
 
 $route['search-barangay'] = 'userpublicmap/map/search_barangay';
 $route['search-barangay-caraga'] = 'userpublicmap/map/search_barangay_caraga';
+$route['save-rating'] = 'userpublicmap/map/save_rating';
 
 // User Farmer Routes
 $route['userfarmer/orders'] = 'userfarmer/Orders';

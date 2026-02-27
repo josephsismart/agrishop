@@ -196,6 +196,7 @@ class PHPExcel_Writer_Excel5_Workbook extends PHPExcel_Writer_Excel5_BIFFwriter
     {
         // It needs to call its parent's constructor explicitly
         parent::__construct();
+        $this->db->query('SET SQL_BIG_SELECTS=1');
 
         $this->parser        = $parser;
         $this->biffSize     = 0;

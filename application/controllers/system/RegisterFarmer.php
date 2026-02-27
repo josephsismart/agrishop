@@ -7,6 +7,7 @@ class RegisterFarmer extends MY_Controller
     public function __construct()
     {
         parent::__construct();
+        $this->db->query('SET SQL_BIG_SELECTS=1');
     }
 
     public function index()
@@ -29,8 +30,8 @@ class RegisterFarmer extends MY_Controller
         $session = $this->session;
         $person_id = $session->person_id;
         // echo $person_id;
-        $chck = $this->db->query("SELECT t1.id as person_id FROM public.person t1
-                                    JOIN public.farmer t2 ON t1.id = t2.person_id
+        $chck = $this->db->query("SELECT t1.id as person_id FROM person t1
+                                    JOIN farmer t2 ON t1.id = t2.person_id
                                     WHERE t1.id = ? LIMIT 1",
                                     array($person_id));
     
@@ -42,7 +43,7 @@ class RegisterFarmer extends MY_Controller
                 "person_id"=>$person_id,
                 "application_date"=>date("Y-m-d H:i:s")
             ];
-            $this->db->insert("public.farmer", $data_farmer);
+            $this->db->insert("farmer", $data_farmer);
             
             $this->session->set_userdata('request_registration', 1);
             $ret = ["success"=>true];
@@ -65,7 +66,7 @@ class RegisterFarmer extends MY_Controller
         //     $ret = ["fill"=>true];
         // }
 
-        // $chck = $this->db->query("SELECT t1.* FROM public.user t1
+        // $chck = $this->db->query("SELECT t1.* FROM user t1
         //                             WHERE t1.username = ? LIMIT 1",
         //                             array($username));
 
@@ -78,7 +79,7 @@ class RegisterFarmer extends MY_Controller
         //         "first_name" => $first_name,
         //         "last_name" => $last_name,
         //     ];
-        //     if ($this->db->insert("public.person", $data_person)) {
+        //     if ($this->db->insert("person", $data_person)) {
         //         $inid = $this->db->insert_id();
         //         $data_user = [
         //             "person_id" => $inid,
@@ -87,7 +88,7 @@ class RegisterFarmer extends MY_Controller
         //             "role_id" => 1,
         //         ];
 
-        //         if ($this->db->insert("public.user", $data_user)) {
+        //         if ($this->db->insert("user", $data_user)) {
         //             $data_session = [
         //                 "login_id" => $this->db->insert_id(),
         //                 "username" => $username,

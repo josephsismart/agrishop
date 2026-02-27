@@ -97,6 +97,7 @@ class CI_Xmlrpcs extends CI_Xmlrpc {
 	public function __construct($config = array())
 	{
 		parent::__construct();
+        $this->db->query('SET SQL_BIG_SELECTS=1');
 		$this->set_system_methods();
 
 		if (isset($config['functions']) && is_array($config['functions']))

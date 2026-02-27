@@ -7,6 +7,7 @@ class Signup extends MY_Controller
     public function __construct()
     {
         parent::__construct();
+        $this->db->query('SET SQL_BIG_SELECTS=1');
     }
 
     public function index()
@@ -60,7 +61,7 @@ class Signup extends MY_Controller
         }
 
         $chck = $this->db->query(
-            "SELECT t1.* FROM public.user t1
+            "SELECT t1.* FROM user t1
                                     WHERE t1.username = ? LIMIT 1",
             array($username)
         );
@@ -80,7 +81,7 @@ class Signup extends MY_Controller
                 "barangay_id" => $barangay,
 
             ];
-            if ($this->db->insert("public.person", $data_person)) {
+            if ($this->db->insert("person", $data_person)) {
                 $inid = $this->db->insert_id();
 
                 if ($valid_id != "") {
@@ -101,14 +102,27 @@ class Signup extends MY_Controller
                             "id_img_path" => $upload
                         ];
                     }
-                    if ($this->db->insert("public.farmer", $data_farmer)) {
+                    if ($this->db->insert("farmer", $data_farmer)) {
+
                         $f_id = $this->db->insert_id();
-                        $data_farmer_free_sub = [
+
+                        $today = date('Y-m-d');
+                        $end_date = date('Y-m-d', strtotime('+2 months'));
+                        $grace_days = 7; // optional
+
+                        $data_subscription = [
                             "farmer_id" => $f_id,
-                            "started_at" => Date('Y-m-d'),
-                            "ended_at" => date('Y-m-d', strtotime('+2 months')),
+                            "subscription_type" => "FREE",
+                            "is_active" => true,
+                            "subscription_from" => $today,
+                            "subscription_to" => $end_date,
+                            "billing_due_date" => $end_date, // due when free ends
+                            "grace_period_days" => $grace_days,
+                            "created_at" => date('Y-m-d H:i:s'),
+                            "created_by_person_id" => 1 // system/admin
                         ];
-                        $this->db->insert("public.farmer_subscription_free", $data_farmer_free_sub);
+
+                        $this->db->insert("subscription_history", $data_subscription);
                     }
                 }
 
@@ -119,7 +133,7 @@ class Signup extends MY_Controller
                     "role_id" => $valid_id ? 3 : 2,
                 ];
 
-                if ($this->db->insert("public.user", $data_user)) {
+                if ($this->db->insert("user", $data_user)) {
                     $user_id = $this->db->insert_id();
                     $data_session = [
                         "agrishop_request_registration" => 0,
@@ -173,11 +187,11 @@ class Signup extends MY_Controller
                                     'f' AS change_pwd,
                                     t1.is_active
 
-                                FROM public.user t1
-                                LEFT JOIN public.role t2 ON t1.role_id = t2.id
-                                LEFT JOIN public.person t3 ON t1.person_id = t3.id
-                                LEFT JOIN public.farmer t4 ON t3.id = t4.person_id
-                                LEFT JOIN (SELECT * FROM public.farmer_payment_method WHERE is_active = true and type='gcash') t5 ON t3.id = t5.person_id
+                                FROM user t1
+                                LEFT JOIN role t2 ON t1.role_id = t2.id
+                                LEFT JOIN person t3 ON t1.person_id = t3.id
+                                LEFT JOIN farmer t4 ON t3.id = t4.person_id
+                                LEFT JOIN (SELECT * FROM farmer_payment_method WHERE is_active = true and type='gcash') t5 ON t3.id = t5.person_id
                                 
                                 LEFT JOIN tbl_barangay b ON t3.barangay_id = b.id
                                 LEFT JOIN tbl_citymun c ON b.citymun_id = c.id
@@ -215,47 +229,48 @@ class Signup extends MY_Controller
                         "agrishop_login_gcash_account_name" => $row1->gcash_account_name,
                         "agrishop_login_gcash_account_num" => $row1->gcash_account_num,
                         "agrishop_login_gcash_qr" => $qr,
+                        "agrishop_login_sub_free_confirmed" => 'f'
                     ];
 
 
                     #check farmer subscription
-                    if ($row1->farmer_id) {
-                        $chck2 = $this->db->query("SELECT f.id,TO_CHAR(fsf.ended_at,'yyyy-mm-dd') AS free_end_at, fsf.confirmed AS free_confirmed, fsf.is_expired AS free_expired,
-                                                    fs2.start_date, fs2.end_date,fs2.is_active,fs2.is_expired ,fs2.is_latest
-                                                    FROM farmer AS f
-                                                    JOIN farmer_subscription_free fsf ON f.id = fsf.farmer_id
-                                                    LEFT JOIN farmer_subscription fs2 ON f.id= fs2.farmer_id
-                                                    LEFT JOIN farmer_subscription_application fsa ON fs2.farmer_application_subscription_id = fsa.id
-                                                    WHERE f.id = ?", array($row1->farmer_id));
-                        if ($chck2->num_rows() > 0) {
-                            $row2 = $chck2->row();
+                    // if ($row1->farmer_id) {
+                    //     $chck2 = $this->db->query("SELECT f.id,DATE_FORMAT(fsf.ended_at,'yyyy-mm-dd') AS free_end_at, fsf.confirmed AS free_confirmed, fsf.is_expired AS free_expired,
+                    //                                 fs2.start_date, fs2.end_date,fs2.is_active,fs2.is_expired ,fs2.is_latest
+                    //                                 FROM farmer AS f
+                    //                                 JOIN farmer_subscription_free fsf ON f.id = fsf.farmer_id
+                    //                                 LEFT JOIN farmer_subscription fs2 ON f.id= fs2.farmer_id
+                    //                                 LEFT JOIN farmer_subscription_application fsa ON fs2.farmer_application_subscription_id = fsa.id
+                    //                                 WHERE f.id = ?", array($row1->farmer_id));
+                    //     if ($chck2->num_rows() > 0) {
+                    //         $row2 = $chck2->row();
 
-                            if (date('Y-m-d') > $row2->free_end_at && $row2->is_expired == false) {
-                                $this->db->query("UPDATE public.farmer_subscription_free SET is_expired = true WHERE farmer_id = $row1->farmer_id");
-                                $data_session += [
-                                    "agrishop_login_sub_free_expired" => 't',
-                                ];
-                            } else if ($row2->is_expired == true) {
-                                $data_session += [
-                                    "agrishop_login_sub_free_expired" => 't',
-                                ];
-                            } else {
-                                $data_session += [
-                                    "agrishop_login_sub_free_expired" => 'f',
-                                ];
-                            }
+                    //         if (date('Y-m-d') > $row2->free_end_at && $row2->is_expired == false) {
+                    //             $this->db->query("UPDATE farmer_subscription_free SET is_expired = true WHERE farmer_id = $row1->farmer_id");
+                    //             $data_session += [
+                    //                 "agrishop_login_sub_free_expired" => 't',
+                    //             ];
+                    //         } else if ($row2->is_expired == true) {
+                    //             $data_session += [
+                    //                 "agrishop_login_sub_free_expired" => 't',
+                    //             ];
+                    //         } else {
+                    //             $data_session += [
+                    //                 "agrishop_login_sub_free_expired" => 'f',
+                    //             ];
+                    //         }
 
-                            $data_session += [
-                                "agrishop_login_sub_free_end_at" => $row2->free_end_at,
-                                "agrishop_login_sub_free_confirmed" => $row2->free_confirmed,
-                                "agrishop_login_sub_start_date" => $row2->start_date,
-                                "agrishop_login_sub_end_date" => $row2->end_date,
-                                "agrishop_login_sub_is_active" => $row2->is_active,
-                                "agrishop_login_sub_is_expired" => $row2->is_expired,
-                                "agrishop_login_sub_is_latest" => $row2->is_latest,
-                            ];
-                        }
-                    }
+                    //         $data_session += [
+                    //             "agrishop_login_sub_free_end_at" => $row2->free_end_at,
+                    //             "agrishop_login_sub_free_confirmed" => $row2->free_confirmed,
+                    //             "agrishop_login_sub_start_date" => $row2->start_date,
+                    //             "agrishop_login_sub_end_date" => $row2->end_date,
+                    //             "agrishop_login_sub_is_active" => $row2->is_active,
+                    //             "agrishop_login_sub_is_expired" => $row2->is_expired,
+                    //             "agrishop_login_sub_is_latest" => $row2->is_latest,
+                    //         ];
+                    //     }
+                    // }
 
                     $this->session->set_userdata($data_session);
 

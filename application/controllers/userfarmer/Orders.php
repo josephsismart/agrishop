@@ -7,6 +7,7 @@ class Orders extends MY_Controller
     public function __construct()
     {
         parent::__construct();
+        $this->db->query('SET SQL_BIG_SELECTS=1');
         $this->redirect();
         $this->load->model('mainModel');
         $this->load->helper('date');
@@ -21,7 +22,7 @@ class Orders extends MY_Controller
             "page_title"        => "Orders",
             "current_location"  => "orders",
             "content"           =>  [$this->load->view('interface/' . $uri . '/Orders', [
-                // "getOnLoad" => $this->getOnLoad(),
+                "billing" => $this->billing_page(true),
             ], TRUE)]
         ];
         $this->public_create_page($page_data);
@@ -56,7 +57,7 @@ class Orders extends MY_Controller
                 'status' => "PAID",
                 'created_by_person_id' => $person_id,
             ];
-            $this->db->insert("transaction_payment_status", $data_transaction_payment);
+            $this->transaction_payment_status($data_transaction_payment);
 
             // 🧾 DELIVERED DONE
             $data_transaction_payment = [
@@ -64,7 +65,7 @@ class Orders extends MY_Controller
                 'status' => "DELIVERED",
                 'created_by_person_id' => $person_id,
             ];
-            $this->db->insert("transaction_delivery_status", $data_transaction_payment);
+            $this->transaction_delivery_status($data_transaction_payment);
 
 
             // 🧾 TRANSACTION DONE
@@ -77,7 +78,7 @@ class Orders extends MY_Controller
 
 
 
-        if ($this->db->insert("transaction_status", $data_transaction_status)) {
+        if ($this->transaction_status($data_transaction_status)) {
             // $cp = $this->getTransactionPeding($person_id);
             $true += ["message"   => $text];
             $ret = $true;
@@ -134,11 +135,11 @@ class Orders extends MY_Controller
                                     WHERE 
                                     t4.farmer_id = $farmer_id AND 
                                     $FILTER_STATUS AND 
-                                    CONCAT(t4.farm_name,t2.status,t3.payable) ILIKE '%$searchValue%'");
+                                    CONCAT(t4.farm_name,t2.status,t3.payable) COLLATE utf8mb4_general_ci LIKE '%$searchValue%'");
 
         $totalRecords = $thisQuery->row()->total;
 
-        $query = $this->db->query("SELECT t1.id AS transaction_id,t1.transaction_date ,t1.person_id,t5.barangay_id,t5.contact_num,  t5.img_path, to_char(t1.transaction_date,'mm/dd/yy') date_, 
+        $query = $this->db->query("SELECT t1.id AS transaction_id,t1.transaction_date ,t1.person_id,t5.barangay_id,t5.contact_num,  t5.img_path, DATE_FORMAT(t1.transaction_date,'%m/%d/%y') date_, 
                                             t4.farm_name,t2.status,t2.created_at,t3.payable,t6.img AS gcash FROM transaction t1 
                                     JOIN (SELECT * FROM transaction_status WHERE is_latest IS TRUE) t2 ON t1.id = t2.transaction_id
 		                            LEFT JOIN (SELECT transaction_id, sum(sub_total) AS payable FROM my_cart_farm_produce mcfp
@@ -149,7 +150,7 @@ class Orders extends MY_Controller
                                     WHERE 
                                     t4.farmer_id = $farmer_id AND 
                                     $FILTER_STATUS AND 
-                                    CONCAT(t4.farm_name,t2.status,t3.payable) ILIKE '%$searchValue%'
+                                    CONCAT(t4.farm_name,t2.status,t3.payable) COLLATE utf8mb4_general_ci LIKE '%$searchValue%'
                                     ORDER BY t2.status='RESERVED' DESC, t2.created_at DESC
                                     LIMIT $limit OFFSET $offset
                                     ");
@@ -218,13 +219,13 @@ class Orders extends MY_Controller
                                 <span class="badge bg-white" style="cursor:pointer;"
                                     onclick="updateModalStatus(' . $value->transaction_id . ',\'' . $payment_status . '\',\'PAYMENT\')">
                                     <i class="fa fa-money-bill"></i> ' . $this->statusBadge($payment_status) . '
-                                </span>'.
-                                ($value->gcash != null ? '
+                                </span>' .
+                    ($value->gcash != null ? '
                                 <span class="badge bg-white ml-n1" style="cursor:pointer;"
                                     onclick="viewGcashAttachment(`' . base_url($value->gcash) . '`)">
                                     <img src="' . base_url('dist/img/credit/gcash_50x50.png') . '" alt="GCash" style="width:18px; height:18px;">
-                                </span>' : '').
-                                '
+                                </span>' : '') .
+                    '
                             </div>
                             ' : '') . '
                         </div>
@@ -448,7 +449,8 @@ class Orders extends MY_Controller
             'status' => $status,
             'created_by_person_id' => $person_id,
         ];
-        if ($this->db->insert($table, $data_status)) {
+        // echo $transaction_id . " " . $status . " " . $person_id;
+        if ($this->transaction_delivery_status($data_status)) {
             $true += ["message"   => "Successfully updaed!"];
             $ret = $true;
         } else {
