@@ -35,10 +35,10 @@ class Dashboard extends MY_Controller
                                         (SELECT COALESCE(sum(total_payment),0) FROM invoice_billing WHERE is_paid) AS revenue")->row();
 
         $data = [
-            "user" => number_format($revenue->user, 0),
-            "farmer" => number_format($revenue->farmer, 0),
-            "subscription" => number_format($revenue->subscription, 0),
-            "revenue" => number_format($revenue->revenue, 0),
+            "user" => $revenue->user == null ? 0 : number_format($revenue->user, 0),
+            "farmer" => $revenue->farmer == null ? 0 : number_format($revenue->farmer, 0),
+            "subscription" => $revenue->subscription == null ? 0 : number_format($revenue->subscription, 0),
+            "revenue" => $revenue->revenue == null ? 0 : number_format($revenue->revenue, 0),
         ];
 
         $farmer_revue = $this->db->query("SELECT concat(p.first_name,' ',p.last_name) AS farmer, sum(td.to_farmer) AS revenue FROM transaction t 

@@ -6,16 +6,23 @@ if (!$this->session->agrishop_login_level) {
 $uri = $this->session->agrishop_login_uri;
 $role_lvl = $this->session->agrishop_login_level;
 ?>
-<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasNavbar">
 
-  <div class="offcanvas-header justify-content-between">
-    <h4 class="fw-normal text-uppercase fs-6">Menu</h4>
-    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+
+<div id="offcanvasNavbar" class="custom-sidebar">
+
+  <div class="sidebar-header d-flex justify-content-between align-items-center p-3">
+    <h4 class="fw-normal text-uppercase fs-6 m-0">Menu</h4>
+    <button id="sidebar-close" class="close" data-bs-dismiss="offcanvas" aria-label="Close" style="font-size: 2.2rem !important;">&times;</button>
   </div>
 
-  <?php $this->load->view('interface/system/layout/Navbar') ?>
+  <div class="offcanvas-body pt-2 pl-2">
+    <?php $this->load->view('interface/system/layout/Navbar') ?>
+  </div>
 
 </div>
+
+<div id="sidebar-backdrop"></div>
+
 
 <header>
 
@@ -61,7 +68,7 @@ $role_lvl = $this->session->agrishop_login_level;
           <?php } ?>
           <?php if ($role_lvl != "") { ?>
             <li>
-              <a href="#" class="p-2 mx-1 text-dark" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar">
+              <a href="#" id="bars" class="p-2 mx-1 text-dark" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar">
                 <i class="fa fa-bars"></i><span class="badge bg-info countOrders"><?= $this->session->agrishop_reserved_trans_count; ?></span>
                 <span class="badge bg-warning countBilling"></span>
               </a>

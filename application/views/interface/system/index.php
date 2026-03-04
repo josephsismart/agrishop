@@ -25,6 +25,8 @@ $farm_produce = base_url() . $uri . '/FarmProduce'; ?>
     <!-- integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ" crossorigin="anonymous"> -->
     <link rel="stylesheet" type="text/css" href="<?= base_url(); ?>dist/layout_shop/css/vendor.css">
     <link rel="stylesheet" type="text/css" href="<?= base_url(); ?>dist/layout_shop/css/style.css">
+    <!-- Toastr -->
+    <link rel="stylesheet" href="<?= base_url() ?>plugins/toastr/toastr.min.css">
     <link rel="stylesheet" href="<?= base_url() ?>dist/css/adminlte.min.css">
     <link rel="stylesheet" href="<?= base_url() ?>plugins/sweetalert2-theme-bootstrap-4/bootstrap-4.min.css">
 
@@ -54,6 +56,37 @@ $farm_produce = base_url() . $uri . '/FarmProduce'; ?>
             height: 100%;
             margin: 0;
             padding: 0;
+        }
+
+
+        .custom-sidebar {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 300px;
+            height: 100%;
+            background: #fff;
+            z-index: 1050;
+            transition: right 0.3s ease;
+        }
+
+        .custom-sidebar.show {
+            right: 0;
+        }
+
+        #sidebar-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 1040;
+        }
+
+        #sidebar-backdrop.show {
+            display: block;
         }
 
         /* The map takes full remaining height */
@@ -182,7 +215,7 @@ $farm_produce = base_url() . $uri . '/FarmProduce'; ?>
 
         .map-controls {
             position: absolute;
-            top: 35px;
+            top: 55px;
             right: 15px;
             width: 180px;
             max-height: 75vh;
@@ -217,8 +250,8 @@ $farm_produce = base_url() . $uri . '/FarmProduce'; ?>
 
         @media (max-width: 768px) {
             .map-controls {
-                width: 90%;
-                left: 5%;
+                width: 38%;
+                left: 62%;
                 right: auto;
             }
         }
@@ -237,59 +270,20 @@ $farm_produce = base_url() . $uri . '/FarmProduce'; ?>
         </div>
     </div>
 
-    <div class="offcanvas offcanvas-end" data-bs-scroll="true" tabindex="-1" id="offcanvasCart">
-        <div class="offcanvas-header justify-content-center">
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        </div>
-        <div class="offcanvas-body">
-            <div class="order-md-last">
-                <h4 class="d-flex justify-content-between align-items-center mb-3">
-                    <span class="text-success">Your cart</span>
-                    <span class="badge bg-success rounded-pill">3</span>
-                </h4>
-                <ul class="list-group mb-3">
-                    <li class="list-group-item d-flex justify-content-between lh-sm">
-                        <div>
-                            <h6 class="my-0">Growers cider</h6>
-                            <small class="text-body-secondary">Brief description</small>
-                        </div>
-                        <span class="text-body-secondary">$12</span>
-                    </li>
-                    <li class="list-group-item d-flex justify-content-between lh-sm">
-                        <div>
-                            <h6 class="my-0">Fresh grapes</h6>
-                            <small class="text-body-secondary">Brief description</small>
-                        </div>
-                        <span class="text-body-secondary">$8</span>
-                    </li>
-                    <li class="list-group-item d-flex justify-content-between lh-sm">
-                        <div>
-                            <h6 class="my-0">Heinz tomato ketchup</h6>
-                            <small class="text-body-secondary">Brief description</small>
-                        </div>
-                        <span class="text-body-secondary">$5</span>
-                    </li>
-                    <li class="list-group-item d-flex justify-content-between">
-                        <span>Total (USD)</span>
-                        <strong>$20</strong>
-                    </li>
-                </ul>
+    <div id="offcanvasNavbar" class="custom-sidebar">
 
-                <button class="w-100 btn btn-success btn-lg" type="submit">Continue to checkout</button>
-            </div>
+        <div class="sidebar-header d-flex justify-content-between align-items-center p-3">
+            <h4 class="fw-normal text-uppercase fs-6 m-0">Menu</h4>
+            <button id="sidebar-close" class="close" data-bs-dismiss="offcanvas" aria-label="Close" style="font-size: 2.2rem !important;">&times;</button>
         </div>
+
+        <div class="offcanvas-body pt-2 pl-2">
+            <?php $this->load->view('interface/system/layout/Navbar') ?>
+        </div>
+
     </div>
 
-    <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasNavbar">
-
-        <div class="offcanvas-header justify-content-between">
-            <h4 class="fw-normal text-uppercase fs-6">Menu</h4>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        </div>
-
-        <?php $this->load->view('interface/system/layout/Navbar') ?>
-
-    </div>
+    <div id="sidebar-backdrop"></div>
 
     <header id="topNav">
 
@@ -307,17 +301,17 @@ $farm_produce = base_url() . $uri . '/FarmProduce'; ?>
                         <li>
                             <?php if ($role_lvl != "") { ?>
                                 <!-- <a href="<?php if ($role_lvl == 0) {
-                                                echo base_url(); ?>user_admin<?php } elseif ($role_lvl == 1) {
-                                                                                echo '#';
-                                                                            } elseif ($role_lvl == 2) {
-                                                                                echo $farm_produce;
-                                                                            } ?>" class="p-2 mx-1 text-dark" style="text-decoration: none;font-weight: bold">
+                                                    echo base_url(); ?>user_admin<?php } elseif ($role_lvl == 1) {
+                                                                                    echo '#';
+                                                                                } elseif ($role_lvl == 2) {
+                                                                                    echo $farm_produce;
+                                                                                } ?>" class="p-2 mx-1 text-dark" style="text-decoration: none;font-weight: bold">
                                     <i class="fa fa-user"></i> <?php echo $this->session->agrishop_login_uname; ?>
                                 </a> -->
 
                                 <?php if ($role_lvl != 2 || $role_lvl != 1) { ?>
                                     <a href="#" data-bs-toggle="modal" data-bs-target="#modalCartListing" class="p-2 mx-1 text-dark" style="text-decoration: none;" onclick="getTable('CartListing', 0, 5);">
-                                        <i class="fa fa-shopping-basket"></i> Cart<span class="badge bg-warning pending-order" title="pending orders"><?= $this->session->agrishop_pending_trans_count; ?></span>
+                                        <i class="fa fa-shopping-basket"></i> Cart<span class="badge bg-warning pending-order" title="pending orders"><?= $status['transaction_status_pending'] ?></span>
                                     </a>
                                 <?php } ?>
 
@@ -335,7 +329,7 @@ $farm_produce = base_url() . $uri . '/FarmProduce'; ?>
                         <?php } ?>
                         <?php if ($role_lvl != "") { ?>
                             <li>
-                                <a href="#" class="p-2 mx-1 text-dark" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar">
+                                <a href="#" id="bars" class="p-2 mx-1 text-dark" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar">
                                     <i class="fa fa-bars"></i>
                                 </a>
                             </li>
@@ -366,58 +360,6 @@ $farm_produce = base_url() . $uri . '/FarmProduce'; ?>
         </div>
     </header>
 
-    <!-- CART SIDEBAR -->
-    <div id="cartSidebar" class="cart-sidebar">
-
-        <div class="cart-header bg-success text-white p-2 d-flex justify-content-between">
-            <span class="font-weight-bold">My Cart</span>
-            <button class="btn btn-sm text-white" onclick="closeCart()">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-
-        <div class="cart-body p-2" id="cartItems">
-            <!-- dynamic items -->
-        </div>
-
-        <div class="cart-footer p-2 border-top bg-light">
-            <div class="d-flex justify-content-between mb-2">
-                <span class="font-weight-bold">Total:</span>
-                <span class="font-weight-bold" id="cartTotal">₱0.00</span>
-            </div>
-
-            <button class="btn btn-success btn-block btn-sm" onclick="openCheckout()">
-                <i class="fas fa-check-circle"></i> Proceed to Checkout
-            </button>
-        </div>
-    </div>
-
-    <style>
-        .cart-sidebar {
-            position: fixed;
-            top: 0;
-            right: -350px;
-            width: 350px;
-            height: 100vh;
-            background: #fff;
-            border-left: 2px solid #28a745;
-            box-shadow: -2px 0 6px rgba(0, 0, 0, 0.2);
-            transition: 0.3s;
-            z-index: 99999;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .cart-sidebar.open {
-            right: 0;
-        }
-
-        .cart-body {
-            flex: 1;
-            overflow-y: auto;
-        }
-    </style>
-
     <!-- <div class="buttons" id="cityButtons"></div> -->
     <div class="container-fluid p-0">
         <?php $this->load->view('interface/system/layout/landing_page') ?>
@@ -425,9 +367,9 @@ $farm_produce = base_url() . $uri . '/FarmProduce'; ?>
         <div id="map">
             <div id="mapControls" class="map-controls">
 
-                <div class="map-controls-header">
-                    <span>🧭 Routes</span>
-                    <button id="toggleControls" class="btn btn-xs btn-light">–</button>
+                <div class="map-controls-header toggleControls" style="cursor: pointer;">
+                    <span style="font-weight: bold;"><i class="fa fa-map-marker-alt"></i> Routes</span>
+                    <button class="btn btn-xs btn-light toggleControls_">–</button>
                 </div>
 
                 <div id="mapControlsBody" style="display: none;">
@@ -472,8 +414,11 @@ $farm_produce = base_url() . $uri . '/FarmProduce'; ?>
 
     <script src="<?= base_url(); ?>dist/layout_shop/js/jquery-1.11.0.min.js"></script>
     <script src="<?php echo base_url(); ?>dist/layout_shop/js/swiper-bundle.min.js"></script>
-    <script src="<?php echo base_url(); ?>dist/layout_shop/js/bootstrap.bundle.min.js"></script>
+    <!-- <script src="<?php echo base_url(); ?>dist/layout_shop/js/bootstrap.bundle.min.js"></script> -->
+    <script src="<?= base_url() ?>plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="<?php echo base_url(); ?>dist/layout_shop/js/plugins.js"></script>
+    <!-- Toastr -->
+    <script src="<?= base_url() ?>plugins/toastr/toastr.min.js"></script>
     <script src="<?= base_url(); ?>dist/layout_shop/js/script.js"></script>
     <script src="<?= base_url() ?>plugins/sweetalert2/sweetalert2.min.js"></script>
     <script src="<?= base_url() ?>plugins/jquery/jquery.form.min.js"></script>
@@ -495,6 +440,18 @@ $farm_produce = base_url() . $uri . '/FarmProduce'; ?>
 
     <script>
         $(function() {
+
+            $('#bars').click(function() {
+                $('#offcanvasNavbar').addClass('show');
+                $('#sidebar-backdrop').addClass('show');
+                $('body').addClass('overflow-hidden');
+            });
+
+            $('#sidebar-close, #sidebar-backdrop').click(function() {
+                $('#offcanvasNavbar').removeClass('show');
+                $('#sidebar-backdrop').removeClass('show');
+                $('body').removeClass('overflow-hidden');
+            });
 
             const texts = [
                 "Search: Tomato",
@@ -561,7 +518,116 @@ $farm_produce = base_url() . $uri . '/FarmProduce'; ?>
             });
 
             startTyping();
+
+            setInterval(function() {
+                checkOrderStatus();
+            }, 2000);
+
+            let currentCount = "";
+
+            function checkOrderStatus() {
+                $.get("<?= base_url('check_order_status') ?>", {
+                    interval: 'realtime'
+                }, function(res) {
+                    let j = JSON.parse(res);
+
+                    $('.pending-order').text(j.transaction_status_pending);
+                    $('.reserved-order').text(j.transaction_status_reserved);
+                    $('.preparing-order').text(j.transaction_delivery_status_preparing);
+                    $('.ready-for-pickup-order').text(j.transaction_delivery_status_pickup);
+                    $('.out-for-delivery-order').text(j.transaction_delivery_status_delivery);
+                    $('.rate-order').text(j.transaction_ratings);
+
+                    // Track delivery statuses specifically
+                    let deliverySnapshot = {
+                        preparing: j.transaction_delivery_status_preparing,
+                        pickup: j.transaction_delivery_status_pickup,
+                        delivery: j.transaction_delivery_status_delivery,
+                    };
+
+                    let res_ = JSON.stringify(deliverySnapshot);
+
+                    if (currentCount === "") {
+                        currentCount = res_;
+                    }
+
+                    if (currentCount !== res_) {
+                        let prev = JSON.parse(currentCount);
+                        let curr = deliverySnapshot;
+
+                        // Check each delivery status individually
+                        if (prev.preparing !== curr.preparing) notifyNewReservation('preparing', prev.preparing, curr.preparing);
+                        if (prev.pickup !== curr.pickup) notifyNewReservation('pickup', prev.pickup, curr.pickup);
+                        if (prev.delivery !== curr.delivery) notifyNewReservation('delivery', prev.delivery, curr.delivery);
+                        currentCount = res_;
+                    }
+
+                    lastReservedCount = currentCount;
+                });
+            }
         });
+
+
+        function notifyNewReservation(type, prevCount, newCount) {
+            if (newCount <= prevCount) return; // ← bail out if not increased
+
+            notifySound();
+
+            const messages = {
+                preparing: `🍳 ${newCount} order(s) are now being <b>Prepared</b>`,
+                pickup: `📦 ${newCount} order(s) are <b>Ready for Pickup</b>`,
+                delivery: `🚗 ${newCount} order(s) are <b>Out for Delivery</b>`,
+            };
+
+            toastr.info(messages[type], 'Order Update', {
+                closeButton: true,
+                timeOut: 5000,
+                escapeHtml: false
+            });
+
+            if (typeof getTable === 'function') {
+                getTable('CartListing', 0, 5);
+            }
+        }
+
+
+        /* -------------------------------
+   GLOBAL AUDIO SETUP
+--------------------------------*/
+        window.notifAudio = window.notifAudio || new Audio("<?= base_url('dist/notification/notify.wav') ?>");
+        notifAudio.volume = 1.0;
+        window.audioUnlocked = false;
+
+        // unlock audio on first user gesture (click anywhere)
+        document.addEventListener('click', function unlockAudio() {
+            notifAudio.play()
+                .then(() => {
+                    notifAudio.pause();
+                    notifAudio.currentTime = 0;
+                    window.audioUnlocked = true;
+                    console.log('🔓 Audio unlocked, notifications ready');
+                })
+                .catch(() => console.warn('❌ Audio blocked until user interacts'));
+
+            document.removeEventListener('click', unlockAudio);
+        }, {
+            once: true
+        });
+
+
+        /* -------------------------------
+           SAFE AUDIO PLAY FUNCTION
+        --------------------------------*/
+        function notifySound() {
+            if (!window.audioUnlocked) return;
+
+            if (!notifAudio.paused) {
+                notifAudio.pause();
+                notifAudio.currentTime = 0;
+            }
+
+            notifAudio.play().catch(err => console.warn('❌ Sound failed:', err));
+        }
     </script>
 
 </body>

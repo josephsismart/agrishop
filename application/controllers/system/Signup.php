@@ -85,7 +85,6 @@ class Signup extends MY_Controller
                 $inid = $this->db->insert_id();
 
                 if ($valid_id != "") {
-
                     $data_farmer = [
                         "person_id" => $inid,
                         "date_registered" => Date('Y-m-d'),
@@ -135,6 +134,7 @@ class Signup extends MY_Controller
 
                 if ($this->db->insert("user", $data_user)) {
                     $user_id = $this->db->insert_id();
+                    // echo $user_id;
                     $data_session = [
                         "agrishop_request_registration" => 0,
                         "agrishop_login_id" => $user_id,

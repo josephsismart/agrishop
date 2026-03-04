@@ -35,12 +35,12 @@
         e.stopPropagation();
     });
 
-    $("#toggleControls").on("click", function() {
+    $(".toggleControls").on("click", function() {
         const body = $("#mapControlsBody");
 
         body.slideToggle(200);
 
-        $(this).text(body.is(":visible") ? "–" : "+");
+        $(".toggleControls_").text(body.is(":visible") ? "–" : "+");
     });
 
     $("#btnLocateMe").on("click", function() {
@@ -239,8 +239,8 @@
 
 
     function routeToFarm(farmLat, farmLon, farmId = null) {
-        $("#toggleControls").click();
-        $("#toggleControls").text("+");
+        $(".toggleControls").click();
+        $(".toggleControls_").text("+");
         $("#routesTableBody tr").removeClass("route-active");
         $(`#eta-${farmId}`).closest("tr").addClass("route-active");
         if (!userLatLng) return;

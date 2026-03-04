@@ -200,7 +200,7 @@ class FarmProduce extends MY_Controller
     function getReservedCount()
     {
         $farmer_id  = (int) $this->session->agrishop_login_farmer_id;
-        echo $this->getTransactionPeding($farmer_id, 'RESERVED', 'farmer');
+        echo $this->getTransactionStatus($farmer_id, 'RESERVED', 'farmer');
     }
 
     function getPrice()
@@ -297,7 +297,7 @@ class FarmProduce extends MY_Controller
             ]);
             return;
         }
-        $query = $this->db->query("SELECT fp.id as fp_id,p.id,p.name as produce,pql.harvest_schedule,pql.uom,pql.price,pql.qty_left ,pc.class_name,p.description,pql.price_wholesale,pql.wholesale_at_qty,
+        $query = $this->db->query("SELECT fp.id as fp_id,fp.specification_variety,p.id,p.name as produce,pql.harvest_schedule,pql.uom,pql.price,pql.qty_left ,pc.class_name,p.description,pql.price_wholesale,pql.wholesale_at_qty,
                                     p.is_seasonal,p.is_active,p.created_at, p.img_path, pc.img_path as default_img_path 
                                     FROM farm_produce fp
                                     LEFT JOIN produce p ON fp.produce_id = p.id
@@ -388,9 +388,12 @@ class FarmProduce extends MY_Controller
 
             // Beautified Produce Name with category
             $produce_display = "<div>
-                            <div class='font-weight-bold text-dark' style='font-size: 1.1rem;'>
+                            <div class='font-weight-bold text-dark' style='font-size: 1.1rem; mb-n1'>
                                 " . htmlspecialchars($value->produce, ENT_QUOTES) . "
                             </div>
+                            <span class='text-muted small mt-n2'>
+                                " . htmlspecialchars($value->specification_variety, ENT_QUOTES) . "
+                            </span>
                             <div class='text-muted small mt-1'>
                                 <i class='fas fa-tag mr-1'></i>
                                 " . htmlspecialchars($value->class_name, ENT_QUOTES) . "
@@ -417,7 +420,7 @@ class FarmProduce extends MY_Controller
                              per " . htmlspecialchars($value->uom, ENT_QUOTES) . "
                          </div>
                       </div>"
-                      . ($value->price_wholesale ? "<div class='badge bg-gray'  title='Wholesale Price' whole-sale>ws@ $formatted_wholesale_price (min " . $value->wholesale_at_qty . ")</div>" : "");
+                . ($value->price_wholesale ? "<div class='badge bg-gray'  title='Wholesale Price' whole-sale>ws@ $formatted_wholesale_price (min " . $value->wholesale_at_qty . ")</div>" : "");
 
             // Beautified Harvest Date
             $date_display = "<div class='text-center'>
@@ -612,6 +615,7 @@ class FarmProduce extends MY_Controller
         $person_id = $this->session->agrishop_person_id;
         $farmId = $this->input->post("farmId");
         $produceSelectedId = $this->input->post("produceSelectedId");
+        $specification_variety = $this->input->post("specification_variety");
         $produceCreatedById = $this->input->post("produceCreatedById");
         $wholesale_min_qty = $this->input->post("wholesale_min_qty");
         $wholesale_price = $this->input->post("wholesale_price");
@@ -633,6 +637,7 @@ class FarmProduce extends MY_Controller
         $data += [
             "farm_id" => $farmId,
             "produce_id" => $produceSelectedId,
+            "specification_variety" => strtoupper($specification_variety),
             "harvest_schedule" => $harvest_date,
             "uom" => $uom,
             "created_at" => Date("Y-m-d"),

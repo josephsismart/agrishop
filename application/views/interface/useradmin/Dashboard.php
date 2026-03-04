@@ -200,19 +200,23 @@ $top_farmers = [
         </div>
         <div class="row">
             <?php 
-                $query_produce = "SELECT p.id,  CASE WHEN p.img_path IS NOT NULL THEN p.img_path ELSE pc.img_path END AS img_path , p.\"name\", SUM(mcfp.qty) sum_qty FROM my_cart_farm_produce mcfp 
-                                    LEFT JOIN \"transaction\" t ON mcfp.transaction_id =t.id 
-                                    LEFT JOIN transaction_cancel tc ON t.id= tc.transaction_id 
+                $query_produce = "SELECT p.id, CASE WHEN p.img_path IS NOT NULL THEN p.img_path ELSE pc.img_path END AS img_path, p.`name`, SUM(mcfp.qty) sum_qty FROM my_cart_farm_produce mcfp 
+                                    LEFT JOIN `transaction` t ON mcfp.transaction_id = t.id 
+                                    LEFT JOIN transaction_cancel tc ON t.id = tc.transaction_id 
                                     LEFT JOIN farm_produce fp ON mcfp.farm_produce_id = fp.id
                                     LEFT JOIN produce p ON fp.produce_id = p.id
                                     LEFT JOIN produce_classification pc ON p.produce_classification_id = pc.id
                                     WHERE tc.id IS NULL
-                                    GROUP BY p.id, p.name,pc.img_path ";
-                $fast_moving_produce = $this->db->query($query_produce . "ORDER BY SUM(mcfp.qty) DESC LIMIT 10")->result_array();
-                $slow_moving_produce = $this->db->query($query_produce . "ORDER BY SUM(mcfp.qty) ASC LIMIT 10")->result_array();
+                                    GROUP BY p.id, p.`name`, pc.img_path ";
+
+                $result_fast = $this->db->query($query_produce . "ORDER BY SUM(mcfp.qty) DESC LIMIT 10");
+                $result_slow = $this->db->query($query_produce . "ORDER BY SUM(mcfp.qty) ASC LIMIT 10");
+
+                $fast_moving_produce = $result_fast ? $result_fast->result_array() : [];
+                $slow_moving_produce = $result_slow ? $result_slow->result_array() : [];
+
                 $counter_fast = 1;
                 $counter_slow = 1;
-
             ?>
             <!-- REVENUE TREND -->
             <div class="col-md-6">

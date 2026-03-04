@@ -86,6 +86,9 @@ $route['userfarmer/orders'] = 'userfarmer/Orders';
 $route['userfarmer/accept_order'] = 'userfarmer/Orders/accept_order';
 $route['userfarmer/getIncomingOrders'] = 'userfarmer/Orders/getIncomingOrders';
 
+$route['check_order_status'] = 'system/Index/status';
+$route['payprocessingfee'] = 'userpublicmap/Map/payprocessingfee';
+
 // $route['save_national'] = 'useradmin/Dataentry/savenational';
 // $route['save_local'] = 'uservalidator/Dataentry/savelocal';
 // $route['get_national'] = 'useradmin/Dataentry/getnational';

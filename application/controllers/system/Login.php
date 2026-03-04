@@ -16,7 +16,7 @@ class Login extends MY_Controller
         $data = $this->system();
         $data += [
             "page_title"    => "Login",
-            "current_location"  => "login",
+            "current_location"  => "login"
         ];
         $this->load->view('interface/system/Login', $data);
     }
@@ -120,7 +120,7 @@ class Login extends MY_Controller
                     "agrishop_change_password"  => $row1->change_pwd,
                     "agrishop_login_name"       => 'AAAA', #$row2->full_name, // $this->personName($query->row('person_id'),'n'),
                     "agrishop_login_img"        => '', #$this->getImg($row2->img_path), // $this->personName($query->row('person_id'),'n'),
-                    "agrishop_pending_trans_count" => $this->getTransactionPeding($person_id, 'PENDING', 'client'),
+                    "agrishop_pending_trans_count" => $this->getTransactionStatus($person_id, 'PENDING', 'client'),
 
                     "agrishop_login_farmer_id" => $row1->farmer_id,
                     "agrishop_login_sub_free_confirmed" => $row1->free_sub_confirm,
@@ -130,7 +130,7 @@ class Login extends MY_Controller
                     "agrishop_login_gcash_account_name" => $row1->gcash_account_name,
                     "agrishop_login_gcash_account_num" => $row1->gcash_account_num,
                     "agrishop_login_gcash_qr" => $qr,
-                    "agrishop_reserved_trans_count" => $row1->farmer_id ? $this->getTransactionPeding($row1->farmer_id, 'RESERVED', 'farmer') : 0,
+                    "agrishop_reserved_trans_count" => $row1->farmer_id ? $this->getTransactionStatus($row1->farmer_id, 'RESERVED', 'farmer') : 0,
                 ];
                 
                 // Generate auto invoice/billing

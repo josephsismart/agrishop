@@ -79,7 +79,7 @@ class Orders extends MY_Controller
 
 
         if ($this->transaction_status($data_transaction_status)) {
-            // $cp = $this->getTransactionPeding($person_id);
+            // $cp = $this->getTransactionStatus($person_id);
             $true += ["message"   => $text];
             $ret = $true;
         } else {
@@ -450,7 +450,7 @@ class Orders extends MY_Controller
             'created_by_person_id' => $person_id,
         ];
         // echo $transaction_id . " " . $status . " " . $person_id;
-        if ($this->transaction_delivery_status($data_status)) {
+        if ($this->update_transaction_status($data_status, $table)) {
             $true += ["message"   => "Successfully updaed!"];
             $ret = $true;
         } else {

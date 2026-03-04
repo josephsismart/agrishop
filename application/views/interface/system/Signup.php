@@ -236,7 +236,7 @@
 
                                     <!-- Action Buttons -->
                                     <div class="d-grid gap-3">
-                                        <button type="submit" class="btn btn-success py-2 shadow-sm">
+                                        <button type="submit" class="btn btn-success py-2 shadow-sm submitBtnPrimary">
                                             <i class="fas fa-user-plus me-2"></i>Create Customer Account
                                         </button>
 
@@ -482,7 +482,7 @@
 
                                     <!-- Action Buttons -->
                                     <div class="d-grid gap-3">
-                                        <button type="submit" class="btn btn-danger btn-lg  py-2 shadow-sm">
+                                        <button type="submit" class="btn btn-danger btn-lg  py-2 shadow-sm submitBtnPrimary">
                                             <i class="fas fa-tractor me-2"></i>Register as Verified Farmer
                                         </button>
 

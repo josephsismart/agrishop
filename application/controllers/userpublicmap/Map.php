@@ -349,8 +349,8 @@ class Map extends MY_Controller
         }
 
         if ($this->db->insert("my_cart_farm_produce", $data_my_cart)) {
-            $cp = $this->getTransactionPeding($person_id, 'PENDING', 'client');
-            $true += ["message"   => "Added to cart!", "cart_pending"   => $cp,"cart"=>$data_my_cart,"transaction"=>$check];
+            $cp = $this->getTransactionStatus($person_id, 'PENDING', 'client');
+            $true += ["message"   => "Added to cart!", "cart_pending"   => $cp, "cart" => $data_my_cart, "transaction" => $check];
             $ret = $true;
         } else {
             $false += ["message"   => "Failed to add to cart!"];
@@ -384,7 +384,7 @@ class Map extends MY_Controller
                 $this->db->query("DELETE FROM transaction WHERE id = $transaction_id");
             }
 
-            $cp = $this->getTransactionPeding($person_id, 'PENDING', 'client');
+            $cp = $this->getTransactionStatus($person_id, 'PENDING', 'client');
             $true += ["message"   => "Removed from cart!", "cart_pending"   => $cp];
             $ret = $true;
         } else {
@@ -397,7 +397,7 @@ class Map extends MY_Controller
         } else {
             $this->db->trans_commit();
         }
-        $this->session->agrishop_pending_trans_count = $this->getTransactionPeding($person_id, 'PENDING', 'client');
+        $this->session->agrishop_pending_trans_count = $this->getTransactionStatus($person_id, 'PENDING', 'client');
         echo json_encode($ret);
     }
 
@@ -495,6 +495,12 @@ class Map extends MY_Controller
         $person_id  = $this->session->agrishop_person_id;
         $requestData = $_REQUEST;
         $farm_id = $requestData['search']['farm_id'];
+        $status = $requestData['search']['status'];
+        if ($status) {
+            $status_condition = "t2.status = '$status' OR t5.status = '$status' AND (t2.status != 'COMPLETED' AND t2.status != 'CANCELLED')";
+        } else {
+            $status_condition = "(t2.status != 'PENDING' AND t2.status != 'COMPLETED' AND t2.status != 'CANCELLED')";
+        }
         $searchValue = isset($requestData['search']['value']) ? $requestData['search']['value'] : '';
 
         // Calculate pagination parameters using the separate function
@@ -506,7 +512,8 @@ class Map extends MY_Controller
 		                                    LEFT JOIN (SELECT transaction_id, sum(sub_total) AS payable FROM my_cart_farm_produce mcfp
 		                                    GROUP BY transaction_id) t3 ON t1.id = t3.transaction_id
                                     LEFT JOIN farmer_farm t4 ON t1.farm_id = t4.id
-                                    WHERE (t2.status != 'PENDING' AND t2.status != 'COMPLETED' AND t2.status != 'CANCELLED') AND t1.person_id = $person_id AND CONCAT(t4.farm_name,t2.status,t3.payable) COLLATE utf8mb4_general_ci LIKE '%$searchValue%'");
+                                    LEFT JOIN (SELECT * FROM transaction_delivery_status WHERE is_latest IS TRUE) t5 ON t1.id = t5.transaction_id
+                                    WHERE t1.person_id = $person_id AND $status_condition AND CONCAT(t4.farm_name,t2.status,t3.payable) COLLATE utf8mb4_general_ci LIKE '%$searchValue%'");
 
         $totalRecords = $thisQuery->row()->total;
 
@@ -515,7 +522,8 @@ class Map extends MY_Controller
 		                                    LEFT JOIN (SELECT transaction_id, sum(sub_total) AS payable FROM my_cart_farm_produce mcfp
 		                                    GROUP BY transaction_id) t3 ON t1.id = t3.transaction_id
                                     LEFT JOIN farmer_farm t4 ON t1.farm_id = t4.id
-                                    WHERE (t2.status != 'PENDING' AND t2.status != 'COMPLETED' AND t2.status != 'CANCELLED') AND t1.person_id = $person_id AND CONCAT(t4.farm_name,t2.status,t3.payable) COLLATE utf8mb4_general_ci LIKE '%$searchValue%'
+                                    LEFT JOIN (SELECT * FROM transaction_delivery_status WHERE is_latest IS TRUE) t5 ON t1.id = t5.transaction_id
+                                    WHERE $status_condition AND t1.person_id = $person_id AND CONCAT(t4.farm_name,t2.status,t3.payable) COLLATE utf8mb4_general_ci LIKE '%$searchValue%'
                                     ORDER BY t1.id DESC
                                     LIMIT $limit OFFSET $offset
                                     ");
@@ -920,12 +928,14 @@ class Map extends MY_Controller
         $q_status = $query->row()->t_status;
         $q_p_status = $query->row()->t_p_status;
         $q_d_status = $query->row()->t_d_status;
+        $pay_to_admin = $this->db->query("SELECT * FROM transaction_payment_to_admin t8 WHERE t8.transaction_id = $transaction_id LIMIT 1");
         if ($q_status == 'PENDING') {
-            $gcash_details = $this->db->query("SELECT mcfp.transaction_id ,fpm.* FROM my_cart_farm_produce mcfp 
+            $gcash_details = $this->db->query("SELECT mcfp.transaction_id ,fpm.*,t8.approved_by as t_p_approved_by, t8.id as t_p_id FROM my_cart_farm_produce mcfp 
 									JOIN farm_produce fp ON mcfp.farm_produce_id = fp.id
 									JOIN farmer_farm ff ON fp.farm_id = ff.id
                                     JOIN farmer f ON ff.farmer_id = f.id
 									JOIN farmer_payment_method fpm ON f.person_id = fpm.person_id
+                                    LEFT JOIN transaction_payment_to_admin t8 ON mcfp.transaction_id = t8.transaction_id
 									WHERE mcfp.transaction_id = $transaction_id LIMIT 1");
         }
 
@@ -1000,6 +1010,17 @@ class Map extends MY_Controller
         $percent = 0.01;
         $convenience_fee = $subtotal * $percent;
         $total_payment   = $subtotal + $convenience_fee;
+        $convenience_fee_ =  ' ₱ ' . $this->format_price($convenience_fee);
+        $t_p_approved_by = '';
+        $t_p_id = '';
+        if ($pay_to_admin->num_rows() > 0) {
+            $t_p_approved_by = $pay_to_admin->row()->approved_by;
+            $t_p_id = $pay_to_admin->row()->id;
+        }
+        $to_admin_payment = $t_p_id == '' ? '<font color="black"><i class="fa fa-times-circle"></i>To be paid ' . $convenience_fee_ . '</font>' : ($t_p_id && $t_p_approved_by == '' ? '<font color="orange"><i class="fa fa-exclamation-circle"></i>To be verified ' . $convenience_fee_ . '</font>' : '<font color="green"><i class="fa fa-check-circle"></i>Verified ' . $convenience_fee_ . '</font>');
+
+
+
         if ($q_status == 'PENDING') {
 
             if ($gcash_details->num_rows() > 0) {
@@ -1078,10 +1099,9 @@ class Map extends MY_Controller
                                 <span>Subtotal</span>
                                 <span>₱ ' . $this->format_price($subtotal) . '</span>
                             </div>
-
                             <div class="d-flex justify-content-between text-muted">
                                 <span>Fee (1%) <small>(Convenience Fee)</small></span>
-                                <span>₱ ' . $this->format_price($convenience_fee) . '</span>
+                                <span> ' . $to_admin_payment . '</span>
                             </div>
 
                             <hr style="margin:6px 0;">
@@ -1198,7 +1218,7 @@ class Map extends MY_Controller
 
                             <div class="d-flex justify-content-between text-muted">
                                 <span>Fee (1%) <small>(Convenience Fee)</small></span>
-                                <span>₱ ' . $this->format_price($convenience_fee) . '</span>
+                                <span> ' . $to_admin_payment . '</span>
                             </div>
 
                             <hr style="margin:6px 0;">
@@ -1232,6 +1252,47 @@ class Map extends MY_Controller
             'data' => $data,
         );
         echo json_encode($response);
+    }
+
+    public function payprocessingfee()
+    {
+
+        $this->db->trans_begin();
+        $person_id = $this->session->agrishop_person_id;
+        $dateNow = $this->now();
+        $true = ["success"   => true];
+        $false = ["success"   => false];
+        $trans_id = $this->input->post('trans_id');
+        $convenience_fee = $this->input->post('convenience_fee');
+        $data_transaction_proof_of_payment = [];
+        if (!empty($_FILES['paymentProof'])) {
+            if (isset($_FILES['paymentProof']) && $_FILES['paymentProof']['error'] === UPLOAD_ERR_OK) {
+                // Normal upload
+                $upload = $this->uploadImg($_FILES['paymentProof'], $person_id . $trans_id, 'payment_to_admin', 'paymentProof');
+                $data_transaction_proof_of_payment = [
+                    "transaction_id" => $trans_id,
+                    "amount" => $convenience_fee,
+                    "img_path" => $upload
+                ];
+            }
+        }
+
+        if ($this->db->insert("transaction_payment_to_admin", $data_transaction_proof_of_payment)) {
+            $this->getTransactionStatus($person_id, 'TO_BE_VERIFIED', 'client');
+            $true += ["message"   => "Successfully paid processing fee!"];
+            $ret = $true;
+        } else {
+            $false += ["message"   => "Failed to add to cart!"];
+            $ret = $false;
+        }
+
+        if ($this->db->trans_status() === false) {
+            $this->db->trans_rollback();
+        } else {
+            $this->db->trans_commit();
+        }
+
+        echo json_encode($ret);
     }
 
 
@@ -1301,9 +1362,9 @@ class Map extends MY_Controller
 
         // 🚚 DELIVERY STATUS
         if ($delivery == 'pickup') {
-            $delivery_status = 'TO_PICKUP';
+            $delivery_status = 'TO_BE_PICKUP';
         } else {
-            $delivery_status = 'TO_DELIVER';
+            $delivery_status = 'TO_BE_DELIVER';
         }
 
         // 🚚 DELIVERY STATUS
@@ -1351,7 +1412,7 @@ class Map extends MY_Controller
         ];
 
         if ($this->db->insert("transaction_details", $data_transaction_details)) {
-            $cp = $this->getTransactionPeding($person_id, 'PENDING', 'client');
+            $cp = $this->getTransactionStatus($person_id, 'PENDING', 'client');
             $true += ["message"   => "Checkout success!", "cart_pending"   => $cp];
             $ret = $true;
         } else {
@@ -1414,7 +1475,7 @@ class Map extends MY_Controller
         $this->db->update("transaction", $data_transaction, ["id" => $transaction_id]);
 
         if ($this->db->insert("transaction_cancel", $data_transaction_cancel_details)) {
-            $cp = $this->getTransactionPeding($person_id, 'PENDING', 'client');
+            $cp = $this->getTransactionStatus($person_id, 'PENDING', 'client');
             $true += ["message"   => "Order cancelled!", "cart_pending"   => $cp];
             $ret = $true;
         } else {

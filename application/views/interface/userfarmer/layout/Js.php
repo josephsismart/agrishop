@@ -11,10 +11,11 @@ $uri = $this->session->agrishop_login_uri;
 <!-- <script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe" crossorigin="anonymous"></script> -->
 <script src="<?php echo base_url(); ?>dist/layout_shop/js/swiper-bundle.min.js"></script>
-<script src="<?php echo base_url(); ?>dist/layout_shop/js/bootstrap.bundle.min.js"></script>
+<!-- <script src="<?php echo base_url(); ?>dist/layout_shop/js/bootstrap.bundle.min.js"></script> -->
 <script src="<?php echo base_url(); ?>dist/layout_shop/js/plugins.js"></script>
 <!-- <script src="<?php echo base_url(); ?>dist/layout_shop/js/script.js"></script> -->
 <script src="<?= base_url() ?>plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+
 <!-- Select2 -->
 <script src="<?= base_url() ?>plugins/select2/js/select2.full.min.js"></script>
 <!-- Toastr -->
@@ -44,6 +45,21 @@ $uri = $this->session->agrishop_login_uri;
     let transaction_id_ = null;
     let status_ = null;
 
+    $(function() {
+
+        $('#bars').click(function() {
+            $('#offcanvasNavbar').addClass('show');
+            $('#sidebar-backdrop').addClass('show');
+            $('body').addClass('overflow-hidden');
+        });
+
+        $('#sidebar-close, #sidebar-backdrop').click(function() {
+            $('#offcanvasNavbar').removeClass('show');
+            $('#sidebar-backdrop').removeClass('show');
+            $('body').removeClass('overflow-hidden');
+        });
+
+    });
 
 
     $('#modalFarmInfo').on('shown.bs.modal', function() {
@@ -490,6 +506,10 @@ $uri = $this->session->agrishop_login_uri;
                 if (d.success == true) {
                     successAlert(d.message);
                     clear_form(formId);
+
+                    // let modalEl = document.getElementById("modal" + formId);
+                    // let modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                    // modal.hide();
                     $("#modal" + formId).modal('hide');
                     for (var i = 0; i < tblId.length; i++) {
                         getTable(tblId[i], dtd, pl);
@@ -501,7 +521,8 @@ $uri = $this->session->agrishop_login_uri;
                             location.reload();
                         }, 1000);
                     }
-                    // if(formId=="AddFarmProduceSupply" ){
+                    // if(formId=="FarmProduceSupply" || formId=="AddFarmProduceSupply"){
+                    //     $("#modalFarmProduceSupply").modal("hide");
                     //     $("#modalAddFarmProduceSupply").modal("hide");
                     // }
                 } else if (d.success == false && d.exist == true) {
@@ -588,7 +609,7 @@ $uri = $this->session->agrishop_login_uri;
         $('[name=previewPicProduce]').attr("src", data.img_path);
 
         // Wholesale price
-        if (data.wholesale_price){
+        if (data.wholesale_price) {
             $('.wholesale-price').show();
             $('[name=wholesale_price]').text(data.wholesale_price);
             $('[name=wholesale_qty]').text(data.wholesale_qty);

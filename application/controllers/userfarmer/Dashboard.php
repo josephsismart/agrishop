@@ -45,10 +45,10 @@ class Dashboard extends MY_Controller
                                         WHERE tc.id IS null")->row();
 
         $data = [
-            "revenue" => number_format($revenue->revenue, 0),
-            "total_orders" => number_format($revenue->total_orders, 0),
-            "products" => number_format($revenue->products, 0),
-            "farms" => number_format($revenue->farms, 0),
+            "revenue" => $revenue->revenue == null ? 0 : number_format($revenue->revenue, 0),
+            "total_orders" => $revenue->total_orders == null ? 0 : number_format($revenue->total_orders, 0),
+            "products" => $revenue->products == null ? 0 : number_format($revenue->products, 0),
+            "farms" => $revenue->farms == null ? 0 : number_format($revenue->farms, 0),
         ];
 
         $products_selling = $this->db->query("SELECT p.id,p.name,COALESCE(p.img_path,pc.img_path) AS img_path ,sum(mcfp.qty) AS qty,pmfp.price, fp.uom FROM (SELECT ff.farmer_id,t.* FROM transaction t

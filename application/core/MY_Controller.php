@@ -634,7 +634,6 @@ class MY_Controller extends CI_Controller
         $this->db->update('transaction_delivery_status', ['is_latest' => 0]);
         $this->db->insert("transaction_delivery_status", $data);
         return true;
-
     }
 
     public function transaction_payment_status($data)
@@ -643,7 +642,14 @@ class MY_Controller extends CI_Controller
         $this->db->update('transaction_payment_status', ['is_latest' => 0]);
         $this->db->insert("transaction_payment_status", $data);
         return true;
+    }
 
+    public function update_transaction_status($data, $table)
+    {
+        $this->db->where('transaction_id', $data["transaction_id"]);
+        $this->db->update($table, ['is_latest' => 0]);
+        $this->db->insert($table, $data);
+        return true;
     }
 
     public function redirect_session()
@@ -732,23 +738,57 @@ class MY_Controller extends CI_Controller
         return $name;
     }
 
-    public function getTransactionPeding($id, $status, $type)
+    public function getTransactionStatus($id, $status, $type, $status_table = 'transaction_status')
     {
-        if ($type == 'farmer') {
-            $FILTR = "t4.farmer_id=$id";
-        }
-        // else ($type == 'client') {
-        else {
-            $FILTR = "t1.person_id=$id";
+        if ($type === 'farmer') {
+            $FILTR = "t4.farmer_id = ?";
+        } else {
+            $FILTR = "t1.person_id = ?";
         }
 
-        $thisQuery = $this->db->query("SELECT count(1) AS total FROM transaction t1 
-                                    JOIN (SELECT * FROM transaction_status WHERE is_latest IS TRUE) t2 ON t1.id = t2.transaction_id
-                                    LEFT JOIN (SELECT transaction_id, sum(sub_total) AS payable FROM my_cart_farm_produce mcfp
-                                                GROUP BY transaction_id) t3 ON t1.id = t3.transaction_id
-                                    LEFT JOIN farmer_farm t4 ON t1.farm_id = t4.id
-                                    WHERE $FILTR AND t2.status = '$status'");
-        $c = $thisQuery->row()->total;
+        // IMPORTANT: validate table name (never trust dynamic table names)
+        $allowed_tables = ['transaction_status', 'transaction_delivery_status']; // add your valid tables here
+
+        if (!in_array($status_table, $allowed_tables)) {
+            die('Invalid status table.');
+        }
+
+        if ($status_table != 'transaction_status') {
+
+            $sql = "SELECT COUNT(1) AS total
+        FROM transaction t1
+        JOIN (
+            SELECT * FROM {$status_table} WHERE is_latest = 1
+        ) t2 ON t1.id = t2.transaction_id
+        LEFT JOIN (
+            SELECT * FROM transaction_status WHERE is_latest = 1
+        ) t22 ON t1.id = t22.transaction_id
+        LEFT JOIN farmer_farm t4 ON t1.farm_id = t4.id
+        WHERE {$FILTR}
+        AND t2.status = ?
+        AND (t22.status != 'COMPLETED' AND t22.status != 'CANCELLED')
+    ";
+
+            $thisQuery = $this->db->query($sql, [$id, $status]);
+        } else {
+
+            $sql = "SELECT COUNT(1) AS total
+        FROM transaction t1
+        JOIN (
+            SELECT * FROM {$status_table} WHERE is_latest = 1
+        ) t2 ON t1.id = t2.transaction_id
+        LEFT JOIN farmer_farm t4 ON t1.farm_id = t4.id
+        WHERE {$FILTR}
+        AND t2.status = ?
+    ";
+
+            $thisQuery = $this->db->query($sql, [$id, $status]);
+        }
+
+        // Safe result handling
+        $c = ($thisQuery && $thisQuery->num_rows() > 0)
+            ? $thisQuery->row()->total
+            : 0;
         $cc = $c > 0 ? $c : '';
         if ($type == 'farmer') {
             $this->session->agrishop_reserved_trans_count = $cc;

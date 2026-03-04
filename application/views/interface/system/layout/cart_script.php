@@ -125,12 +125,24 @@
         }
     });
 
+    $('#agreeFee').on('click', function() {
+        $('#btnProceedOrder').prop('disabled', !this.checked);
+    });
+
+    function format_money(num) {
+        return num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
 
     function checkout() {
+        let trans_id = $("#pay_cash").data('trans_id');
+        let convenience_fee = $("#pay_cash").data('convenience_fee');
+        // $("#processingFeeAmount").text("₱ " + format_money(convenience_fee));
+        // $("#trans_id").val(trans_id);
+        // $("#convenience_fee").val(convenience_fee);
+        // $('#modalProcessingFeeModal').modal('show')
 
         let pay = $('input[name="payment_method"]:checked').val();
         let total = $("#pay_cash").data('total');
-        let trans_id = $("#pay_cash").data('trans_id');
         let subtotal = $("#pay_cash").data('subtotal');
         let percentage = $("#pay_cash").data('percentage');
         let name = $(".pay_gcash").data('name');
@@ -155,7 +167,7 @@
 
         Swal.fire({
             title: '<label style="font-size: 18px;">' + (pay === 'gcash' ? 'Confirm GCash Payment' : 'Confirm Cash Payment') + '</label>',
-            html: '<b style="font-size: 20px;margin-top: -20px;">Amount: ₱ ' + total + '</b>',
+            html: '<b style="font-size: 20px;margin-top: -20px;">Amount: ₱ ' + format_money(subtotal) + '</b>',
             iconHtml: pay === 'gcash' ?
                 '<img src="<?= base_url('dist/img/credit/gcash_50x50.png') ?>" width="70">' : '<i class="fa fa-money-bill-wave text-primary"></i>',
             showCancelButton: true,

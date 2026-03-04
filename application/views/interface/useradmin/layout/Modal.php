@@ -15,7 +15,7 @@ $uri = $this->session->agrishop_login_uri;
             <!-- Header -->
             <div class="modal-header border-0 pb-0">
                 <h5 class="fw-bold">View Payment Details</h5>
-                <button class="btn-close" data-bs-dismiss="modal"></button>
+                <button class="btn-close" data-dismiss="modal"></button>
             </div>
 
             <!-- Body -->
@@ -46,7 +46,7 @@ $uri = $this->session->agrishop_login_uri;
                             <i class="fas fa-user-circle me-2"></i>My Profile
                         </h1>
                     </div>
-                    <button type="button" class="btn-close btn-close-white shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white shadow-none" data-dismiss="modal" aria-label="Close"></button>
                 </div>
             </div>
 
@@ -189,7 +189,7 @@ $uri = $this->session->agrishop_login_uri;
             <!-- FOOTER -->
             <div class="modal-footer bg-light py-3 px-4 border-top">
                 <div class="d-flex w-100 gap-3">
-                    <button type="button" class="btn btn-outline-secondary btn-lg flex-fill rounded-pill" data-bs-dismiss="modal">
+                    <button type="button" class="btn btn-outline-secondary btn-lg flex-fill rounded-pill" data-dismiss="modal">
                         <i class="fas fa-times me-2"></i>Cancel
                     </button>
                     <button type="submit" class="btn btn-primary btn-lg flex-fill rounded-pill fw-bold shadow-sm update_profile">
@@ -216,7 +216,7 @@ $uri = $this->session->agrishop_login_uri;
                             <i class="fas fa-wallet me-2"></i>Proof of payment
                         </h6>
                     </div>
-                    <button type="button" class="btn-close btn-close-white shadow-none m-0" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white shadow-none m-0" data-dismiss="modal"></button>
                 </div>
             </div>
 
@@ -243,7 +243,7 @@ $uri = $this->session->agrishop_login_uri;
                             <i class="fas fa-wallet me-2"></i>My GCash Account
                         </h6>
                     </div>
-                    <button type="button" class="btn-close btn-close-white shadow-none m-0" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white shadow-none m-0" data-dismiss="modal"></button>
                 </div>
             </div>
 
@@ -320,7 +320,7 @@ $uri = $this->session->agrishop_login_uri;
             <!-- FOOTER -->
             <div class="modal-footer bg-light py-3 px-4">
                 <div class="d-flex w-100 gap-2">
-                    <button type="button" class="btn btn-outline-secondary btn-lg flex-fill rounded-pill" data-bs-dismiss="modal">
+                    <button type="button" class="btn btn-outline-secondary btn-lg flex-fill rounded-pill" data-dismiss="modal">
                         <i class="fas fa-times me-2"></i>Cancel
                     </button>
                     <button type="submit" class="btn btn-primary btn-lg flex-fill rounded-pill fw-bold update_gcash shadow-sm">
@@ -343,7 +343,7 @@ $uri = $this->session->agrishop_login_uri;
                 <h5 class="modal-title mb-0">
                     <i class="fas fa-money-bill-wave mr-1"></i> Payment Status
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
             </div>
 
             <div class="modal-body px-3 py-2">

@@ -37,6 +37,36 @@
         margin-bottom: 10px;
     }
 
+    .custom-sidebar {
+        position: fixed;
+        top: 0;
+        right: -300px;
+        width: 300px;
+        height: 100%;
+        background: #fff;
+        z-index: 1050;
+        transition: right 0.3s ease;
+    }
+
+    .custom-sidebar.show {
+        right: 0;
+    }
+
+    #sidebar-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        z-index: 1040;
+    }
+
+    #sidebar-backdrop.show {
+        display: block;
+    }
+
     .buttons {
         margin-bottom: 10px;
     }

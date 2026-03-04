@@ -1,6 +1,7 @@
 <script type="text/javascript">
     let farm_id = null;
     let transaction_id_ = null;
+    let status_ = null;
     const farmCache = {};
     document.addEventListener("DOMContentLoaded", function() {
         const nav = document.getElementById("topNav");
@@ -176,6 +177,9 @@
                             location.reload();
                         }, 1000)
                     }
+                    if (formId == "PayProcessingFee") {
+                        $('#modalProcessingFeeModal').modal('hide');
+                    }
                 } else if (d.exist == true) {
                     existAlert("Application already exist!");
                     // toastr.warning("Application already exist!")
@@ -191,6 +195,7 @@
 
     saveForm("RegisterFarmer", [null], null);
     saveForm("UpdateProfile", [null], null);
+    saveForm("PayProcessingFee", ['CartDetails'], null);
 
     function imageView(a, b, c) {
         var fileInput = $("[name=" + a + "]")[0]; // Get the file input element
@@ -305,6 +310,7 @@
                     d.search.value = $('#tbl' + tableId + '_filter input').val();
                     d.search.farm_id = farm_id;
                     d.search.transaction_id = transaction_id_;
+                    d.search.status = status_;
                 }
             },
 

@@ -11,7 +11,7 @@ $uri = $this->session->agrishop_login_uri;
 <!-- <script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe" crossorigin="anonymous"></script> -->
 <script src="<?php echo base_url(); ?>dist/layout_shop/js/swiper-bundle.min.js"></script>
-<script src="<?php echo base_url(); ?>dist/layout_shop/js/bootstrap.bundle.min.js"></script>
+<!-- <script src="<?php echo base_url(); ?>dist/layout_shop/js/bootstrap.bundle.min.js"></script> -->
 <script src="<?php echo base_url(); ?>dist/layout_shop/js/plugins.js"></script>
 <!-- <script src="<?php echo base_url(); ?>dist/layout_shop/js/script.js"></script> -->
 <script src="<?= base_url() ?>plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
@@ -41,6 +41,22 @@ $uri = $this->session->agrishop_login_uri;
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script> -->
 
 <script type="text/javascript">
+    $(function() {
+
+        $('#bars').click(function() {
+            $('#offcanvasNavbar').addClass('show');
+            $('#sidebar-backdrop').addClass('show');
+            $('body').addClass('overflow-hidden');
+        });
+
+        $('#sidebar-close, #sidebar-backdrop').click(function() {
+            $('#offcanvasNavbar').removeClass('show');
+            $('#sidebar-backdrop').removeClass('show');
+            $('body').removeClass('overflow-hidden');
+        });
+
+    });
+
 
     $(document).on('click', '.barangay-item', function() {
         let id = $(this).data('id');
