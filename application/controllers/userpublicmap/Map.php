@@ -1018,6 +1018,7 @@ class Map extends MY_Controller
             $t_p_id = $pay_to_admin->row()->id;
         }
         $to_admin_payment = $t_p_id == '' ? '<font color="black"><i class="fa fa-times-circle"></i>To be paid ' . $convenience_fee_ . '</font>' : ($t_p_id && $t_p_approved_by == '' ? '<font color="orange"><i class="fa fa-exclamation-circle"></i>To be verified ' . $convenience_fee_ . '</font>' : '<font color="green"><i class="fa fa-check-circle"></i>Verified ' . $convenience_fee_ . '</font>');
+        $to_admin_payment_stat = $t_p_id == '' ? 'TO_BE_PAID' : ($t_p_id && $t_p_approved_by == '' ? 'TO_BE_VERIFIED' : 'VERIFIED');
 
 
 
@@ -1081,6 +1082,7 @@ class Map extends MY_Controller
                                         data-convenience_fee="' . $convenience_fee . '"
                                         data-subtotal="' . $subtotal . '"
                                         data-percentage="' . $percent . '"
+                                        data-to_admin_payment_stat="' . $to_admin_payment_stat . '"
                                         value="cash" checked>
                                     <label class="form-check-label" for="pay_cash" style="cursor:pointer;">
                                     <i class="fa fa-money-bill"></i>
@@ -1272,7 +1274,9 @@ class Map extends MY_Controller
                 $data_transaction_proof_of_payment = [
                     "transaction_id" => $trans_id,
                     "amount" => $convenience_fee,
-                    "img_path" => $upload
+                    "img_path" => $upload,
+                    "approved_at" => $dateNow,//for test to be delete
+                    "approved_by" => 1,//for test to be delete
                 ];
             }
         }

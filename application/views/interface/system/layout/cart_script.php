@@ -134,99 +134,104 @@
     }
 
     function checkout() {
+
         let trans_id = $("#pay_cash").data('trans_id');
         let convenience_fee = $("#pay_cash").data('convenience_fee');
-        // $("#processingFeeAmount").text("₱ " + format_money(convenience_fee));
-        // $("#trans_id").val(trans_id);
-        // $("#convenience_fee").val(convenience_fee);
-        // $('#modalProcessingFeeModal').modal('show')
+        let to_admin_payment_status = $("#pay_cash").data('to_admin_payment_stat');
 
-        let pay = $('input[name="payment_method"]:checked').val();
-        let total = $("#pay_cash").data('total');
-        let subtotal = $("#pay_cash").data('subtotal');
-        let percentage = $("#pay_cash").data('percentage');
-        let name = $(".pay_gcash").data('name');
-        let number = $(".pay_gcash").data('number');
-        let proof = $('input[name="proof_of_payment"]').val();
-        let delivery = $('input[name="delivery_option"]:checked').val();
+        if (to_admin_payment_status == 'TO_BE_PAID') {
+            $("#processingFeeAmount").text("₱ " + format_money(convenience_fee));
+            $("#trans_id").val(trans_id);
+            $("#convenience_fee").val(convenience_fee);
+            $('#modalProcessingFeeModal').modal('show');
+        } else {
+            let pay = $('input[name="payment_method"]:checked').val();
+            let total = $("#pay_cash").data('total');
+            let subtotal = $("#pay_cash").data('subtotal');
+            let percentage = $("#pay_cash").data('percentage');
+            let name = $(".pay_gcash").data('name');
+            let number = $(".pay_gcash").data('number');
+            let proof = $('input[name="proof_of_payment"]').val();
+            let delivery = $('input[name="delivery_option"]:checked').val();
 
-        if (pay === 'gcash' && proof === '') {
+            if (pay === 'gcash' && proof === '') {
+                Swal.fire({
+                    title: 'Required',
+                    text: 'Upload proof of payment',
+                    icon: 'warning',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    customClass: {
+                        popup: 'swal-mini',
+                        icon: 'no-border'
+                    }
+                });
+                return;
+            }
+
             Swal.fire({
-                title: 'Required',
-                text: 'Upload proof of payment',
-                icon: 'warning',
+                title: '<label style="font-size: 18px;">' + (pay === 'gcash' ? 'Confirm GCash Payment' : 'Confirm Cash Payment') + '</label>',
+                html: '<b style="font-size: 20px;margin-top: -20px;">Amount: ₱ ' + format_money(subtotal) + '</b>',
+                iconHtml: pay === 'gcash' ?
+                    '<img src="<?= base_url('dist/img/credit/gcash_50x50.png') ?>" width="70">' : '<i class="fa fa-money-bill-wave text-primary"></i>',
+                showCancelButton: true,
+                confirmButtonText: 'Confirm',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#28a745', // green
+                cancelButtonColor: '#dc3545', // red
                 allowOutsideClick: false,
                 allowEscapeKey: false,
                 customClass: {
                     popup: 'swal-mini',
                     icon: 'no-border'
                 }
-            });
-            return;
-        }
 
-        Swal.fire({
-            title: '<label style="font-size: 18px;">' + (pay === 'gcash' ? 'Confirm GCash Payment' : 'Confirm Cash Payment') + '</label>',
-            html: '<b style="font-size: 20px;margin-top: -20px;">Amount: ₱ ' + format_money(subtotal) + '</b>',
-            iconHtml: pay === 'gcash' ?
-                '<img src="<?= base_url('dist/img/credit/gcash_50x50.png') ?>" width="70">' : '<i class="fa fa-money-bill-wave text-primary"></i>',
-            showCancelButton: true,
-            confirmButtonText: 'Confirm',
-            cancelButtonText: 'Cancel',
-            confirmButtonColor: '#28a745', // green
-            cancelButtonColor: '#dc3545', // red
-            allowOutsideClick: false,
-            allowEscapeKey: false,
-            customClass: {
-                popup: 'swal-mini',
-                icon: 'no-border'
-            }
+            }).then(r => {
+                if (!r.isConfirmed) return;
 
-        }).then(r => {
-            if (!r.isConfirmed) return;
+                let fd = new FormData();
 
-            let fd = new FormData();
-
-            fd.append('pay', pay === 'gcash' ? 'gcash' : 'cash');
-            fd.append('total', total);
-            fd.append('trans_id', trans_id);
-            fd.append('subtotal', subtotal);
-            fd.append('percentage', percentage);
-            fd.append('number', number);
-            fd.append('name', name);
-            fd.append('proof', proof);
-            fd.append('delivery', delivery);
+                fd.append('pay', pay === 'gcash' ? 'gcash' : 'cash');
+                fd.append('total', total);
+                fd.append('trans_id', trans_id);
+                fd.append('subtotal', subtotal);
+                fd.append('percentage', percentage);
+                fd.append('number', number);
+                fd.append('name', name);
+                fd.append('proof', proof);
+                fd.append('delivery', delivery);
 
 
-            // only append proof if gcash
-            if (pay === 'gcash') {
-                fd.append('proof_of_payment', $('input[name="proof_of_payment"]')[0].files[0]);
-            }
-
-            $.ajax({
-                url: "<?= base_url('userpublicmap/Map/submit_order') ?>",
-                type: "POST",
-                data: fd,
-                processData: false,
-                contentType: false,
-                success: res => {
-                    let j = JSON.parse(res);
-                    $(".pending-order").text(j.cart_pending);
-                    if (j.success == true) {
-                        successAlert(j.message); //this line
-                        $('#modalCartDetails').modal('hide');
-                        getTable('CartListing', 0, 5);;
-                    } else {
-                        failAlert(j.message);
-                    }
-
-                    // setTimeout(function() {
-                    //     location.reload();
-                    // }, 1500)
-                    // Swal.fire(j.success ? 'Success' : 'Error', j.message, j.success ? 'success' : 'error');
+                // only append proof if gcash
+                if (pay === 'gcash') {
+                    fd.append('proof_of_payment', $('input[name="proof_of_payment"]')[0].files[0]);
                 }
+
+                $.ajax({
+                    url: "<?= base_url('userpublicmap/Map/submit_order') ?>",
+                    type: "POST",
+                    data: fd,
+                    processData: false,
+                    contentType: false,
+                    success: res => {
+                        let j = JSON.parse(res);
+                        $(".pending-order").text(j.cart_pending);
+                        if (j.success == true) {
+                            successAlert(j.message); //this line
+                            $('#modalCartDetails').modal('hide');
+                            getTable('CartListing', 0, 5);;
+                        } else {
+                            failAlert(j.message);
+                        }
+
+                        // setTimeout(function() {
+                        //     location.reload();
+                        // }, 1500)
+                        // Swal.fire(j.success ? 'Success' : 'Error', j.message, j.success ? 'success' : 'error');
+                    }
+                });
             });
-        });
+        }
     }
 
 

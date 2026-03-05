@@ -274,7 +274,7 @@ $farm_produce = base_url() . $uri . '/FarmProduce'; ?>
 
         <div class="sidebar-header d-flex justify-content-between align-items-center p-3">
             <h4 class="fw-normal text-uppercase fs-6 m-0">Menu</h4>
-            <button id="sidebar-close" class="close" data-bs-dismiss="offcanvas" aria-label="Close" style="font-size: 2.2rem !important;">&times;</button>
+            <button id="sidebar-close" class="close" data-dismiss="offcanvas" aria-label="Close" style="font-size: 2.2rem !important;">&times;</button>
         </div>
 
         <div class="offcanvas-body pt-2 pl-2">
@@ -310,7 +310,7 @@ $farm_produce = base_url() . $uri . '/FarmProduce'; ?>
                                 </a> -->
 
                                 <?php if ($role_lvl != 2 || $role_lvl != 1) { ?>
-                                    <a href="#" data-bs-toggle="modal" data-bs-target="#modalCartListing" class="p-2 mx-1 text-dark" style="text-decoration: none;" onclick="getTable('CartListing', 0, 5);">
+                                    <a href="#" data-toggle="modal" data-target="#modalCartListing" class="p-2 mx-1 text-dark" style="text-decoration: none;" onclick="getTable('CartListing', 0, 5);">
                                         <i class="fa fa-shopping-basket"></i> Cart<span class="badge bg-warning pending-order" title="pending orders"><?= $status['transaction_status_pending'] ?></span>
                                     </a>
                                 <?php } ?>
@@ -329,7 +329,7 @@ $farm_produce = base_url() . $uri . '/FarmProduce'; ?>
                         <?php } ?>
                         <?php if ($role_lvl != "") { ?>
                             <li>
-                                <a href="#" id="bars" class="p-2 mx-1 text-dark" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar">
+                                <a href="#" id="bars" class="p-2 mx-1 text-dark" data-toggle="offcanvas" data-target="#offcanvasNavbar" aria-controls="offcanvasNavbar">
                                     <i class="fa fa-bars"></i>
                                 </a>
                             </li>

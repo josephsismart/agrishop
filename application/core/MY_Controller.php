@@ -756,38 +756,38 @@ class MY_Controller extends CI_Controller
         if ($status_table != 'transaction_status') {
 
             $sql = "SELECT COUNT(1) AS total
-        FROM transaction t1
-        JOIN (
-            SELECT * FROM {$status_table} WHERE is_latest = 1
-        ) t2 ON t1.id = t2.transaction_id
-        LEFT JOIN (
-            SELECT * FROM transaction_status WHERE is_latest = 1
-        ) t22 ON t1.id = t22.transaction_id
-        LEFT JOIN farmer_farm t4 ON t1.farm_id = t4.id
-        WHERE {$FILTR}
-        AND t2.status = ?
-        AND (t22.status != 'COMPLETED' AND t22.status != 'CANCELLED')
-    ";
+                        FROM transaction t1
+                        JOIN (
+                            SELECT * FROM {$status_table} WHERE is_latest = 1
+                        ) t2 ON t1.id = t2.transaction_id
+                        LEFT JOIN (
+                            SELECT * FROM transaction_status WHERE is_latest = 1
+                        ) t22 ON t1.id = t22.transaction_id
+                        LEFT JOIN farmer_farm t4 ON t1.farm_id = t4.id
+                        WHERE {$FILTR}
+                        AND t2.status = ?
+                        AND (t22.status != 'COMPLETED' AND t22.status != 'CANCELLED')
+                    ";
 
             $thisQuery = $this->db->query($sql, [$id, $status]);
         } else {
 
             $sql = "SELECT COUNT(1) AS total
-        FROM transaction t1
-        JOIN (
-            SELECT * FROM {$status_table} WHERE is_latest = 1
-        ) t2 ON t1.id = t2.transaction_id
-        LEFT JOIN farmer_farm t4 ON t1.farm_id = t4.id
-        WHERE {$FILTR}
-        AND t2.status = ?
-    ";
+                    FROM transaction t1
+                    JOIN (
+                        SELECT * FROM {$status_table} WHERE is_latest = 1
+                    ) t2 ON t1.id = t2.transaction_id
+                    LEFT JOIN farmer_farm t4 ON t1.farm_id = t4.id
+                    WHERE {$FILTR}
+                    AND t2.status = ?
+                ";
 
             $thisQuery = $this->db->query($sql, [$id, $status]);
         }
 
         // Safe result handling
         $c = ($thisQuery && $thisQuery->num_rows() > 0)
-            ? $thisQuery->row()->total
+            ? (int)$thisQuery->row()->total
             : 0;
         $cc = $c > 0 ? $c : '';
         if ($type == 'farmer') {

@@ -179,6 +179,7 @@
                     }
                     if (formId == "PayProcessingFee") {
                         $('#modalProcessingFeeModal').modal('hide');
+                        getTable('CartDetails', 1, 1000);
                     }
                 } else if (d.exist == true) {
                     existAlert("Application already exist!");
@@ -195,7 +196,7 @@
 
     saveForm("RegisterFarmer", [null], null);
     saveForm("UpdateProfile", [null], null);
-    saveForm("PayProcessingFee", ['CartDetails'], null);
+    saveForm("PayProcessingFee", [null], null);
 
     function imageView(a, b, c) {
         var fileInput = $("[name=" + a + "]")[0]; // Get the file input element

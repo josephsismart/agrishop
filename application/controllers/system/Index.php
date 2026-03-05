@@ -28,7 +28,7 @@ class Index extends MY_Controller
     public function status()
     {
         $interval = $this->input->get('interval');
-        $person_id = $this->session->agrishop_login_id;
+        $person_id = $this->session->agrishop_person_id;
         if ($person_id != null) {
             $ratings = $this->db->query("SELECT count(1) AS count FROM transaction t1 
                                     JOIN (SELECT * FROM transaction_status WHERE is_latest IS TRUE) t2 ON t1.id = t2.transaction_id
