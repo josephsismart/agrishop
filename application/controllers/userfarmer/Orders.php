@@ -22,7 +22,7 @@ class Orders extends MY_Controller
             "page_title"        => "Orders",
             "current_location"  => "orders",
             "content"           =>  [$this->load->view('interface/' . $uri . '/Orders', [
-                "billing" => $this->billing_page(true),
+                "billing" => $this->subscription_count(),
             ], TRUE)]
         ];
         $this->public_create_page($page_data);

@@ -90,7 +90,7 @@ class MY_Controller extends CI_Controller
 
     public function redirect()
     {
-        $this->check_subscription2();
+        // $this->check_subscription2();
         $login = $this->session->agrishop_login_id;
         $defaultPassword = $this->session->agrishop_change_password;
         $uri = $this->session->agrishop_login_uri;
@@ -146,29 +146,104 @@ class MY_Controller extends CI_Controller
         }
     }
 
+    public function subscription_count()
+    {
+        $farmer_id  = $this->session->agrishop_login_farmer_id;
+        $count_billing = $this->db->query("SELECT count(1) as count FROM invoice_billing
+                WHERE farmer_id = ?
+                AND (payment_for = 'SERVICE_FEE' OR payment_for = 'SUBSCRIPTION')
+                AND is_paid = false
+            ", [$farmer_id])->row();
+        return [
+            "count" => $count_billing->count,
+        ];
+    }
+
     public function check_subscription2()
     {
+        $farmer_id = $this->session->agrishop_login_farmer_id;
 
-        // $farmer_id = (int) $this->session->agrishop_login_farmer_id;
-        // $query_pending = $this->db->query("SELECT b.id,  DATE_FORMAT(b.billing_due_date,'yyyy-mm-dd') as billing_due_date, b.proof_img_path, b.status, f.is_active FROM billing b
-        //                             LEFT JOIN farmer f ON b.farmer_id=f.id
-        //                             WHERE b.farmer_id = $farmer_id AND b.status!='PAID' AND b.payment_for ='SUBSCRIPTION'")->row();
-        // if (($query_pending->billing_due_date > date('Y-m-d') && $query_pending->status == 'PENDING')) {
-        //     // $this->db->query("UPDATE farmer SET is_active = false WHERE id = $farmer_id");
-        //     $this->session->set_userdata([
-        //         "agrishop_login_uri" => "ud440aed189",
-        //         "agrishop_login_landing" => "Subscription"
-        //     ]);
-        //     return;
-        // }
+        // check if subscription is active and the next billing date has lapsed
+        $subscription_active_lapsed = $this->db->query("SELECT id, billing_due_date FROM subscription_history 
+                                                WHERE farmer_id=? 
+                                                AND billing_due_date<now() 
+                                                ORDER BY id DESC 
+                                                LIMIT 1", [$farmer_id])->row();
+        if ($subscription_active_lapsed) {
+            // check if there is unpaid invoice
+            $invoice_billing = $this->db->query("SELECT t1.id FROM invoice_billing t1 
+            WHERE t1.farmer_id=? and t1.is_paid is false
+            LIMIT 1", [$farmer_id])->row();
+            if ($invoice_billing != null) {
+            } else {
 
-        // if (($query_pending->proof_img_path!="" && $query_pending->status == 'FOR_APPROVAL')) {
-        //     $this->session->set_userdata([
-        //         "agrishop_login_uri" => "ud440aed188v",
-        //         "agrishop_login_landing" => "Validation"
-        //     ]);
-        //     return;
-        // }
+                // //check the last subscription history to then get the last date to be inserted in subscription history and invoice billing
+                // $invoice_billing_last_billing = $this->db->query("SELECT t1.subscription_to, t1.billing_due_date FROM subscription_history t1 
+                //                             WHERE t1.farmer_id=? ORDER BY t1.id DESC
+                //                             LIMIT 1", [$farmer_id])->row();
+                // // data for last subscription history to insert
+
+                // if ($invoice_billing_last_billing) {
+                //     $data_invoice_billing = [
+                //         "farmer_id" => $farmer_id,
+                //         "payment_for" => "SUBSCRIPTION",
+                //         "total_payment" => 99,
+                //         "billing_due_date" => $subscription_active_lapsed->billing_due_date,
+                //     ];
+                //     $billing_data = $this->db->insert("invoice_billing", $data_invoice_billing);
+
+                //     if ($billing_data) {
+                //         $data_invoice_billing = [
+                //             "invoice_billing_id" => $data_invoice_billing['id'],
+                //             "status" => "PENDING",
+                //         ];
+                //         $invoice_billing = $this->db->insert("invoice_billing", $data_invoice_billing);
+                //         if ($invoice_billing) {
+                //             //insert also status billing
+                //             $data_invoice_billing_status = [
+                //                 "invoice_billing_id" => $data_invoice_billing['id'],
+                //                 "status" => "PENDING",
+                //             ];
+                //             $this->db->insert("invoice_billing_status", $data_invoice_billing_status);
+                //         }
+                //     }
+                // }
+            }
+        }
+
+        $over_due_invoice = $this->db->query("SELECT t1.id, t2.status, t1.is_paid, t1.billing_due_date, CASE WHEN t1.billing_due_date>now() THEN 1 else 0 end as over_due
+            FROM invoice_billing t1 
+            LEFT JOIN (select * from invoice_billing_status WHERE is_latest IS TRUE ORDER BY id desc) t2 ON t1.id =t2.invoice_billing_id
+            WHERE t1.farmer_id=? and t1.is_paid is false
+            LIMIT 1
+        ", [$farmer_id])->row();
+        if ($over_due_invoice) {
+            if ($over_due_invoice->status == 'PENDING' && $over_due_invoice->over_due == 1) {
+                $data_session = [
+                    "agrishop_login_uri" => 'ud440aed189',
+                    "agrishop_login_landing" => 'subscribe',
+                ];
+
+                $this->session->set_userdata($data_session);
+                // redirect(base_url('ud440aed189/subscribe'));
+            } else if ($over_due_invoice->status == 'TO_BE_VERIFIED' && $over_due_invoice->over_due == 1) {
+                $data_session = [
+                    "agrishop_login_uri" => "ud440aed188v",
+                    "agrishop_login_landing" => "validation"
+                ];
+
+                $this->session->set_userdata($data_session);
+                // redirect(base_url('ud440aed188v/validation'));
+            } else {
+                $data_session = [
+                    "agrishop_login_uri" => "userfarmer",
+                    "agrishop_login_landing" => "dashboard"
+                ];
+
+                $this->session->set_userdata($data_session);
+                // redirect(base_url('userfarmer/dashboard'));
+            }
+        }
     }
 
     public function check_subscription()
@@ -243,10 +318,11 @@ class MY_Controller extends CI_Controller
         return $response;
     }
 
-    public function billing_page($check_count = false)
+    public function billing_page()
     {
         $farmer_id = $this->session->agrishop_login_farmer_id;
         $billing = $this->billing();
+
 
         // CURRENT SUBSCRIPTION
         $subscription = $this->db->query("
@@ -279,23 +355,20 @@ class MY_Controller extends CI_Controller
             LIMIT 1
         ", [$farmer_id])->row_array();
 
-        if ($check_count) {
-            $count_billing = $this->db->query("
-                SELECT count(1) as count FROM invoice_billing
-                WHERE farmer_id = ?
-                AND (payment_for = 'SERVICE_FEE' OR payment_for = 'SUBSCRIPTION')
-                AND is_paid = false
-            ", [$farmer_id])->row();
-            return [
-                "count" => $count_billing->count,
-            ];
-        }
-
         return [
             "subscription" => $subscription,
             "subscription_invoice" => $subscription_invoice,
             "service_invoice" => $service_invoice,
         ];
+    }
+
+    public function insert_production_status($id, $data)
+    {
+        $this->db->update("farmer_produce_production_status", ["is_latest" => 0], [
+            "id" => $id,
+        ]);
+
+        $this->db->insert("farmer_produce_production_status", $data);
     }
 
     public function insert_billing_status($id, $status, $remarks = null, $payment_for = null, $farmer_id = null)
@@ -371,6 +444,7 @@ class MY_Controller extends CI_Controller
     //             "agrishop_login_uri" => "ud440aed188v",
     //             "agrishop_login_landing" => "validation"
     //         ]);
+
     //         return;
     //     }
 
@@ -1280,6 +1354,18 @@ class MY_Controller extends CI_Controller
 
         return '<span style="font-size:12px; color:#fff !important;" class="badge ' . $color . '">' . $status . '</span>';
     }
+
+    public function defaultImage($img_path_, $produce_id)
+    {
+            $query = $this->db->query("SELECT pc.img_path as default_img FROM produce p
+                                        JOIN produce_classification pc ON p.produce_classification_id = pc.id
+                                        WHERE p.id = $produce_id LIMIT 1");
+            $default_img_path = $query->row("default_img");
+     
+            return (!empty($img_path_) && file_exists(FCPATH . $img_path_))
+                ? base_url($img_path_)
+                : base_url($default_img_path);
+    }   
 
     public function scanlog($x, $type, $scanned_id, $io, $g_name, $g_id)
     {

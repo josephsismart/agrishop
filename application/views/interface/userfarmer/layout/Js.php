@@ -43,6 +43,7 @@ $uri = $this->session->agrishop_login_uri;
 
 <script type="text/javascript">
     let transaction_id_ = null;
+    let production_id_ = null;
     let status_ = null;
 
     $(function() {
@@ -351,7 +352,13 @@ $uri = $this->session->agrishop_login_uri;
                             onclick="getPrice(${item.id})"
                             data-id="${item.id}"
                             data-img="${img}"
-                            data-name="${item.name}">
+                            data-name="${item.name}"
+                            data-days_to_harvest="${item.days_to_harvest}"
+                            data-category="${item.category}"
+                            data-life_span="${item.life_span}"
+                            data-harvest_frequency="${item.harvest_frequency}"
+                            data-yield_per_sqm_as_kg="${item.yield_per_sqm_as_kg}"
+                            >
                             <img src="${img}" 
                                  width="35" height="35" 
                                  class="rounded mr-2">
@@ -572,7 +579,7 @@ $uri = $this->session->agrishop_login_uri;
                     d.length = pl;
                     d.draw = drawCounter;
                     d.search.value = $('#tbl' + tableId + '_filter input').val();
-                    d.search.farm_id = $("#farmList").val();;
+                    d.search.farm_id = $("#farmList").val();
                     d.search.transaction_id = transaction_id_;
                 }
             },

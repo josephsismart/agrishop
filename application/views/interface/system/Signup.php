@@ -140,12 +140,8 @@
                                     </div>
 
                                     <!-- Address Information -->
-                                    <div class="mb-4">
-                                        <h6 class="text-muted mb-3 border-bottom pb-2">
-                                            <i class="fas fa-home me-2"></i>Address Information
-                                        </h6>
+                                    <div class="mb-4 mt-n1">
 
-                                        <hr>
                                         <div class="form-floating">
                                             <input type="hidden" name="barangay">
                                             <input type="text" name="type_barangay1" class="form-control border-1 border-primary barangayInput" id="customerBarangay" placeholder="TYPE BARANGAY (min 3 chars)" autocomplete="off" minlength="3" required>
@@ -240,13 +236,6 @@
                                             <i class="fas fa-user-plus me-2"></i>Create Customer Account
                                         </button>
 
-                                        <div class="position-relative my-3">
-                                            <hr class="border-1">
-                                            <span class="position-absolute top-50 start-50 translate-middle bg-white px-3 text-muted small">
-                                                OR
-                                            </span>
-                                        </div>
-
                                         <a href="<?= base_url() ?>login" class="btn btn-outline-dark py-2">
                                             <i class="fas fa-sign-in-alt me-2"></i>Already have an account? Login
                                         </a>
@@ -328,10 +317,7 @@
                                     </div>
 
                                     <!-- Address Information -->
-                                    <div class="mb-4">
-                                        <h6 class="text-muted mb-3 border-bottom pb-2">
-                                            <i class="fas fa-tractor me-2"></i>Farm Location
-                                        </h6>
+                                    <div class="mb-4 mt-n1">
 
                                         <div class="form-floating">
                                             <input type="hidden" name="barangay">
@@ -339,21 +325,41 @@
                                             <label for="farmerBarangay" class="text-muted">
                                                 <i class="fas fa-home me-2"></i>Barangay Location
                                             </label>
+                                            <div class="barangay-results mt-1">
+                                                <ul class="list-group barangayResults" style="position:absolute; z-index:9999; width:100%; display:none;cursor:pointer;"></ul>
+                                            </div>
                                             <div class="form-text text-muted small">
                                                 Type your barangay name to search and select from dropdown
                                             </div>
                                         </div>
-                                        <div class="barangay-results mt-1">
-                                            <ul class="list-group barangayResults" style="position:absolute; z-index:9999; width:100%; display:none;cursor:pointer;"></ul>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <h6 class="text-muted mb-3 border-bottom pb-2">
+                                            <i class="fas fa-tractor me-2"></i>Farmer Information
+                                        </h6>
+
+
+                                        <!-- <select name="product_type" class="form-control border-1 border-primary mb-3">
+                                            <option value="">Select Product Type</option>
+                                            <option value="produce">Farm Produce</option>
+                                            <option value="tools">Farm Tools</option>
+                                        </select> -->
+
+                                        <div class="form-floating mb-3">
+                                            <select name="farmer_selling_type" class="form-select border-1 <?= $signup_attempt == md5(0) ? 'is-invalid border-danger' : 'border-primary' ?>" id="farmerSellingType" required>
+                                                <option value="1">Farm Produce</option>
+                                                <option value="2">Farm Tools & Equipments</option>
+                                                <option value="3">Both</option>
+                                            </select>
+                                            <label for="farmerSellingType" class="text-muted">
+                                                <i class="fas fa-venus-mars me-2"></i>Selling Type
+                                            </label>
                                         </div>
                                     </div>
 
                                     <!-- Farmer Verification Section -->
                                     <div class="mb-4">
-                                        <h6 class="text-muted mb-3 border-bottom pb-2">
-                                            <i class="fas fa-id-card me-2"></i>Farmer Verification
-                                        </h6>
-
                                         <!-- Valid ID Selection -->
                                         <div class="form-floating mb-3">
                                             <select name="valid_id" class="form-select border-1 border-primary" id="farmerValidID" required>
@@ -406,16 +412,16 @@
 
                                         <!-- Organization Membership -->
                                         <div class="form-floating">
-                                            <select name="organization" class="form-select border-1 border-primary" id="farmerOrganization" nr="1">
+                                            <select name="organization" class="form-select border-1 border-primary select2" id="farmerOrganization" nr="1">
                                                 <option value="" selected>Select Organization (Optional)</option>
                                                 <?php $this->load->view('interface/system/layout/options_select_for_organization') ?>
                                             </select>
-                                            <label for="farmerOrganization" class="text-muted">
+                                            <!-- <label for="farmerOrganization" class="text-muted">
                                                 <i class="fas fa-users me-2"></i>Farm Organization (Optional)
-                                            </label>
-                                            <div class="form-text text-muted small">
+                                            </label> -->
+                                            <!-- <div class="form-text text-muted small">
                                                 Select if you belong to any farming association or cooperative
-                                            </div>
+                                            </div> -->
                                         </div>
                                     </div>
 
@@ -485,13 +491,6 @@
                                         <button type="submit" class="btn btn-danger btn-lg  py-2 shadow-sm submitBtnPrimary">
                                             <i class="fas fa-tractor me-2"></i>Register as Verified Farmer
                                         </button>
-
-                                        <div class="position-relative my-3">
-                                            <hr class="border-1">
-                                            <span class="position-absolute top-50 start-50 translate-middle bg-white px-3 text-muted small">
-                                                OR
-                                            </span>
-                                        </div>
 
                                         <a href="<?= base_url() ?>login" class="btn btn-outline-dark btn-lg py-2">
                                             <i class="fas fa-sign-in-alt me-2"></i>Already have an account? Login

@@ -10,6 +10,7 @@ $billing = base_url() . $uri . '/Billing';
 $profile = base_url() . $uri . '/Profile';
 $farm_produce = base_url() . $uri . '/FarmProduce';
 $client_orders = base_url() . $uri . '/Orders';
+$on_production = base_url() . $uri . '/OnProduction';
 
 
 ?>
@@ -76,6 +77,12 @@ $client_orders = base_url() . $uri . '/Orders';
                 <li class="nav-item border-dashed">
                     <a href="<?= $farm_produce; ?>" class="nav-link d-flex align-items-center gap-3 text-dark p-2">
                         <i class="fa fa-tractor"></i> <span>Farm Produce</span>
+                    </a>
+                </li>
+
+                <li class="nav-item border-dashed">
+                    <a href="<?= $on_production; ?>" class="nav-link d-flex align-items-center gap-3 text-dark p-2">
+                        <i class="fa fa-seedling"></i> <span>On Production</span>
                     </a>
                 </li>
 

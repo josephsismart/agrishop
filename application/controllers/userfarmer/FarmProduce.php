@@ -23,7 +23,7 @@ class FarmProduce extends MY_Controller
             "page_title"        => "Farm & Produce",
             "current_location"  => "FarmProduce",
             "content"           =>  [$this->load->view('interface/' . $uri . '/FarmProduce', [
-                "billing" => $this->billing_page(true),
+                "billing" => $this->subscription_count(),
             ], TRUE)]
         ];
         $this->public_create_page($page_data);
@@ -83,6 +83,16 @@ class FarmProduce extends MY_Controller
         $requestData = $_REQUEST;
         $person_id  = $this->session->agrishop_person_id;
         $searchValue = isset($requestData['search']['value']) ? $requestData['search']['value'] : '';
+        $selling_type = $this->session->agrishop_login_farmer_selling_type;
+        if($selling_type==1){
+            $where = "WHERE id < 9";
+        }else if($selling_type==2){
+            $where = "WHERE id = 9";
+        }else{
+            $where = "";
+        }
+
+        $query_classification = "SELECT * FROM produce_classification $where";
 
         // Calculate pagination parameters using the separate function
         list($limit, $offset) = $this->calculatePagination($requestData);
@@ -90,7 +100,7 @@ class FarmProduce extends MY_Controller
         // Query to get total record count
         $thisQuery = $this->db->query("SELECT COUNT(1) AS total
                                             FROM produce p
-                                            LEFT JOIN produce_classification pc ON p.produce_classification_id = pc.id
+                                            JOIN ($query_classification) pc ON p.produce_classification_id = pc.id
                                         WHERE (p.created_by_person_id = $person_id OR p.created_by_person_id IS NULL) AND 
                                         CONCAT(p.name, pc.class_name, p.description, p.tags) COLLATE utf8mb4_general_ci LIKE '%$searchValue%'");
 
@@ -100,7 +110,7 @@ class FarmProduce extends MY_Controller
                                         SELECT c.id, c.name AS produce, pc.class_name, c.description,
                                             c.is_seasonal, c.is_active, c.created_at, c.created_by_person_id, c.img_path,pc.img_path as default_img_path, c.tags, c.is_customized
                                         FROM produce c
-                                        LEFT JOIN produce_classification pc ON c.produce_classification_id = pc.id
+                                        JOIN ($query_classification) pc ON c.produce_classification_id = pc.id
                                         WHERE c.created_by_person_id = $person_id OR c.created_by_person_id IS NULL) AS x
                                     WHERE CONCAT(x.produce, x.class_name, x.description, x.tags) COLLATE utf8mb4_general_ci LIKE '%$searchValue%'
                                     ORDER BY x.img_path
@@ -145,23 +155,33 @@ class FarmProduce extends MY_Controller
             echo json_encode([]);
             return;
         }
+        $selling_type = $this->session->agrishop_login_farmer_selling_type;
+        if($selling_type==1){
+            $where = "WHERE id < 9";
+        }else if($selling_type==2){
+            $where = "WHERE id = 9";
+        }else{
+            $where = "";
+        }
+        $query_classification = "SELECT * FROM produce_classification $where";
 
 
-        $query = $this->db->query("SELECT * FROM (
+        $query = $this->db->query("SELECT x.*,ppi.days_to_harvest,ppi.category,ppi.life_span,ppi.harvest_frequency,ppi.yield_per_sqm_as_kg FROM (
                                         SELECT p.id, p.name AS produce, pc.class_name, p.description,
                                             p.is_seasonal, p.is_active, p.created_at, p.created_by_person_id, p.img_path, p.tags, pc.img_path as default_img_path
                                         FROM produce p
-                                        LEFT JOIN produce_classification pc ON p.produce_classification_id = pc.id
+                                        JOIN ($query_classification) pc ON p.produce_classification_id = pc.id
 
                                         UNION ALL
 
                                         SELECT c.id, c.name AS produce, pc.class_name, c.description,
                                             c.is_seasonal, c.is_active, c.created_at, c.created_by_person_id, c.img_path, c.tags, pc.img_path as default_img_path
                                         FROM produce_customize c
-                                        LEFT JOIN produce_classification pc ON c.produce_classification_id = pc.id
+                                        JOIN ($query_classification) pc ON c.produce_classification_id = pc.id
                                         WHERE c.created_by_person_id = $person_id
                                     ) AS x
-                                    WHERE x.produce LIKE '%$keyword%'
+                                    LEFT JOIN produce_plantation_info ppi on x.id = ppi.produce_id
+                                    WHERE CONCAT(x.produce, x.tags) LIKE '%$keyword%'
                                     ORDER BY x.produce
                                     LIMIT 20");
 
@@ -176,6 +196,11 @@ class FarmProduce extends MY_Controller
                 'name' => $row->produce,
                 'created_by' => $row->created_by_person_id,
                 'image_url' => $img,
+                'days_to_harvest' => $row->days_to_harvest,
+                'category' => $row->category,
+                'life_span' => $row->life_span,
+                'harvest_frequency' => $row->harvest_frequency,
+                'yield_per_sqm_as_kg' => $row->yield_per_sqm_as_kg
             ];
         }
 
@@ -210,16 +235,15 @@ class FarmProduce extends MY_Controller
         $price_qty_left = $this->price_qty_left();
 
         $query = $this->db->query("SELECT
-            harvest_schedule,
-            price,
-            COALESCE(qty_sold, 0) AS qty_sold,
-            qty_left,
-            produce_id
-        FROM ($price_qty_left)
-        WHERE farmer_person_id = $person_id
-          AND produce_id = $produce_id
-        LIMIT 1
-    ");
+                                        t1.harvest_schedule,
+                                        t1.price,
+                                        COALESCE(t1.qty_sold, 0) AS qty_sold,
+                                        t1.qty_left,
+                                        t1.produce_id
+                                    FROM ($price_qty_left) t1
+                                    WHERE t1.farmer_person_id = $person_id
+                                    AND t1.produce_id = $produce_id
+                                    LIMIT 1");
 
         if ($query->num_rows() == 0) {
             echo json_encode([]);
@@ -255,7 +279,6 @@ class FarmProduce extends MY_Controller
             "reason"           => $reason
         ]);
     }
-
 
     function getFarmProduceInfo()
     {

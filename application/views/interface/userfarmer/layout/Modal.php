@@ -6,6 +6,274 @@ if (!$this->session->agrishop_login_level) {
 }
 $uri = $this->session->agrishop_login_uri;
 ?>
+
+<!-- <div class="modal fade show" id="modalProductionSupply" data-backdrop="static" style="padding-right: 15px; display: block;" aria-modal="true" role="dialog"> -->
+<div class="modal fade" id="modalProductionInfo" data-backdrop="static">
+    <div class="modal-dialog modal modal-dialog-centered">
+        <div class="modal-content shadow-lg" style="border-radius:12px;">
+
+            <!-- HEADER -->
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-seedling mr-2"></i> Create Produce Production
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+
+            <?= form_open(base_url($uri . '/OnProduction/saveProductionInfo'), 'id="form_save_dataProductionInfo"'); ?>
+
+            <!-- <input type="hidden" name="farmer_farm_id"> -->
+            <input type="hidden" name="produce_id">
+
+            <div class="modal-body" style="overflow-y: auto; max-height: 68vh;">
+
+                <!-- PRODUCE SELECTION -->
+                <div class="card border-success">
+
+                    <div class="card-body p-3">
+
+                        <div class="row">
+                            <!-- AREA -->
+                            <div class="col-6 ">
+                                <label class="font-weight-bold">Search Produce</label>
+
+                                <div class="input-group input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text bg-white">
+                                            <i class="fas fa-search text-success"></i>
+                                        </span>
+                                    </div>
+
+                                    <input type="text" class="form-control produceInput text-uppercase" placeholder="Type crop name..." autocomplete="off">
+                                </div>
+
+                                <ul class="list-group produceList shadow" style="position:absolute; z-index:999; display:none;"></ul>
+
+                            </div>
+
+                            <!-- VARIETY -->
+                            <div class="col-6">
+                                <label class="font-weight-bold">Variety</label>
+                                <input type="text" name="variety" class="form-control text-uppercase" placeholder="Example: Hybrid / Native" autocomplete="off">
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+
+
+                <!-- PRODUCTION DETAILS -->
+                <div class="card border-success mb-3">
+
+                    <div class="card-body">
+
+                        <div class="row">
+
+
+                            <!-- AREA -->
+                            <div class="col-6  mb-3">
+                                <label class="font-weight-bold">Select Farm Located</label>
+                                <select class="form-control" name="farmer_farm_id">
+                                    <?php
+                                    $farmer_id = $this->session->agrishop_login_farmer_id;
+                                    $query = "SELECT  id, farm_name from farmer_farm where farmer_id=$farmer_id order by farm_name";
+                                    $farms = $this->db->query($query)->result();
+                                    foreach ($farms as $farm) {
+                                        echo '<option value="' . $farm->id . '">' . $farm->farm_name . '</option>';
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+                            <!-- AREA -->
+                            <div class="col-6  mb-3">
+                                <label class="font-weight-bold">Area Planted (sqm)</label>
+                                <input type="number" name="area_sqm" class="form-control" placeholder="Example: 500" onkeyup="computeProductionPrediction()">
+                            </div>
+
+                            <!-- PLANTED DATE -->
+                            <div class="col-6">
+                                <label class="font-weight-bold">Planted Date</label>
+                                <input type="date" value="<?= date('Y-m-d'); ?>" name="planted_date" class="form-control" onchange="computeProductionPrediction()">
+                            </div>
+                            <!-- MARKET PRICE -->
+                            <div class="col-6">
+                                <label class="font-weight-bold">Market Price per KG</label>
+                                <input type="number" name="market_price_per_kg" class="form-control" placeholder="Example: 50" onkeyup="computeProductionPrediction()">
+                            </div>
+
+                            <!-- LAST HARVEST (HIDDEN INITIALLY) -->
+                            <div class="col-12 mt-3" id="lastHarvestWrapper" style="display: none;">
+                                <label class="font-weight-bold">
+                                    Last Harvest Date
+                                </label>
+                                <input type="date" value="" max="<?= date('Y-m-d') ?>" name="last_harvest_date" class="form-control" onchange="computeProductionPrediction()" nr="1">
+                                <small class="text-muted">Required for perennial crops</small>
+                            </div>
+
+
+                        </div>
+
+                    </div>
+                </div>
+
+                <div id="ProductionInfo"></div>
+                <!-- AI PREDICTION PANEL -->
+                <div class="card border-info mb-n2" id="predictionPanel">
+
+                    <div class="card-header bg-info text-white">
+                        <b><i class="fas fa-seedling"></i> Harvest Prediction</b>
+                    </div>
+
+                    <div class="card-body p-1">
+
+                        <div class="row text-center">
+
+                            <div class="col-6 col-md-4">
+                                <div class="text-muted small">Typical Harvest Days</div>
+                                <h5 id="typicalHarvestDays">--</h5>
+                            </div>
+
+                            <div class="col-6 col-md-4">
+                                <div class="text-muted small">Yield / sqm</div>
+                                <h5 id="yieldPerSqm">-- kg</h5>
+                            </div>
+
+                            <div class="col-6 col-md-4">
+                                <div class="text-muted small">Area Planted</div>
+                                <h5 id="areaPlanted">-- sqm</h5>
+                            </div>
+
+                            <div class="col-6 col-md-4">
+                                <div class="text-muted small">Expected Harvest Date</div>
+                                <h5 id="expected_harvest_date" class="text-black fw-bold">--</h5>
+                                <input type="date" name="expected_harvest_date" hidden/>
+                            </div>
+                            
+                            <div class="col-6 col-md-4">
+                                <div class="text-muted small">Expected Yield</div>
+                                <h4 class="text-success fw-bold">
+                                    <span id="expected_yield">--</span>
+                                </h4>
+                                <input type="text" name="expected_yield" hidden/>
+
+                            </div>
+
+                            <div class="col-6 col-md-4">
+                                <div class="text-muted small">Estimated Revenue</div>
+                                <h4 class="text-primary fw-bold">
+                                    <span id="expected_revenue">--</span>
+                                </h4>
+                                <input type="text" name="expected_revenue" hidden/>
+                            </div>
+
+                        </div>
+
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+            <!-- FOOTER -->
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-success btn-lg btn-block">
+                    <i class="fas fa-save"></i> Save Production
+                </button>
+            </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+<!-- <div class="modal fade show" id="modalSearchProduction" data-backdrop="static" style="padding-right: 15px; display: block;" aria-modal="true" role="dialog"> -->
+<div class="modal fade" id="modalSearchProduction">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-search"></i> Search Farmer Production
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+
+            <div class="modal-body">
+
+                <div class="row align-items-end">
+
+                    <!-- Produce Select -->
+                    <div class="col-5">
+                        <label class="mb-1">Produce</label>
+                        <input type="text" class="form-control" id="searchProductionProduce" placeholder="Search produce..." autocomplete="off"/>
+                    </div>
+
+                    <!-- Search Button -->
+                    <div class="col-md-1 col-2 ml-n2">
+                        <button class="btn btn-success btn btn-block" onclick="searchProductionMap()">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+
+                    <!-- View Switch -->
+                    <!-- <div class="col-3 text-center">
+                        <label class="mb-1">View Table</label>
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" id="viewSwitch">
+                            <label class="custom-control-label" for="viewSwitch" style="cursor: pointer;"></label>
+                        </div>
+                    </div> -->
+
+                </div>
+
+
+                <!-- MAP VIEW -->
+                <div class="card card-outline card-primary mt-3" id="mapView">
+                    <div class="card-header py-2">
+                        <h6 class="mb-0">Production Map</h6>
+                    </div>
+
+                    <div class="card-body p-0" style="height:550px;" id="productionMap"></div>
+                </div>
+
+
+                <!-- TABLE VIEW -->
+                <div class="card card-outline card-success mt-3 d-none" id="tableSearchedProduction">
+                    <div class="card-header py-2">
+                        <h6 class="mb-0">Production Table</h6>
+                    </div>
+
+                    <div class="card-body p-0">
+
+                        <table class="table table-sm table-bordered mb-0 text-center">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Farmer</th>
+                                    <th>Produce</th>
+                                    <th>Area</th>
+                                    <!-- <th>Expected Harvest</th> -->
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
 <!-- <div class="modal fade show" id="modalFarmInfo" data-backdrop="static" style="padding-right: 15px; display: block;" aria-modal="true" role="dialog"> -->
 <div class="modal fade" id="modalFarmInfo" data-backdrop="static" data-toggle="modal">
     <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -172,7 +440,15 @@ $uri = $this->session->agrishop_login_uri;
                                     <select class="form-control border-primary text-uppercase" name="classification">
                                         <option value="">Select Classification</option>
                                         <?php
-                                        $query = $this->db->query("SELECT id, class_name FROM produce_classification ORDER BY id ASC");
+                                        $selling_type = $this->session->agrishop_login_farmer_selling_type;
+                                        if($selling_type==1){
+                                            $where = "WHERE id < 9";
+                                        }else if($selling_type==2){
+                                            $where = "WHERE id = 9";
+                                        }else{
+                                            $where = "";
+                                        }
+                                        $query = $this->db->query("SELECT id, class_name FROM produce_classification $where ORDER BY id ASC");
                                         $classifications = $query->result();
                                         foreach ($classifications as $classification) {
                                             echo '<option value="' . $classification->id . '"> ' . $classification->class_name . '</option>';
@@ -1066,6 +1342,37 @@ $uri = $this->session->agrishop_login_uri;
     </div>
 </div>
 
+<div class="modal fade" id="modalProductionStatus">
+    <!-- <div class="modal fade show" id="modalProductionStatus" tabindex="-1" aria-labelledby="modalCheckoutLabel" aria-hidden="true" style="display: block; padding-left: 0px;"> -->
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content rounded shadow">
+            <!-- HEADER -->
+            <div class="modal-header py-2">
+                <h5 class="modal-title mb-0">
+                    <i class="fas fa-seedling mr-1"></i> Production Status
+                </h5>
+                <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body px-3 py-2">
+                <i>Please select the production status</i>
+                <select id="productionStatus" class="form-control form-control-sm fs-5 text-uppercase status-select text-center" data-type="production">
+                    <option value="PLANTED">PLANTED</option>
+                    <option value="FERTILIZING">FERTILIZING</option>
+                    <option value="GROWING">GROWING</option>
+                    <option value="HARVESTED">HARVESTED</option>
+                    <option value="COMPLETED">COMPLETED</option>
+                    <option value="DAMAGED">DAMAGED</option>
+                    <option value="CANCELLED">CANCELLED</option>
+                </select>
+                <textarea id="note" class="form-control form-control-sm mt-3" placeholder="Enter note (optional)"></textarea>
+                <button type="button" class="btn btn-primary btn-sm w-100 mt-3" onclick="updateProductionStatus()"><i class="fas fa-check"></i> Update Status</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="modalDeliveryStatus">
     <!-- <div class="modal fade show" id="modalDeliveryStatus" tabindex="-1" aria-labelledby="modalCheckoutLabel" aria-hidden="true" style="display: block; padding-left: 0px;"> -->
     <div class="modal-dialog modal-sm modal-dialog-centered">
@@ -1118,4 +1425,5 @@ $uri = $this->session->agrishop_login_uri;
 
         </div>
     </div>
+</div>
 </div>

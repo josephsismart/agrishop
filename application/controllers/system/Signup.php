@@ -92,6 +92,7 @@ class Signup extends MY_Controller
                         "organization" => $organization,
                         "approved_by_person_id" => 1,
                         "approved_at" => Date('Y-m-d'),
+                        "farmer_selling_type" => $this->input->post('farmer_selling_type')
                     ];
 
                     if (isset($_FILES['picFarmerID']) && $_FILES['picFarmerID']['error'] === UPLOAD_ERR_OK) {
@@ -165,6 +166,7 @@ class Signup extends MY_Controller
                                     t3.barangay_id,
                                     t3.img_path,
                                     t4.id as farmer_id,
+                                    t4.farmer_selling_type,
 
                                     t5.id as gcash_id,
                                     t5.type as gcash_type,
@@ -224,6 +226,7 @@ class Signup extends MY_Controller
                         "agrishop_person_id"        => $person_id, // $query->row('id'),
 
                         "agrishop_login_farmer_id" => $row1->farmer_id,
+                        "agrishop_login_farmer_selling_type" => $row1->farmer_selling_type,
                         "agrishop_login_gcash_id" => $row1->gcash_id,
                         "agrishop_login_gcash_type" => $row1->gcash_type,
                         "agrishop_login_gcash_account_name" => $row1->gcash_account_name,

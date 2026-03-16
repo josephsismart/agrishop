@@ -61,7 +61,7 @@ $uri = $this->session->agrishop_login_uri;
 							<div class="card-header bg-success">
 								<h1 class="card-title"><i class="fa fa-list"></i> Farm & Produce</h1>
 								<div class="card-tools mt-n1">
-									<span class='btn bg-navy' data-toggle="modal" data-target="#modalFarmProduceSupply" role="button"><i class="fas fa-plus"></i> Create New Supply</span>
+									<span class='btn bg-navy' onclick="farmList=$('#farmList').val(); if(farmList){ $('#modalFarmProduceSupply').modal('show'); }else{ alert('Please add a location first'); $('#btnAddFarm').click(); }" role="button"><i class="fas fa-plus"></i> Create New Supply</span>
 									<!-- <button type="button" class="btn btn-tool" data-card-widget="remove"><i class="fas fa-remove"></i></button> -->
 								</div>
 							</div>
@@ -120,7 +120,7 @@ $uri = $this->session->agrishop_login_uri;
 							<div class="card-header">
 								<h1 class="card-title"><i class="fa fa-list"></i> List of Farms</h1>
 								<div class="card-tools mt-n1">
-									<span class='btn bg-primary' data-toggle="modal" data-target="#modalFarmInfo" role="button"><i class="fas fa-plus"></i> Add Farm</span>
+									<span class='btn bg-primary' id="btnAddFarm" data-toggle="modal" data-target="#modalFarmInfo" role="button"><i class="fas fa-plus"></i> Add Farm</span>
 									<!-- <button type="button" class="btn btn-tool" data-card-widget="remove"><i class="fas fa-remove"></i></button> -->
 								</div>
 							</div>

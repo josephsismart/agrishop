@@ -59,14 +59,15 @@ class Billing extends MY_Controller
         // Query to get total record count
         $billing = $this->billing();
         $thisQuery = $this->db->query("SELECT COUNT(1) AS total
-                                            FROM ($billing) 
-                                        WHERE is_paid = false 
-                                        AND CONCAT(DATE_FORMAT(paid_at,'%d-%m-%Y'),payment_for, total_payment, status, invoice_no) COLLATE utf8mb4_general_ci LIKE '%$searchValue%'");
+                                            FROM ($billing) t1
+                                        WHERE t1.is_paid = false 
+                                        AND CONCAT(t1.payment_for, t1.total_payment, t1.status, t1.invoice_no) COLLATE utf8mb4_general_ci LIKE '%$searchValue%'"
+                                        );
 
         $totalRecords = $thisQuery->row()->total;
-        $query = $this->db->query("SELECT id, proof_img_path, DATE_FORMAT(created_at,'%m-%d-%Y %h:%i%p') as billing_date, farmer,DATE_FORMAT(paid_at,'%d-%m-%Y') date_paid, payment_for,total_payment, status, status_remarks, invoice_no AS ref FROM ($billing) 
-                                    WHERE is_paid = false
-                                    AND CONCAT(DATE_FORMAT(paid_at,'%d-%m-%Y'),payment_for, total_payment, status, invoice_no) COLLATE utf8mb4_general_ci LIKE '%$searchValue%'
+        $query = $this->db->query("SELECT id, proof_img_path, DATE_FORMAT(created_at,'%m-%d-%Y %h:%i%p') as billing_date, farmer,DATE_FORMAT(paid_at,'%d-%m-%Y') date_paid, payment_for,total_payment, status, status_remarks, invoice_no AS ref FROM ($billing) t1
+                                    WHERE t1.is_paid = false
+                                    AND CONCAT(t1.payment_for, t1.total_payment, t1.status, t1.invoice_no) COLLATE utf8mb4_general_ci LIKE '%$searchValue%'
                                     ORDER BY id DESC
                                     LIMIT $limit OFFSET $offset");
 

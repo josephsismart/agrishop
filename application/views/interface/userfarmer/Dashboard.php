@@ -23,7 +23,7 @@ if (!$this->session->agrishop_login_level) {
 
         <div class="row mb-3">
 
-            <div class="col-md-3 col-6">
+            <div class="col-md-4 col-6">
                 <div class="info-box shadow-sm">
                     <span class="info-box-icon bg-success">
                         <i class="fa fa-sack-dollar"></i>
@@ -36,7 +36,7 @@ if (!$this->session->agrishop_login_level) {
                 </div>
             </div>
 
-            <div class="col-md-3 col-6">
+            <div class="col-md-4 col-6">
                 <div class="info-box shadow-sm">
                     <span class="info-box-icon bg-info">
                         <i class="fa fa-basket-shopping"></i>
@@ -49,7 +49,7 @@ if (!$this->session->agrishop_login_level) {
                 </div>
             </div>
 
-            <div class="col-md-3 col-6">
+            <div class="col-md-4 col-6">
                 <div class="info-box shadow-sm">
                     <span class="info-box-icon bg-warning">
                         <i class="fa fa-seedling"></i>
@@ -61,7 +61,7 @@ if (!$this->session->agrishop_login_level) {
                 </div>
             </div>
 
-            <div class="col-md-3 col-6">
+            <div class="col-md-4 col-6">
                 <div class="info-box shadow-sm">
                     <span class="info-box-icon bg-danger">
                         <i class="fa-solid fa-house-chimney-window"></i>
@@ -69,6 +69,18 @@ if (!$this->session->agrishop_login_level) {
                     <div class="info-box-content">
                         <span class="info-box-text">Farms</span>
                         <span class="info-box-number fs-4"><?= $dashboard["farms"] ?></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 col-6">
+                <div class="info-box shadow-sm">
+                    <span class="info-box-icon bg-success">
+                        <i class="fa-solid fa-leaf"></i>
+                    </span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">On Production</span>
+                        <span class="info-box-number fs-4"><?= $dashboard["on_production"] ?></span>
                     </div>
                 </div>
             </div>

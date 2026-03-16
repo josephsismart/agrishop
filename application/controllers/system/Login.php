@@ -50,6 +50,7 @@ class Login extends MY_Controller
                                     t4.id as farmer_id,
                                     t4.free_sub_confirm,
                                     t4.is_active as farmer_active,
+                                    t4.farmer_selling_type,
 
                                     t5.id as gcash_id,
                                     t5.type as gcash_type,
@@ -123,6 +124,7 @@ class Login extends MY_Controller
                     "agrishop_pending_trans_count" => $this->getTransactionStatus($person_id, 'PENDING', 'client'),
 
                     "agrishop_login_farmer_id" => $row1->farmer_id,
+                    "agrishop_login_farmer_selling_type" => $row1->farmer_selling_type,
                     "agrishop_login_sub_free_confirmed" => $row1->free_sub_confirm,
                     "agrishop_login_farmer_active" => $row1->farmer_active,
                     "agrishop_login_gcash_id" => $row1->gcash_id,

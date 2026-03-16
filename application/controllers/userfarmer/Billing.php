@@ -19,8 +19,8 @@ class Billing extends MY_Controller
             "page_title"        => "Billing",
             "current_location"  => "billing",
             "content"           =>  [$this->load->view('interface/' . $uri . '/Billing', [
-                "subscription" => $this->billing_page(),
-                "billing" => $this->billing_page(true),
+                "subscription" => $this->billing_page(), // $this->billing_page(),
+                "billing" => $this->subscription_count(),
             ], TRUE)]
         ];
         $this->public_create_page($page_data);
@@ -61,8 +61,8 @@ class Billing extends MY_Controller
                 $value->date_paid,
                 $value->ref,
                 $value->payment_for,
-                "<div class='text-center'>" .$status_. "</div>",
-                "<div class='text-right'>" .$value->total_payment. "</div>",
+                "<div class='text-center'>" . $status_ . "</div>",
+                "<div class='text-right'>" . $value->total_payment . "</div>",
             );
         } // Prepare the response data in the required format
         $response = array(

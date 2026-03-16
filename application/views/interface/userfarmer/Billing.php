@@ -45,9 +45,9 @@ if (!$this->session->agrishop_login_level) {
                     To: <?= date("M j, Y", strtotime($subscription["subscription"]["subscription_to"])); ?>
                 </span>
 
-                <span>
+                <!-- <span>
                     Grace Period: 7 days
-                </span>
+                </span> -->
 
             </div>
         </div>

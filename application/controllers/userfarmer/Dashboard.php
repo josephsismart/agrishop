@@ -20,7 +20,7 @@ class Dashboard extends MY_Controller
             "current_location"  => "dashboard",
             "content"           =>  [$this->load->view('interface/' . $uri . '/Dashboard', [
                 "dashboard" => $this->getDashboard(),
-                "billing" => $this->billing_page(true),
+                "billing" => $this->subscription_count(),
             ], TRUE)]
         ];
         $this->public_create_page($page_data);
@@ -36,7 +36,12 @@ class Dashboard extends MY_Controller
                                             JOIN farmer_farm ff ON fp.farm_id = ff.id
                                             WHERE ff.farmer_id = $farmer_id) as products,
                                         (SELECT count(ff.id) FROM farmer_farm ff
-                                            WHERE ff.farmer_id = $farmer_id) as farms
+                                            WHERE ff.farmer_id = $farmer_id) as farms,
+                                        (SELECT count(fpp.id) FROM farmer_produce_production fpp
+                                            JOIN farmer_farm ff ON fpp.farmer_farm_id = ff.id
+                                            JOIN (SELECT * FROM farmer_produce_production_status WHERE is_latest = 1 AND (status != 'CANCELLED' AND status != 'DAMAGED' AND status != 'COMPLETED'))
+                                                AS fpp2 ON fpp.id = fpp2.farmer_produce_production_id
+                                            WHERE ff.farmer_id = $farmer_id) as on_production
                                         FROM (SELECT ff.farmer_id,t.* FROM transaction t
                                         JOIN farmer_farm ff  ON t.farm_id = ff.id
                                         WHERE ff.farmer_id = $farmer_id) t 
@@ -49,6 +54,7 @@ class Dashboard extends MY_Controller
             "total_orders" => $revenue->total_orders == null ? 0 : number_format($revenue->total_orders, 0),
             "products" => $revenue->products == null ? 0 : number_format($revenue->products, 0),
             "farms" => $revenue->farms == null ? 0 : number_format($revenue->farms, 0),
+            "on_production" => $revenue->on_production == null ? 0 : number_format($revenue->on_production, 0),
         ];
 
         $products_selling = $this->db->query("SELECT p.id,p.name,COALESCE(p.img_path,pc.img_path) AS img_path ,sum(mcfp.qty) AS qty,pmfp.price, fp.uom FROM (SELECT ff.farmer_id,t.* FROM transaction t
