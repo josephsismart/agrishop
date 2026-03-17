@@ -41,6 +41,9 @@ $uri = $this->session->agrishop_login_uri;
 								</div>
 							</div>
 							<div class="card-body p-2" style="overflow: auto;">
+								<div class="mb-2 text-primary">
+									<i class="fas fa-info-circle"></i> Kindly <b>click the image</b> to update the status.
+								</div>
 								<table id="tblProductionInfo" class="table table-sm table-striped table-hover">
 									<thead>
 										<tr>
@@ -72,6 +75,9 @@ $uri = $this->session->agrishop_login_uri;
 								</div>
 							</div>
 							<div class="card-body p-2" style="overflow: auto;">
+								<div class="mb-2 text-primary">
+									<i class="fas fa-info-circle"></i> Kindly <b>click the image</b> to update the status.
+								</div>
 								<table id="tblProductionInfoCompleted" class="table table-sm table-striped table-hover">
 									<thead>
 										<tr>
@@ -214,19 +220,19 @@ $uri = $this->session->agrishop_login_uri;
 		let expected_volume = expected_yield;
 
 		let expected_revenue = expected_volume * price;
-		
-		let expected_yield_format = '~ ' +expected_yield.toFixed(2).toLocaleString() + ' kg';
+
+		let expected_yield_format = '~ ' + expected_yield.toFixed(2).toLocaleString() + ' kg';
 		let expected_revenue_format = '~ ₱' + expected_revenue.toLocaleString('en-US', {
-										minimumFractionDigits: 2,
-										maximumFractionDigits: 2
-									});
-		
+			minimumFractionDigits: 2,
+			maximumFractionDigits: 2
+		});
+
 		$('#typicalHarvestDays').text(days_to_harvest);
 		$('#yieldPerSqm').text(yield_per_sqm + ' kg');
 		$('#areaPlanted').text(area + ' sqm');
 		/* DISPLAY RESULT */
 
-		$('#expected_harvest_date').text('~ ' +expectedHarvestDate);
+		$('#expected_harvest_date').text('~ ' + expectedHarvestDate);
 		$('#form_save_dataProductionInfo input[name=expected_harvest_date]').val(expectedHarvestDate);
 		$('#expected_yield').text(expected_yield_format);
 		$('#form_save_dataProductionInfo input[name=expected_yield]').val(expected_yield_format);
@@ -236,22 +242,22 @@ $uri = $this->session->agrishop_login_uri;
 		$('#predictionPanel').fadeIn();
 	}
 
-    function updateProductionStatus(){
-        $.post("<?= base_url('userfarmer/OnProduction/updateProductionStatus') ?>", {
-            production_id: production_id_,
-            status: $('#productionStatus').val(),
+	function updateProductionStatus() {
+		$.post("<?= base_url('userfarmer/OnProduction/updateProductionStatus') ?>", {
+			production_id: production_id_,
+			status: $('#productionStatus').val(),
 			note: $('#modalProductionStatus #note').val()
-        }, function(res) {
-            let j = JSON.parse(res);
-            if (j.success == true) {
-                successAlert(j.message);
-                getTable('ProductionInfo', 0, 5);
-                getTable('ProductionInfoCompleted', 0, 5);
-                $("#modalProductionStatus").modal("hide");
+		}, function(res) {
+			let j = JSON.parse(res);
+			if (j.success == true) {
+				successAlert(j.message);
+				getTable('ProductionInfo', 0, 5);
+				getTable('ProductionInfoCompleted', 0, 5);
+				$("#modalProductionStatus").modal("hide");
 
-            } else {
-                errorAlert(j.message);
-            }
-        });
-    }
+			} else {
+				errorAlert(j.message);
+			}
+		});
+	}
 </script>

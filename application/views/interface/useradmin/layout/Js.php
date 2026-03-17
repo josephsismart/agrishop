@@ -41,6 +41,8 @@ $uri = $this->session->agrishop_login_uri;
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script> -->
 
 <script type="text/javascript">
+    let farmer_id_ = null;
+    
     $(function() {
 
         $('#bars').click(function() {

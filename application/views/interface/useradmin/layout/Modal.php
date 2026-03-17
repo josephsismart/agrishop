@@ -7,6 +7,35 @@ if (!$this->session->agrishop_login_level) {
 $uri = $this->session->agrishop_login_uri;
 ?>
 
+
+
+<div class="modal fade" id="modalApproveFarmer">
+    <!-- <div class="modal fade show" id="modalProductionStatus" tabindex="-1" aria-labelledby="modalCheckoutLabel" aria-hidden="true" style="display: block; padding-left: 0px;"> -->
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content rounded shadow">
+            <!-- HEADER -->
+            <div class="modal-header py-2">
+                <h5 class="modal-title mb-0">
+                    <i class="fas fa-user-check mr-1"></i> Farmer Approval
+                </h5>
+                <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body px-3 py-2">
+                <i>Farmer presented ID</i>
+                <div class="form-check mt-2">
+                    <div class="form-check form-switch" style="overflow: auto;">
+                        <img src="" id="idFarmerImg" alt="ID Image" class="img-fluid" style="max-width: 200px;">
+                    </div>
+                </div>
+                <button type="button" class="btn btn-primary btn-sm w-100 mt-3" onclick="approveFarmerNow()"><i class="fas fa-check"></i> Approve Farmer</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
 <!-- VIEW PAYMENT DETAILS MODAL -->
 <div class="modal fade" id="viewPaymentDetailsModal">
     <div class="modal-dialog modal-dialog-centered">

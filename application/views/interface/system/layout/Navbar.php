@@ -11,6 +11,7 @@ $profile = base_url() . $uri . '/Profile';
 $farm_produce = base_url() . $uri . '/FarmProduce';
 $client_orders = base_url() . $uri . '/Orders';
 $on_production = base_url() . $uri . '/OnProduction';
+$users = base_url() . $uri . '/Users';
 
 
 ?>
@@ -37,6 +38,12 @@ $on_production = base_url() . $uri . '/OnProduction';
                 <li class="nav-item border-dashed">
                     <a href="#" data-toggle="modal" data-target="#gcashModal" class="nav-link d-flex align-items-center gap-3 text-dark p-2">
                         <img src="<?= base_url('dist/img/credit/gcash_50x50.png'); ?>" class="mr-n1 ml-n1" height="21" width="21" /> <span>My Gcash</span>
+                    </a>
+                </li>
+                <li class="nav-item border-dashed">
+                    <a href="<?= $users; ?>" class="nav-link d-flex align-items-center gap-3 text-dark p-2">
+                        <i class="fa fa-users"></i>
+                        <span> Users</span>
                     </a>
                 </li>
             <?php } ?>
