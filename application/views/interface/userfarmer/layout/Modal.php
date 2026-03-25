@@ -194,79 +194,45 @@ $uri = $this->session->agrishop_login_uri;
 </div>
 <!-- <div class="modal fade show" id="modalSearchProduction" data-backdrop="static" style="padding-right: 15px; display: block;" aria-modal="true" role="dialog"> -->
 <div class="modal fade" id="modalSearchProduction">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content shadow">
 
-            <div class="modal-header">
+            <div class="modal-header bg-success text-white py-2">
                 <h5 class="modal-title">
-                    <i class="fas fa-search"></i> Search Farmer Production
+                    <i class="fa fa-map-marked-alt mr-2"></i> Production Map — Search &amp; Explore
                 </h5>
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
             </div>
 
-            <div class="modal-body">
+            <div class="modal-body p-2">
 
-                <div class="row align-items-end">
-
-                    <!-- Produce Select -->
-                    <div class="col-5">
-                        <label class="mb-1">Produce</label>
-                        <input type="text" class="form-control" id="searchProductionProduce" placeholder="Search produce..." autocomplete="off"/>
+                <!-- Search bar -->
+                <div class="input-group mb-2">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text bg-white border-right-0">
+                            <i class="fa fa-search text-success"></i>
+                        </span>
                     </div>
-
-                    <!-- Search Button -->
-                    <div class="col-md-1 col-2 ml-n2">
-                        <button class="btn btn-success btn btn-block" onclick="searchProductionMap()">
+                    <input type="text" class="form-control border-left-0"
+                           id="searchProductionProduce"
+                           placeholder="Search produce by name, variety, tags... (press Enter or click 🔍)"
+                           autocomplete="off"
+                           style="border-left:0;"/>
+                    <div class="input-group-append">
+                        <button class="btn btn-success px-3" onclick="searchProductionMap()" title="Search">
                             <i class="fas fa-search"></i>
                         </button>
-                    </div>
-
-                    <!-- View Switch -->
-                    <!-- <div class="col-3 text-center">
-                        <label class="mb-1">View Table</label>
-                        <div class="custom-control custom-switch">
-                            <input type="checkbox" class="custom-control-input" id="viewSwitch">
-                            <label class="custom-control-label" for="viewSwitch" style="cursor: pointer;"></label>
-                        </div>
-                    </div> -->
-
-                </div>
-
-
-                <!-- MAP VIEW -->
-                <div class="card card-outline card-primary mt-3" id="mapView">
-                    <div class="card-header py-2">
-                        <h6 class="mb-0">Production Map</h6>
-                    </div>
-
-                    <div class="card-body p-0" style="height:550px;" id="productionMap"></div>
-                </div>
-
-
-                <!-- TABLE VIEW -->
-                <div class="card card-outline card-success mt-3 d-none" id="tableSearchedProduction">
-                    <div class="card-header py-2">
-                        <h6 class="mb-0">Production Table</h6>
-                    </div>
-
-                    <div class="card-body p-0">
-
-                        <table class="table table-sm table-bordered mb-0 text-center">
-                            <thead class="bg-light">
-                                <tr>
-                                    <th>Farmer</th>
-                                    <th>Produce</th>
-                                    <th>Area</th>
-                                    <!-- <th>Expected Harvest</th> -->
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            </tbody>
-                        </table>
-
+                        <button class="btn btn-outline-secondary px-3" onclick="$('#searchProductionProduce').val('');searchProductionMap();" title="Show all">
+                            <i class="fa fa-redo-alt"></i> All
+                        </button>
                     </div>
                 </div>
+
+                <!-- Map -->
+                <div id="productionMap" style="height:560px;width:100%;border-radius:8px;overflow:hidden;"></div>
+
+                <!-- Result count -->
+                <div id="searchResultCount" class="mt-1 text-muted" style="font-size:12px;"></div>
 
             </div>
 

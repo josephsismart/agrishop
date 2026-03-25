@@ -26,417 +26,205 @@ class Signup extends MY_Controller
 
     public function request_signup()
     {
-        // $sy = $this->getOnLoad()["sy_id"];
-        $ret = false;
-        $uri = "";
+        $signup_type = $this->input->post('signup_type'); // customer | farmer | supplier
 
-        $first_name = strtoupper(trim($this->input->post('firstname')));
-        $last_name = strtoupper(trim($this->input->post('lastname')));
-        $sex = $this->input->post('sex') == 'MALE' ? TRUE : FALSE; //strtoupper(trim($this->input->post('sex')));
-        $birthDate = strtoupper(trim($this->input->post('birthDate')));
-        $contact = strtoupper(trim($this->input->post('contact')));
-        $email = strtoupper(trim($this->input->post('email')));
-        $barangay = trim($this->input->post('barangay'));
+        // ── Shared personal fields ─────────────────────────────
+        $first_name   = strtoupper(trim($this->input->post('firstname')));
+        $middle_name  = strtoupper(trim($this->input->post('middlename')));
+        $last_name    = strtoupper(trim($this->input->post('lastname')));
+        $sex          = $this->input->post('sex') == 'MALE' ? TRUE : FALSE;
+        $birthDate    = trim($this->input->post('birthDate'));
+        $contact      = trim($this->input->post('contact'));
+        $email        = trim($this->input->post('email'));
+        $barangay     = trim($this->input->post('barangay'));
+        $address_info = strtoupper(trim($this->input->post('address_info'))); // ← NEW: address line
+        $username     = trim($this->input->post('username'));
+        $password     = md5($this->input->post('password'));
+        $password2    = md5($this->input->post('password2'));
 
-
-        $username = $this->input->post('username');
-        $password = md5($this->input->post('password')); //md5($this->input->post('password'));
-
-        #for farmers
-        $valid_id = $this->input->post('valid_id');
-        $picFarmerID = $this->input->post('picFarmerID');
-        $organization = $this->input->post('organization');
-
-        $row1 = "";
-        $row2 = "";
-        $result = "";
-        $data = [];
-
-        if (!$first_name || !$last_name || !$username || !$password) {
-            $ret = ["fill" => true];
+        // ── Validation ────────────────────────────────────────
+        if (!$first_name || !$last_name || !$username || !$this->input->post('password')) {
+            echo json_encode(["fill" => true]); return;
+        }
+        if ($password !== $password2) {
+            echo json_encode(["password" => true]); return;
+        }
+        if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            echo json_encode(["email_invalid" => true]); return;
         }
 
-        if ($password != $this->input->post('password2')) {
-            $ret = ["password" => true];
-        }
-
-        $chck = $this->db->query(
-            "SELECT t1.* FROM user t1
-                                    WHERE t1.username = ? LIMIT 1",
-            array($username)
-        );
-
+        // ── Check username duplicate ───────────────────────────
+        $chck = $this->db->query("SELECT id FROM user WHERE username = ? LIMIT 1", [$username]);
         if ($chck->num_rows() > 0) {
-            $ret = ["exist" => true];
+            echo json_encode(["exist" => true]); return;
         }
 
-        if ($chck->num_rows() == 0) {
-            $data_person = [
-                "first_name" => $first_name,
-                "last_name" => $last_name,
-                "sex" => $sex,
-                "birthdate" => $birthDate,
-                "contact_num" => $contact,
-                "email_address" => $email,
-                "barangay_id" => $barangay,
-
-            ];
-            if ($this->db->insert("person", $data_person)) {
-                $inid = $this->db->insert_id();
-
-                if ($valid_id != "") {
-                    $data_farmer = [
-                        "person_id" => $inid,
-                        "date_registered" => Date('Y-m-d'),
-                        "presented_valid_id" => $valid_id,
-                        "organization" => $organization,
-                        "approved_by_person_id" => 1,
-                        "approved_at" => Date('Y-m-d'),
-                        "farmer_selling_type" => $this->input->post('farmer_selling_type')
-                    ];
-
-                    if (isset($_FILES['picFarmerID']) && $_FILES['picFarmerID']['error'] === UPLOAD_ERR_OK) {
-                        // Normal upload
-                        $upload = $this->uploadImg($_FILES['picFarmerID'], $first_name, 'farmer', 'picFarmerID');
-                        $data_farmer += [
-                            "id_img_path" => $upload
-                        ];
-                    }
-                    if ($this->db->insert("farmer", $data_farmer)) {
-
-                        $f_id = $this->db->insert_id();
-
-                        $today = date('Y-m-d');
-                        $end_date = date('Y-m-d', strtotime('+2 months'));
-                        $grace_days = 7; // optional
-
-                        $data_subscription = [
-                            "farmer_id" => $f_id,
-                            "subscription_type" => "FREE",
-                            "is_active" => true,
-                            "subscription_from" => $today,
-                            "subscription_to" => $end_date,
-                            "billing_due_date" => $end_date, // due when free ends
-                            "grace_period_days" => $grace_days,
-                            "created_at" => date('Y-m-d H:i:s'),
-                            "created_by_person_id" => 1 // system/admin
-                        ];
-
-                        $this->db->insert("subscription_history", $data_subscription);
-                    }
-                }
-
-                $data_user = [
-                    "person_id" => $inid,
-                    "username" => $username,
-                    "password" => $password,
-                    "role_id" => $valid_id ? 3 : 2,
-                ];
-
-                if ($this->db->insert("user", $data_user)) {
-                    $user_id = $this->db->insert_id();
-                    // echo $user_id;
-                    $data_session = [
-                        "agrishop_request_registration" => 0,
-                        "agrishop_login_id" => $user_id,
-                        "agrishop_login_uname" => $username,
-                        "agrishop_login_level" => $valid_id ? 2 : 1,
-                        "agrishop_login_uri" =>   $valid_id ? "userfarmer" : "",
-                        "agrishop_login_landing" => $valid_id ? "FarmProduce" : "index",
-                        "agrishop_pass" => $password,
-                        "agrishop_change_password" => 'f',
-                        "agrishop_login_name" => $first_name . ' ' . $last_name,
-                        "agrishop_login_img" => 'dist/img/media/personnel/default.jpg',
-                    ];
-
-                    $chck = $this->db->query(
-                        "SELECT 
-                                    t1.id,
-                                    t1.password,
-                                    t1.person_id,
-                                    t1.username,
-                                    t2.level,
-                                    t3.first_name,
-                                    t3.middle_name,
-                                    t3.last_name,
-                                    t3.birthdate,
-                                    t3.sex,
-                                    t3.email_address,
-                                    t3.contact_num,
-                                    t3.barangay_id,
-                                    t3.img_path,
-                                    t4.id as farmer_id,
-                                    t4.farmer_selling_type,
-
-                                    t5.id as gcash_id,
-                                    t5.type as gcash_type,
-                                    t5.account_name as gcash_account_name,
-                                    t5.number as gcash_account_num,
-                                    t5.qr as gcash_qr,
-
-                                    UPPER(CONCAT(
-                                        b.description, ' ',
-                                        c.description, ', ',
-                                        p.description, ', ',
-                                        r.region
-                                    )) AS address_text,
-
-                                    CASE 
-                                        WHEN t4.id IS NOT NULL AND t4.approved_at IS NULL THEN 1 
-                                        ELSE 0 
-                                    END AS is_registered_farmer,
-
-                                    'f' AS change_pwd,
-                                    t1.is_active
-
-                                FROM user t1
-                                LEFT JOIN role t2 ON t1.role_id = t2.id
-                                LEFT JOIN person t3 ON t1.person_id = t3.id
-                                LEFT JOIN farmer t4 ON t3.id = t4.person_id
-                                LEFT JOIN (SELECT * FROM farmer_payment_method WHERE is_active = true and type='gcash') t5 ON t3.id = t5.person_id
-                                
-                                LEFT JOIN tbl_barangay b ON t3.barangay_id = b.id
-                                LEFT JOIN tbl_citymun c ON b.citymun_id = c.id
-                                LEFT JOIN tbl_province p ON c.province_id = p.id
-                                LEFT JOIN tbl_region r ON p.region_id = r.id
-
-                                WHERE t1.id = ? 
-                                AND t1.is_active = true
-                                LIMIT 1",
-                        array($user_id)
-                    );
-
-                    $row1 = $chck->row();
-                    $person_id = $row1->person_id;
-                    $img = $row1->img_path ? base_url($row1->img_path) : base_url('dist/img/media/icons/1x1.png');
-                    $qr = $row1->gcash_qr ? base_url($row1->gcash_qr) : base_url('dist/img/credit/gcash.png');
-
-
-                    $data_session += [
-                        "agrishop_login_first_name" => $row1->first_name,
-                        "agrishop_login_middle_name" => $row1->middle_name,
-                        "agrishop_login_last_name" => $row1->last_name,
-                        "agrishop_login_birthdate" => $row1->birthdate,
-                        "agrishop_login_sex" => $row1->sex,
-                        "agrishop_login_email_address" => $row1->email_address,
-                        "agrishop_login_contact_num" => $row1->contact_num,
-                        "agrishop_login_barangay_id" => $row1->barangay_id,
-                        "agrishop_login_address_text" => $row1->barangay_id ? $row1->address_text : "",
-                        "agrishop_login_img_path" => $img,
-                        "agrishop_person_id"        => $person_id, // $query->row('id'),
-
-                        "agrishop_login_farmer_id" => $row1->farmer_id,
-                        "agrishop_login_farmer_selling_type" => $row1->farmer_selling_type,
-                        "agrishop_login_gcash_id" => $row1->gcash_id,
-                        "agrishop_login_gcash_type" => $row1->gcash_type,
-                        "agrishop_login_gcash_account_name" => $row1->gcash_account_name,
-                        "agrishop_login_gcash_account_num" => $row1->gcash_account_num,
-                        "agrishop_login_gcash_qr" => $qr,
-                        "agrishop_login_sub_free_confirmed" => 'f'
-                    ];
-
-
-                    #check farmer subscription
-                    // if ($row1->farmer_id) {
-                    //     $chck2 = $this->db->query("SELECT f.id,DATE_FORMAT(fsf.ended_at,'yyyy-mm-dd') AS free_end_at, fsf.confirmed AS free_confirmed, fsf.is_expired AS free_expired,
-                    //                                 fs2.start_date, fs2.end_date,fs2.is_active,fs2.is_expired ,fs2.is_latest
-                    //                                 FROM farmer AS f
-                    //                                 JOIN farmer_subscription_free fsf ON f.id = fsf.farmer_id
-                    //                                 LEFT JOIN farmer_subscription fs2 ON f.id= fs2.farmer_id
-                    //                                 LEFT JOIN farmer_subscription_application fsa ON fs2.farmer_application_subscription_id = fsa.id
-                    //                                 WHERE f.id = ?", array($row1->farmer_id));
-                    //     if ($chck2->num_rows() > 0) {
-                    //         $row2 = $chck2->row();
-
-                    //         if (date('Y-m-d') > $row2->free_end_at && $row2->is_expired == false) {
-                    //             $this->db->query("UPDATE farmer_subscription_free SET is_expired = true WHERE farmer_id = $row1->farmer_id");
-                    //             $data_session += [
-                    //                 "agrishop_login_sub_free_expired" => 't',
-                    //             ];
-                    //         } else if ($row2->is_expired == true) {
-                    //             $data_session += [
-                    //                 "agrishop_login_sub_free_expired" => 't',
-                    //             ];
-                    //         } else {
-                    //             $data_session += [
-                    //                 "agrishop_login_sub_free_expired" => 'f',
-                    //             ];
-                    //         }
-
-                    //         $data_session += [
-                    //             "agrishop_login_sub_free_end_at" => $row2->free_end_at,
-                    //             "agrishop_login_sub_free_confirmed" => $row2->free_confirmed,
-                    //             "agrishop_login_sub_start_date" => $row2->start_date,
-                    //             "agrishop_login_sub_end_date" => $row2->end_date,
-                    //             "agrishop_login_sub_is_active" => $row2->is_active,
-                    //             "agrishop_login_sub_is_expired" => $row2->is_expired,
-                    //             "agrishop_login_sub_is_latest" => $row2->is_latest,
-                    //         ];
-                    //     }
-                    // }
-
-                    $this->session->set_userdata($data_session);
-
-                    $level = $valid_id ? 2 : 1;
-                    $defaultPassword = 'f';
-                    $uri = $valid_id ? "userfarmer" : "";
-                    $landing = $valid_id ? "FarmProduce" : "index";
-                    $ret = [
-                        "success" => true,
-                        "redirect_to" => base_url($uri . '/' . $landing)
-                    ];
-                }
-            }
-        }
-        echo json_encode($ret);
-    }
-
-    public function sendSMS()
-    {
-        $url = "https://api.engagespark.com/v1/sms";
-        $phone = "639159566465";
-        $apiKey = "a2927f88d9a6b51e1fb0a68f90d8c8b3fcdd972d";
-        $apiToken = $apiKey;      // from dashboard
-        $orgId    = 17879;                     // as per your org profile
-        $toPhone  = $phone;                 // recipient, Philippines +63
-        $fromId   = 'MYAPP';                          // your sender ID (string)
-        $message  = 'Please unblock me';
-
-        // Build payload
-        $payload = [
-            "orgId" => $orgId,
-            "message" => $message,
-            "fullPhoneNumber" => "+639159566465",
+        // ── Insert person ──────────────────────────────────────
+        $data_person = [
+            "first_name"    => $first_name,
+            "middle_name"   => $middle_name,
+            "last_name"     => $last_name,
+            "sex"           => $sex,
+            "birthdate"     => $birthDate ?: null,
+            "contact_num"   => $contact,
+            "email_address" => strtoupper($email),
+            "barangay_id"   => $barangay ?: null,
+            "address_info"  => $address_info, // ← house no / street / sitio
         ];
 
-        // Init cURL
-        $ch = curl_init('https://api.engagespark.com/v1/sms/contact');
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Authorization: Token ' . $apiToken,
-            'Content-Type: application/json'
-        ]);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-
-        // Execute and get response
-        $response = curl_exec($ch);
-        $err = curl_error($ch);
-        curl_close($ch);
-
-        // Show result
-        if ($err) {
-            echo "cURL Error: $err";
-        } else {
-            echo "Response: $response";
+        if (!$this->db->insert("person", $data_person)) {
+            echo json_encode(["success" => false]); return;
         }
-    }
+        $person_id = $this->db->insert_id();
 
+        // ── Role mapping ───────────────────────────────────────
+        // role: 2=consumer, 3=farmer, 4=supplier
+        $role_id   = 2;
+        $uri       = "";
+        $landing   = "index";
+        $level     = 1;
 
-    public function email_verification()
-    {
-        $action = 'send'; //$this->input->post('action'); // send | verify
-        $email  = 'josephsismart@gmail.com'; //$this->input->post('email');
-        $code   = $this->input->post('code');
-
-        // Basic validation
-        if (!$action || !$email) {
-            echo json_encode(["status" => false, "message" => "Invalid request"]);
-            return;
+        if ($signup_type === 'farmer') {
+            $role_id = 3; $uri = "userfarmer"; $landing = "dashboard"; $level = 2;
+        } elseif ($signup_type === 'supplier') {
+            $role_id = 4; $uri = "usersupplier"; $landing = "dashboard"; $level = 4;
         }
 
-        // Storage file path (you can change to DB if needed)
-        $storage = APPPATH . "cache/email_verification.json";
-        $records = file_exists($storage) ? json_decode(file_get_contents($storage), true) : [];
+        // ── Insert user ───────────────────────────────────────
+        $data_user = [
+            "person_id" => $person_id,
+            "username"  => $username,
+            "password"  => $password,
+            "role_id"   => $role_id,
+            "is_active" => true,
+        ];
+        if (!$this->db->insert("user", $data_user)) {
+            echo json_encode(["success" => false]); return;
+        }
+        $user_id = $this->db->insert_id();
 
-        // ---------------------------------------------------------
-        // 1) SEND CODE
-        // ---------------------------------------------------------
-        if ($action == "send") {
-            // generate 6 digit code
-            $newCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        // ── Farmer-specific insert ─────────────────────────────
+        if ($signup_type === 'farmer') {
+            $valid_id            = $this->input->post('valid_id');
+            $organization        = $this->input->post('organization');
+            $farmer_selling_type = $this->input->post('farmer_selling_type') ?: 1;
 
-            // save hashed to prevent plaintext exposure
-            $records[$email] = [
-                "hash"      => password_hash($newCode, PASSWORD_DEFAULT),
-                "expires"   => time() + 600, // 10 minutes
-                "used"      => false,
-                "attempts"  => 0
+            $data_farmer = [
+                "person_id"           => $person_id,
+                "farmer_selling_type" => $farmer_selling_type,
+                "application_date"    => date('Y-m-d H:i:s'),
+                "is_active"           => 1,
+                "presented_valid_id"  => $valid_id,
+                "organization"        => $organization,
+                "free_sub_confirm"    => 0,
             ];
 
-            // save file
-            file_put_contents($storage, json_encode($records));
+            if (isset($_FILES['picFarmerID']) && $_FILES['picFarmerID']['error'] === UPLOAD_ERR_OK) {
+                $upload = $this->uploadImg($_FILES['picFarmerID'], $first_name, 'farmer', 'picFarmerID');
+                $data_farmer["id_img_path"] = $upload;
+            }
 
-            // SEND EMAIL
-            $this->load->library('email');
-            $this->email->from('no-reply@agrishop.com', 'Agrishop');
-            $this->email->to($email);
-            $this->email->subject("Your Verification Code");
-            $this->email->message("Your 6-digit verification code is: <b>$newCode</b><br>Valid for 10 minutes.");
-            $this->load->library('email');
+            $this->db->insert("farmer", $data_farmer);
+            $farmer_id = $this->db->insert_id();
 
-            $config = [
-                'protocol'  => 'smtp',
-                'smtp_host' => 'smtp.gmail.com',
-                'smtp_port' => 587,
-                'smtp_user' => 'sismarjoseph@gmail.com',
-                'smtp_pass' => 'YOUR_APP_PASSWORD',
-                'smtp_crypto' => 'tls',
-                'mailtype'  => 'html',
-                'charset'   => 'utf-8',
-                'newline'   => "\r\n",
-                'crlf'      => "\r\n"
+            // Free 2-month subscription
+            $this->db->insert("subscription_history", [
+                "farmer_id"             => $farmer_id,
+                "subscription_type"     => "FREE",
+                "is_active"             => true,
+                "subscription_from"     => date('Y-m-d'),
+                "subscription_to"       => date('Y-m-d', strtotime('+2 months')),
+                "billing_due_date"      => date('Y-m-d', strtotime('+2 months')),
+                "grace_period_days"     => 7,
+                "created_at"            => date('Y-m-d H:i:s'),
+                "created_by_person_id"  => 1,
+            ]);
+        }
+
+        // ── Supplier-specific insert ───────────────────────────
+        if ($signup_type === 'supplier') {
+            $valid_id     = $this->input->post('valid_id');
+            $business_name = $this->input->post('business_name');
+
+            $data_supplier = [
+                "person_id"          => $person_id,
+                "application_date"   => date('Y-m-d H:i:s'),
+                "is_active"          => 1,
+                "presented_valid_id" => $valid_id,
+                "organization"       => $business_name,
+                "free_sub_confirm"   => 0,
             ];
 
-            $this->email->initialize($config);
-            $sent = $this->email->send();
+            if (isset($_FILES['picSupplierID']) && $_FILES['picSupplierID']['error'] === UPLOAD_ERR_OK) {
+                $upload = $this->uploadImg($_FILES['picSupplierID'], $first_name, 'supplier', 'picSupplierID');
+                $data_supplier["id_img_path"] = $upload;
+            }
+
+            $this->db->insert("supplier", $data_supplier);
+            $supplier_id = $this->db->insert_id();
+
+            // Free 2-month subscription
+            $this->db->insert("supplier_subscription_history", [
+                "supplier_id"           => $supplier_id,
+                "subscription_type"     => "FREE",
+                "is_active"             => true,
+                "subscription_from"     => date('Y-m-d'),
+                "subscription_to"       => date('Y-m-d', strtotime('+2 months')),
+                "billing_due_date"      => date('Y-m-d', strtotime('+2 months')),
+                "grace_period_days"     => 7,
+                "created_at"            => date('Y-m-d H:i:s'),
+                "created_by_person_id"  => 1,
+            ]);
+        }
+
+        // ── Set session & respond ─────────────────────────────
+        
+        $session_data = [
+            "agrishop_login_id"         => $user_id,
+            "agrishop_login_uname"      => $username,
+            "agrishop_login_level"      => $level,
+            "agrishop_login_uri"        => $uri,
+            "agrishop_login_landing"    => $landing,
+            "agrishop_change_password"  => 'f',
+            "agrishop_login_name"       => $first_name . ' ' . $last_name,
+            "agrishop_person_id"        => $person_id,
+            "agrishop_login_first_name" => $first_name,
+            "agrishop_login_last_name"  => $last_name,
+            "agrishop_login_farmer_id"  => $signup_type === 'farmer'   ? ($farmer_id   ?? null) : null,
+            "agrishop_login_supplier_id"=> $signup_type === 'supplier' ? ($supplier_id ?? null) : null,
+        ];
+        $this->session->set_userdata($session_data);
+
+        // Farmer and Supplier need admin approval first
+        if ($signup_type === 'farmer' || $signup_type === 'supplier') {
+
+            // Notify all admins of new signup
+            $admins = $this->db->query("
+                SELECT p.id FROM user u JOIN person p ON u.person_id = p.id
+                WHERE u.role_id = 1 AND u.is_active = 1
+            ")->result();
+            foreach ($admins as $admin) {
+                $this->notify(
+                    $admin->id,
+                    'New ' . ucfirst($signup_type) . ' Application 📋',
+                    $first_name . ' ' . $last_name . ' has submitted a ' . $signup_type . ' registration. Please review their ID.',
+                    'INFO', $signup_type, null
+                );
+            }
 
             echo json_encode([
-                "status" => $sent,
-                "message" => $sent ? "Verification code sent to your email." : "Failed to send email."
+                "success"     => true,
+                "redirect_to" => base_url('pending'),   // <-- pending approval page
             ]);
-            return;
+
+        } else {
+            // Customer — go straight to homepage
+            echo json_encode([
+                "success"     => true,
+                "redirect_to" => base_url('index'),
+            ]);
         }
 
-        // ---------------------------------------------------------
-        // 2) VERIFY CODE
-        // ---------------------------------------------------------
-        if ($action == "verify") {
-            if (!isset($records[$email])) {
-                echo json_encode(["status" => false, "message" => "No code requested for this email."]);
-                return;
-            }
-
-            $row = $records[$email];
-
-            // check expiry
-            if ($row["expires"] < time()) {
-                echo json_encode(["status" => false, "message" => "Code expired."]);
-                return;
-            }
-
-            // check attempts
-            if ($row["attempts"] >= 5) {
-                echo json_encode(["status" => false, "message" => "Too many attempts."]);
-                return;
-            }
-
-            // verify
-            $records[$email]["attempts"]++;
-
-            if (!password_verify($code, $row["hash"])) {
-                file_put_contents($storage, json_encode($records));
-                echo json_encode(["status" => false, "message" => "Invalid code."]);
-                return;
-            }
-
-            // success — mark used
-            $records[$email]["used"] = true;
-            file_put_contents($storage, json_encode($records));
-
-            echo json_encode(["status" => true, "message" => "Email verified successfully!"]);
-            return;
-        }
     }
 }
 

@@ -148,10 +148,68 @@ if (!$this->session->agrishop_login_level) {
 </section>
 
 
+
+
+<!-- Pay/Resubmit Modal -->
+<div class="modal fade" id="modalPayBilling" data-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content shadow-lg">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="payBillingTitle">
+                    <i class="fa fa-upload mr-2"></i> Submit Payment
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <?= form_open(base_url($uri . '/Billing/savePayBilling'), 'id="form_save_dataPayBilling" enctype="multipart/form-data"') ?>
+            <input type="hidden" name="id" id="payBillingId">
+            <div class="modal-body">
+                <div id="rejectedAlert" class="alert alert-danger d-none" style="font-size:13px;">
+                    <i class="fa fa-exclamation-triangle mr-1"></i>
+                    <strong>Payment was rejected.</strong>
+                    <div id="rejectedReason" class="mt-1"></div>
+                    <div class="mt-1 text-danger">Please attach a new proof of payment.</div>
+                </div>
+                <p class="text-muted" style="font-size:13px;">Upload your GCash screenshot.</p>
+                <label class="btn btn-outline-success w-100 mb-2">
+                    <i class="fa fa-image mr-1"></i> Choose GCash Screenshot
+                    <input type="file" name="gcash_qr" hidden accept="image/*" onchange="imageView('gcash_qr','previewPayBilling')">
+                </label>
+                <div class="text-center">
+                    <img name="previewPayBilling" src="<?= $system_svg_1x1 ?? '' ?>" style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid #dee2e6;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-success btn-sm submitBtnPrimary">Submit</button>
+            </div>
+            <?= form_close() ?>
+        </div>
+    </div>
+</div>
+
+
 <script type="text/javascript">
     $(function() {
         getTable('BillingFarmers', 0, 10);
         getTable('BillingHistory', 0, 5);
+    });
+
+
+    function openPayBilling(id, status, reason) {
+        $('#payBillingId').val(id);
+        if (status === 'REJECTED') {
+            $('#payBillingTitle').html('<i class="fa fa-redo mr-2"></i> Resubmit Payment');
+            $('#rejectedAlert').removeClass('d-none');
+            $('#rejectedReason').text(reason || '');
+        } else {
+            $('#payBillingTitle').html('<i class="fa fa-upload mr-2"></i> Submit Payment');
+            $('#rejectedAlert').addClass('d-none');
+        }
+        $('#modalPayBilling').modal('show');
+    }
+    $(function() {
+        getTable('PaymentHistory', 0, 10);
+        saveForm("PayBilling", [null], null);
     });
 
     function viewPaymentDetails(img) {

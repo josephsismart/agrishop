@@ -48,6 +48,16 @@
         transition: right 0.3s ease;
     }
 
+
+    .countOrders {
+        font-size: 11px;
+    }
+
+    .countBilling {
+        font-size: 11px;
+        background: #e67e22 !important;
+    }
+
     .custom-sidebar.show {
         right: 0;
     }

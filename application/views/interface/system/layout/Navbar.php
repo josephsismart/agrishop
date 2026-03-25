@@ -46,6 +46,12 @@ $users = base_url() . $uri . '/Users';
                         <span> Users</span>
                     </a>
                 </li>
+                <li class="nav-item border-dashed reports">
+                    <a href="<?= base_url('useradmin/Reports'); ?>" class="nav-link d-flex align-items-center gap-3 text-dark p-2">
+                        <i class="fa fa-chart-bar"></i>
+                        <span> Generate Reports</span>
+                    </a>
+                </li>
             <?php } ?>
             <?php if ($role_lvl == 3 || $role_lvl == 2) { ?>
                 <li class="nav-item border-dashed">
@@ -99,6 +105,13 @@ $users = base_url() . $uri . '/Users';
                     </a>
                 </li>
 
+                <li class="nav-item border-dashed Promo">
+                    <a href="<?= base_url($uri . '/Promo') ?>" class="nav-link d-flex align-items-center gap-3 text-dark p-2">
+                        <i class="fa fa-tags text-warning"></i>
+                        <span>Promos &amp; Discounts</span>
+                    </a>
+                </li>
+
             <?php }
             ?>
             <?php if ($role_lvl == 1) {
@@ -123,7 +136,7 @@ $users = base_url() . $uri . '/Users';
                     <ul class="collapsed list-unstyled ps-4 pl-5" id="orderSubMenu">
 
                         <li>
-                            <a href="#" class="nav-link text-dark"  data-toggle="modal" data-target="#modalOrderListing" onclick="status_='RESERVED';getTable('OrderListing', 0, 5);" title="Reserved orders">
+                            <a href="#" class="nav-link text-dark" data-toggle="modal" data-target="#modalOrderListing" onclick="status_='RESERVED';getTable('OrderListing', 0, 5);" title="Reserved orders">
                                 <i class="fa fa-clock"></i> Reserved <span class="badge bg-danger reserved-order" title="reserved orders"><?= $status['transaction_status_reserved'] ?></span>
                             </a>
                         </li>
@@ -142,7 +155,7 @@ $users = base_url() . $uri . '/Users';
 
                         <li>
                             <a href="#" class="nav-link text-dark" data-toggle="modal" data-target="#modalOrderListing" onclick="status_='TO_DELIVER';getTable('OrderListing', 0, 5)" title="Out for Delivery">
-                                <i class="fa fa-truck"></i>   Out for Delivery <span class="badge bg-danger out-for-delivery-order" title="out for delivery orders"><?= $status['transaction_delivery_status_delivery']; ?></span>
+                                <i class="fa fa-truck"></i> Out for Delivery <span class="badge bg-danger out-for-delivery-order" title="out for delivery orders"><?= $status['transaction_delivery_status_delivery']; ?></span>
                             </a>
                         </li>
 

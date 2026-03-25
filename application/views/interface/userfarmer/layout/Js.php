@@ -181,20 +181,43 @@ $uri = $this->session->agrishop_login_uri;
 
     // when clicking a suggestion
     $(document).on("click", ".produce-item", function() {
-        let id = $(this).data("id");
-        let name = $(this).data("name");
-        let img = $(this).data("img");
-        let farm_id = $("#farmList").val();
+        let id       = $(this).data("id");
+        let name     = $(this).data("name");
+        let img      = $(this).data("img");
+        let farm_id  = $("#farmList").val();
 
-
+        // Standard produce fields
         $('[name=farmId]').val(farm_id);
         $("#produce_id").val(id);
+        $("[name=produce_id]").val(id);
         $(".produceInput").val(name);
         $(".produceList").hide();
         $("[name=produceSelectedId]").val(id);
-        $(".produceImg").html(`<img src="${img}" 
-                                 width="100" height="100" 
-                                 class="rounded mr-2">`);
+        $(".produceImg").html(`<img src="${img}" width="100" height="100" class="rounded mr-2">`);
+
+        // ── Store plantation data on #ProductionInfo for computeProductionPrediction() ──
+        let dth  = parseInt($(this).data("days_to_harvest"))  || 0;
+        let cat  = $(this).data("category")                   || "";
+        let hf   = parseInt($(this).data("harvest_frequency")) || 0;
+        let yps  = parseFloat($(this).data("yield_per_sqm_as_kg")) || 0;
+
+        $("#ProductionInfo")
+            .data("days_to_harvest",      dth)
+            .data("category",             cat)
+            .data("harvest_frequency",    hf)
+            .data("yield_per_sqm_as_kg",  yps);
+
+        // Show/hide last harvest date for perennial crops
+        if (cat && cat.toLowerCase() === "perennial") {
+            $("#lastHarvestWrapper").show();
+        } else {
+            $("#lastHarvestWrapper").hide();
+        }
+
+        // Trigger prediction recalculation
+        if (typeof computeProductionPrediction === "function") {
+            computeProductionPrediction();
+        }
     });
 
     // initial count from PHP session
@@ -203,30 +226,27 @@ $uri = $this->session->agrishop_login_uri;
     // start polling
     setInterval(function() {
         getReservedCount();
-    }, 3000);
+    }, 8000);
 
     function getReservedCount() {
         $.post("<?= base_url('userfarmer/FarmProduce/getReservedCount') ?>", function(res) {
+            var currentCount = parseInt(res, 10);
+            if (isNaN(currentCount)) currentCount = 0;
 
-            // convert safely → default to 0
-            let currentCount = parseInt(res, 10);
-            currentCount = isNaN(currentCount) ? 0 : currentCount;
-
-            // console.log("Current:", currentCount, "Last:", lastReservedCount);
-
-            // notify only if INCREASED
-            if (currentCount > lastReservedCount) {
-                let newCount = currentCount - lastReservedCount;
-                notifyNewReservation(newCount);
+            // Only play sound and show toast when count INCREASES
+            if (currentCount > lastReservedCount && lastReservedCount >= 0) {
+                var newOrders = currentCount - lastReservedCount;
+                notifyNewReservation(newOrders);
             }
 
-            // update last count
             lastReservedCount = currentCount;
 
-            b = currentCount == 0 ? '' : currentCount;
+            var display = currentCount === 0 ? '' : currentCount;
+            $('.countOrders').text(display);
 
-            $('.countOrders').text(b);
-            $('.countBilling').text(<?= $billing["count"] > 0 ? $billing["count"] : ''; ?>);
+            // Update billing badge
+            var billingCount = parseInt("<?= $billing['count'] ?? 0 ?>") || 0;
+            $('.countBilling').text(billingCount > 0 ? billingCount : '');
         });
     }
 
@@ -579,6 +599,7 @@ $uri = $this->session->agrishop_login_uri;
                     d.length = pl;
                     d.draw = drawCounter;
                     d.search.value = $('#tbl' + tableId + '_filter input').val();
+                    d.search.status = window['status_filter_' + tableId] || null;
                     d.search.farm_id = $("#farmList").val();
                     d.search.transaction_id = transaction_id_;
                 }

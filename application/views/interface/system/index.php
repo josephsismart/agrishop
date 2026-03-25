@@ -298,6 +298,11 @@ $farm_produce = base_url() . $uri . '/FarmProduce'; ?>
 
                 <div class="col-7">
                     <ul class="d-flex justify-content-end list-unstyled m-0">
+                        <li class="nav-item">
+                            <a class="p-2 mx-1 text-dark" style="text-decoration: none;" href="#" onclick="showSuppliesShop()">
+                                <i class="fa fa-store mr-1"></i> Farm Supplies
+                            </a>
+                        </li>
                         <li>
                             <?php if ($role_lvl != "") { ?>
                                 <!-- <a href="<?php if ($role_lvl == 0) {
@@ -341,9 +346,9 @@ $farm_produce = base_url() . $uri . '/FarmProduce'; ?>
                     <div class="search-bar row bg-light p-2 rounded-4">
 
                         <div class="col-10">
-                            <form id="search-form" class="text-center" action="index.html" method="post">
-                                <input type="text" class="form-control border-0 bg-transparent" id="searchProduce" placeholder="" autocomplete="off">
-                            </form>
+                            <input type="text" class="form-control border-0 bg-transparent" id="searchProduce"
+                                   placeholder="" autocomplete="off"
+                                   onkeydown="if(event.key==='Enter'){event.preventDefault();searchProduces();}">
                         </div>
                         <div class="col-1" style="text-align: right;">
                             <i class="fa fa-search" onclick="searchProduces()" style="cursor: pointer;"></i>
@@ -361,6 +366,61 @@ $farm_produce = base_url() . $uri . '/FarmProduce'; ?>
     </header>
 
     <!-- <div class="buttons" id="cityButtons"></div> -->
+    <div id="suppliesShopSection" style="display:none;">
+        <div class="container py-3">
+
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <h5 class="m-0 font-weight-bold">
+                    <i class="fa fa-store text-warning mr-2"></i> Farm Supplies Shop
+                </h5>
+                <button class="btn btn-sm btn-outline-secondary" onclick="hideSuppliesShop()">
+                    <i class="fa fa-times mr-1"></i> Back to Map
+                </button>
+            </div>
+
+            <!-- Search + Category filter row -->
+            <div class="row mb-3">
+                <div class="col-md-8 mb-2">
+                    <div class="input-group">
+                        <input type="text" id="supplySearchInput" class="form-control" placeholder="Search supplies... (fertilizer, seeds, tools...)" onkeyup="if(event.key==='Enter') refreshSuppliesTable()">
+                        <div class="input-group-append">
+                            <button class="btn btn-warning" onclick="refreshSuppliesTable()">
+                                <i class="fa fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <select id="supplyCategoryFilter" class="form-control" onchange="refreshSuppliesTable()">
+                        <option value="">All Categories</option>
+                        <!-- populated via JS -->
+                    </select>
+                </div>
+            </div>
+
+            <!-- Datatable -->
+            <div class="card shadow-sm">
+                <div class="card-body p-2">
+                    <table id="tblSuppliesShop" class="table table-sm table-hover" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th width="70">Image</th>
+                                <th>Supply</th>
+                                <th>Price</th>
+                                <th>Stock</th>
+                                <th>Location</th>
+                                <th width="160">Order</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Cart summary badge (if logged in) -->
+        </div>
+    </div>
     <div class="container-fluid p-0">
         <?php $this->load->view('interface/system/layout/landing_page') ?>
 
@@ -628,6 +688,131 @@ $farm_produce = base_url() . $uri . '/FarmProduce'; ?>
 
             notifAudio.play().catch(err => console.warn('❌ Sound failed:', err));
         }
+
+
+
+
+
+
+
+
+        /* ── Supplies shop logic ── */
+        let suppliesTableInit = false;
+
+        function showSuppliesShop() {
+            $('#suppliesShopSection').show();
+            $('#map').hide();
+            $('#landing_Page').hide();
+            $('#mapControls').hide();
+            loadSupplyCategories();
+            if (!suppliesTableInit) {
+                initSuppliesTable();
+                suppliesTableInit = true;
+            }
+        }
+
+        function hideSuppliesShop() {
+            $('#suppliesShopSection').hide();
+            $('#landing_Page').show();
+        }
+
+        function loadSupplyCategories() {
+            $.get("<?= base_url('userpublicmap/map/getSupplyCategories') ?>", function(res) {
+                let cats = JSON.parse(res);
+                let opts = '<option value="">All Categories</option>';
+                cats.forEach(c => {
+                    opts += `<option value="${c.id}">${c.name}</option>`;
+                });
+                $('#supplyCategoryFilter').html(opts);
+            });
+        }
+
+        function initSuppliesTable() {
+            $("#tblSuppliesShop").DataTable({
+                order: [
+                    [1, "asc"]
+                ],
+                dom: 'frtip',
+                processing: true,
+                serverSide: true,
+                language: {
+                    searchPlaceholder: "Search..."
+                },
+                searching: false, // use custom search above
+                ajax: {
+                    url: "<?= base_url('userpublicmap/map/getSuppliesShop') ?>",
+                    type: "POST",
+                    data: function(d) {
+                        d.search.value = $('#supplySearchInput').val();
+                        d.search.category = $('#supplyCategoryFilter').val();
+                    }
+                },
+                lengthMenu: [10, 25, 50],
+                pageLength: 10,
+            });
+        }
+
+        function refreshSuppliesTable() {
+            if (!suppliesTableInit) {
+                initSuppliesTable();
+                suppliesTableInit = true;
+                return;
+            }
+            $("#tblSuppliesShop").DataTable().ajax.reload();
+        }
+
+        function viewOnMap(lat, lon, storeName) {
+            hideSuppliesShop();
+            $('#landing_Page').hide();
+            $('#map').show();
+            // Use window.map set in map.php; invalidate size after show
+            setTimeout(function() {
+                if (typeof window.map !== 'undefined') {
+                    window.map.invalidateSize();
+                    window.map.setView([lat, lon], 16);
+                    L.popup()
+                        .setLatLng([lat, lon])
+                        .setContent('<div style="font-weight:600;font-size:14px;"><i class="fa fa-store mr-1"></i>' + storeName + '</div>')
+                        .openOn(window.map);
+                }
+            }, 150);
+        }
+
+        function addSupplyToCartShop(supply_id, price, qtyId, name) {
+            <?php if (!$this->session->agrishop_login_id) : ?>
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Login Required',
+                    text: 'Please login to add items to your cart.',
+                    confirmButtonText: 'Login',
+                    confirmButtonColor: '#e67e22',
+                }).then(r => {
+                    if (r.isConfirmed) window.location = "<?= base_url('login') ?>";
+                });
+                return;
+            <?php endif; ?>
+
+            let qty = parseInt($('#' + qtyId).val()) || 1;
+            $.post("<?= base_url('userpublicmap/map/addSupplyToCart') ?>", {
+                    supply_id,
+                    qty,
+                    price
+                },
+                function(res) {
+                    let d = JSON.parse(res);
+                    if (d.success) {
+                        if (typeof successAlert === 'function') successAlert(name + ' added to cart!');
+                        else alert(name + ' added to cart!');
+                        updateSupplyCartBadge();
+                    } else {
+                        if (typeof failAlert === 'function') failAlert(d.message || 'Failed!');
+                        else alert(d.message || 'Failed!');
+                    }
+                }
+            );
+        }
+
+
     </script>
 
 </body>

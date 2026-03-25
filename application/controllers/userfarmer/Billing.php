@@ -77,40 +77,61 @@ class Billing extends MY_Controller
     function savePayBilling()
     {
         $this->db->trans_begin();
-        $true = ["success"   => true];
-        $false = ["success"   => false];
+        $true  = ["success" => true];
+        $false = ["success" => false];
 
-        $id = $this->input->post('id');
+        $id          = $this->input->post('id');
+        $person_id   = $this->session->agrishop_person_id;
+        $farmer_id   = $this->session->agrishop_login_farmer_id;
 
+        // ✅ Check current billing status — only allow if PENDING or REJECTED
+        $current_status = $this->db->query("
+            SELECT status FROM invoice_billing_status
+            WHERE invoice_billing_id = ? AND is_latest = 1 LIMIT 1
+        ", [$id])->row();
 
-        $person_id = $this->session->agrishop_person_id;
+        if ($current_status && !in_array($current_status->status, ['PENDING', 'REJECTED'])) {
+            echo json_encode(["success" => false, "message" => "This invoice is already being processed."]);
+            return;
+        }
 
         $data = [
-            "invoice_billing_id" => $id,
-            "created_by_person_id" => $person_id,
+            "invoice_billing_id"    => $id,
+            "created_by_person_id"  => $person_id,
+            "is_approved"           => 0,
+            "created_at"            => date('Y-m-d H:i:s'),
         ];
+
         if (isset($_FILES['gcash_qr']) && $_FILES['gcash_qr']['error'] === UPLOAD_ERR_OK) {
-            // Normal upload
             $upload = $this->uploadImg($_FILES['gcash_qr'], $id, 'gcash', 'gcash_qr');
-            $data += [
-                "img_path" => $upload
-            ];
+            $data["img_path"] = $upload;
+        } else {
+            echo json_encode(["success" => false, "message" => "Please attach your GCash screenshot."]);
+            return;
         }
 
         if ($this->db->insert("invoice_billing_proof_of_payment", $data)) {
-            $this->insert_billing_status($id, 'FOR_APPROVAL');
-            $true += ["message"   => "Successfully created!"];
-            $ret = $true;
+            // Update billing status to FOR_APPROVAL
+            $this->insert_billing_status($id, 'FOR_APPROVAL', null, null, null);
+
+            // Notify admin
+            $admin = $this->db->query("SELECT p.id FROM user u JOIN person p ON u.person_id = p.id WHERE u.role_id = 1 LIMIT 1")->row();
+            if ($admin) {
+                $this->notify($admin->id, 'Payment Submitted 💳',
+                    'A farmer submitted payment proof for Invoice #' . $id . '. Please verify.',
+                    'INFO', 'invoice_billing', $id);
+            }
+
+            $true  += ["message" => "Payment submitted! Waiting for admin verification."];
+            $ret    = $true;
         } else {
-            $false += ["message"   => "Something went wrong!"];
-            $ret = $false;
+            $false += ["message" => "Something went wrong!"];
+            $ret    = $false;
         }
 
-        if ($this->db->trans_status() === false) {
-            $this->db->trans_rollback();
-        } else {
-            $this->db->trans_commit();
-        }
+        $this->db->trans_status() === false
+            ? $this->db->trans_rollback()
+            : $this->db->trans_commit();
 
         echo json_encode($ret);
     }

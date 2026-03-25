@@ -68,7 +68,7 @@ $role_lvl = $this->session->agrishop_login_level;
           <?php } ?>
           <?php if ($role_lvl != "") { ?>
             <li>
-              <a href="#" id="bars" class="p-2 mx-1 text-dark" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar">
+              <a href="#" id="bars" class="p-2 mx-1 text-dark">
                 <i class="fa fa-bars"></i><span class="badge bg-info countOrders"><?= $this->session->agrishop_reserved_trans_count; ?></span>
                 <span class="badge bg-warning countBilling"></span>
               </a>

@@ -44,7 +44,10 @@ class OnProduction extends MY_Controller
                                         p.contact_num,p.email_address,
                                         ff.barangay_id,
                                         ff.lat,
-                                        ff.lon, pr.name as produce_name, pr.img_path as produce_img_path FROM farmer_produce_production t1
+                                        ff.lon, pr.name as produce_name, pr.img_path as produce_img_path,
+                                        t1.expected_harvest_date, t1.expected_yield, t1.expected_revenue,
+                                        t1.market_price_per_kg, t1.area_sqm as area_sqm_raw
+                                        FROM farmer_produce_production t1
                                     JOIN (SELECT * FROM farmer_produce_production_status WHERE is_latest = 1 $status_production)t2 on t1.id=t2.farmer_produce_production_id
                                     LEFT JOIN farmer_farm ff ON t1.farmer_farm_id = ff.id
                                     LEFT JOIN farmer f on ff.farmer_id= f.id
@@ -77,7 +80,14 @@ class OnProduction extends MY_Controller
                 "produce"    => $value->produce_name,
                 "variety" => $value->variety,
                 "produce_img_path" => $produce_image_path,
-                "farmerContact" => "Contact: " . $value->contact_num . " | Email: " . $value->email_address
+                "farmerContact"        => "Contact: " . $value->contact_num . " | Email: " . $value->email_address,
+                "expected_harvest_date"=> $value->expected_harvest_date,
+                "expected_yield"       => $value->expected_yield,
+                "expected_revenue"     => $value->expected_revenue,
+                "market_price_per_kg"  => $value->market_price_per_kg,
+                "note"                 => $value->note,
+                "farmer_img_raw"       => $farmer_image,
+                "produce_img_raw"      => $produce_image,
             ];
         }
         echo json_encode($data);
@@ -86,78 +96,108 @@ class OnProduction extends MY_Controller
 
     function getProductionInfo($status_production = '')
     {
-        $requestData = $_REQUEST;
-        $person_id  = $this->session->agrishop_person_id;
-        $farmer_id = $this->session->agrishop_login_farmer_id;
-        // $status_production = isset($requestData['search']['status_production']) ? $requestData['search']['status_production'] : '';
+        $requestData  = $_REQUEST;
+        // Logged-in farmer — controls who can update
+        $my_farmer_id = (int) $this->session->agrishop_login_farmer_id;
+
         if ($status_production == '') {
-            $status_production = "AND (status!='COMPLETED' AND status!='CANCELLED' AND status!='DAMAGED')";
+            $status_filter = "AND (status!='COMPLETED' AND status!='CANCELLED' AND status!='DAMAGED')";
         } else {
-            $status_production = "AND (status='COMPLETED' OR status='CANCELLED' OR status='DAMAGED')";
+            $status_filter = "AND (status='COMPLETED' OR status='CANCELLED' OR status='DAMAGED')";
         }
 
-        $searchValue = isset($requestData['search']['value']) ? $requestData['search']['value'] : '';
-
-        // Calculate pagination parameters using the separate function
+        $searchValue = $this->db->escape_like_str(
+            isset($requestData['search']['value']) ? $requestData['search']['value'] : ''
+        );
         list($limit, $offset) = $this->calculatePagination($requestData);
 
-        // Query to get total record count
-        $thisQuery = $this->db->query("SELECT COUNT(1) as total FROM farmer_produce_production t1
-                                JOIN (SELECT * FROM farmer_produce_production_status WHERE is_latest = 1 $status_production)t2 on t1.id=t2.farmer_produce_production_id
-                                LEFT JOIN farmer_farm ff ON t1.farmer_farm_id = ff.id
-                                LEFT JOIN farmer f on ff.farmer_id= f.id
-                                LEFT JOIN person p on f.person_id=p.id
-                                LEFT JOIN produce pr on t1.produce_id = pr.id
-                                WHERE f.id= $farmer_id AND CONCAT(pr.name, pr.tags, t1.variety, t2.status) COLLATE utf8mb4_general_ci LIKE '%$searchValue%'");
-        $totalRecords = $thisQuery->row()->total;
+        // Show ALL farmers production records
+        $base = "FROM farmer_produce_production t1
+            JOIN (SELECT * FROM farmer_produce_production_status WHERE is_latest = 1 $status_filter) t2
+                ON t1.id = t2.farmer_produce_production_id
+            LEFT JOIN farmer_farm ff ON t1.farmer_farm_id = ff.id
+            LEFT JOIN farmer f ON ff.farmer_id = f.id
+            LEFT JOIN person p ON f.person_id = p.id
+            LEFT JOIN produce pr ON t1.produce_id = pr.id
+            WHERE CONCAT(
+                COALESCE(pr.name,''), COALESCE(pr.tags,''), COALESCE(t1.variety,''),
+                COALESCE(t2.status,''), COALESCE(p.first_name,''), COALESCE(p.last_name,''),
+                COALESCE(ff.farm_name,'')
+            ) COLLATE utf8mb4_general_ci LIKE '%$searchValue%'";
 
-        $query = $this->db->query("SELECT t1.*,t2.status,t2.note,t2.created_at,ff.img_path,t1.produce_id, p.img_path as farmer_img_path,
-                                        ff.farm_name,
-                                        ff.barangay_id,
-                                        ff.lat,
-                                        ff.lon, pr.name as produce_name, pr.img_path as produce_img_path FROM farmer_produce_production t1
-                                    JOIN (SELECT * FROM farmer_produce_production_status WHERE is_latest = 1 $status_production)t2 on t1.id=t2.farmer_produce_production_id
-                                    LEFT JOIN farmer_farm ff ON t1.farmer_farm_id = ff.id
-                                    LEFT JOIN farmer f on ff.farmer_id= f.id
-                                    LEFT JOIN person p on f.person_id=p.id
-                                    LEFT JOIN produce pr on t1.produce_id = pr.id
-                                    WHERE f.id= $farmer_id  AND CONCAT(pr.name, pr.tags, t1.variety, t2.status) COLLATE utf8mb4_general_ci LIKE '%$searchValue%'
-                                    ORDER BY id DESC
-                                    LIMIT $limit OFFSET $offset
-                                    ");
+        $totalRecords = (int) $this->db->query("SELECT COUNT(1) AS total $base")->row()->total;
 
-        $data = array();
-        $cc = 1;
-        foreach ($query->result() as $key => $value) {
-            $is_a_v = $value->status;
+        $query = $this->db->query("
+            SELECT t1.*, t2.status, t2.note, t2.created_at AS status_date,
+                   ff.img_path AS farm_img, ff.farm_name, ff.barangay_id, ff.lat, ff.lon,
+                   f.id AS owner_farmer_id,
+                   CONCAT(p.first_name, ' ', p.last_name) AS farmer_name,
+                   p.img_path AS farmer_img,
+                   pr.name AS produce_name, pr.img_path AS produce_img_path
+            $base
+            ORDER BY t1.id DESC
+            LIMIT $limit OFFSET $offset
+        ");
+
+        $data = [];
+        $cc   = 1;
+        foreach ($query->result() as $value) {
+            $is_owner = ((int)$value->owner_farmer_id === $my_farmer_id);
+
             $img_path = $this->defaultImage($value->produce_img_path, $value->produce_id);
-            $img = "<img src='$img_path' width='50' height='50' class='rounded' data-toggle='tooltip' data-placement='top' title=''>";
-            $status_color = $value->status == 'DAMAGED' ? 'bg-danger' : ($value->status == 'CANCELLED' ? 'bg-gray' : 'bg-success');
-            $status = "<span class='badge $status_color'>" . $value->status . "</span>";
-            $note = '<i class="text-muted text-xs" title="' . $value->note . '">' . $value->note . '</i>';
-            $status_date = "<br/><small class='text-black'>" . date('M d, Y', strtotime($value->created_at)) . "</small>";
-            $data[] = array(
-                $cc++,
-                "<div onclick=\"production_id_=" . $value->id . ";$('#note').val('" . $value->note . "'); $('#productionStatus').val('" . $value->status . "');$('#modalProductionStatus').modal('show');\" style=\"cursor:pointer;\">" . $img . '</br>' . $status . $status_date . '<br/>' . $note  . '</div>',
-                '<b class="text-black">' . $value->produce_name . '</b></br><i class="text-gray">' . $value->variety . '</i>',
-                'HRVST:<b class="text-black">' . $value->expected_harvest_date .
-                    '</b><br/>YIELD:<b class="text-success"> ' . $value->expected_yield .
-                    '</b><br/>REVENUE:<b class="text-blue"> ' . $value->expected_revenue . '</b>',
-                $value->planted_date,
-                $value->area_sqm . " sqm",
-                $value->market_price_per_kg,
-                $value->farm_name . "<br/><span class='text-xs'><i>" . $this->getAddress2($value->barangay_id) . "</i></span>",
-            );
-        } // Prepare the response data in the required format
-        $response = array(
-            'draw' => intval($requestData['draw']),
-            'recordsTotal' => intval($totalRecords),
-            'recordsFiltered' => intval($totalRecords), // For simplicity, assuming no filtering is applied
-            'data' => $data,
-        );
-        echo json_encode($response);
-    }
+            $img = "<img src='$img_path' width='50' height='50' class='rounded'>";
 
+            $sc = $value->status == 'DAMAGED'   ? 'bg-danger'
+               : ($value->status == 'CANCELLED' ? 'bg-secondary'
+               : ($value->status == 'COMPLETED' ? 'bg-info' : 'bg-success'));
+            $badge = "<span class='badge $sc'>" . $value->status . "</span>";
+            $sdate = "<br><small class='text-muted'>" . date('M d, Y', strtotime($value->status_date)) . "</small>";
+            $note  = "<br><i class='text-muted text-xs'>" . htmlspecialchars($value->note ?? '') . "</i>";
+
+            // Only owner can click to update
+            // Use data-* attributes to avoid any quote/syntax issues in onclick
+            if ($is_owner) {
+                $img_col = '<div class="prod-status-btn" style="cursor:pointer" title="Click to update status"'
+                    . ' data-pid="' . $value->id . '"'
+                    . ' data-note="' . htmlspecialchars($value->note ?? '', ENT_QUOTES) . '"'
+                    . ' data-status="' . htmlspecialchars($value->status, ENT_QUOTES) . '">'
+                    . $img . $badge . $sdate . $note . '</div>';
+            } else {
+                $img_col = '<div style="cursor:default" title="View only — not your record">'
+                    . $img . $badge . $sdate . $note . '</div>';
+            }
+
+            $f_img = !empty($value->farmer_img)
+                ? base_url($value->farmer_img)
+                : base_url('dist/img/media/icons/1x1.png');
+            $farmer_col = "<div class='d-flex align-items-center' style='gap:6px;'>"
+                . "<img src='$f_img' width='32' height='32' class='rounded-circle' style='object-fit:cover;flex-shrink:0;'>"
+                . "<div style='line-height:1.2;'><div style='font-size:12px;font-weight:600;'>" . htmlspecialchars($value->farmer_name) . "</div>"
+                . ($is_owner ? "<span class='badge bg-success' style='font-size:9px;'>You</span>" : "")
+                . "</div></div>";
+
+            $data[] = [
+                $cc++,
+                $img_col,
+                '<b>' . htmlspecialchars($value->produce_name) . '</b><br><i class="text-gray text-xs">' . htmlspecialchars($value->variety ?? '') . '</i>',
+                'HRVST: <b>' . $value->expected_harvest_date . '</b><br>'
+                . 'YIELD: <b class="text-success">' . $value->expected_yield . '</b><br>'
+                . 'REVENUE: <b class="text-primary">' . $value->expected_revenue . '</b>',
+                $value->planted_date,
+                $value->area_sqm . ' sqm',
+                $value->market_price_per_kg,
+                $farmer_col,
+                $value->farm_name . "<br><small class='text-muted'><i>" . $this->getAddress2($value->barangay_id) . "</i></small>",
+            ];
+        }
+
+        echo json_encode([
+            'draw'            => intval($requestData['draw']),
+            'recordsTotal'    => intval($totalRecords),
+            'recordsFiltered' => intval($totalRecords),
+            'data'            => $data,
+        ]);
+    }
     function getProductionInfoCompleted()
     {
         $this->getProductionInfo('COMPLETED');
@@ -244,6 +284,46 @@ class OnProduction extends MY_Controller
         }
 
         echo json_encode($ret);
+    }
+
+    public function getProductionMapData()
+    {
+        $query = $this->db->query("
+            SELECT t1.id, t1.variety, t1.expected_harvest_date,
+                   t2.status,
+                   ff.farm_name, ff.lat, ff.lon, ff.barangay_id,
+                   f.id AS owner_farmer_id,
+                   CONCAT(p.first_name, ' ', p.last_name) AS farmer_name,
+                   pr.name AS produce
+            FROM farmer_produce_production t1
+            JOIN (SELECT * FROM farmer_produce_production_status
+                  WHERE is_latest = 1
+                  AND status NOT IN ('COMPLETED','CANCELLED','DAMAGED')) t2
+                ON t1.id = t2.farmer_produce_production_id
+            LEFT JOIN farmer_farm ff ON t1.farmer_farm_id = ff.id
+            LEFT JOIN farmer f ON ff.farmer_id = f.id
+            LEFT JOIN person p ON f.person_id = p.id
+            LEFT JOIN produce pr ON t1.produce_id = pr.id
+            WHERE ff.lat IS NOT NULL AND ff.lon IS NOT NULL
+        ");
+
+        $data = [];
+        foreach ($query->result() as $row) {
+            $data[] = [
+                'id'             => $row->id,
+                'lat'            => (float) $row->lat,
+                'lon'            => (float) $row->lon,
+                'produce'        => $row->produce,
+                'variety'        => $row->variety,
+                'status'         => $row->status,
+                'farm_name'      => $row->farm_name,
+                'farmer_name'    => $row->farmer_name,
+                'owner_farmer_id'=> (int) $row->owner_farmer_id,
+                'harvest_date'   => $row->expected_harvest_date,
+                'location'       => $this->getAddress2($row->barangay_id),
+            ];
+        }
+        echo json_encode($data);
     }
 }
 

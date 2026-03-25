@@ -301,4 +301,64 @@
             });
         });
     }
+
+    function removePromoCart(cart_id, transaction_id) {
+        Swal.fire({
+            title: 'Remove promo item?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Remove',
+            cancelButtonText: 'Keep',
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#28a745',
+            width: '300px',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.post("<?= base_url('userpublicmap/Map/remove_promo_from_cart') ?>", {
+                    cart_id: cart_id,
+                    transaction_id: transaction_id,
+                }, function(res) {
+                    let j = JSON.parse(res);
+                    if (j.success) {
+                        successAlert(j.message);
+                        getTable("CartDetails", 1, 1000);
+                        getTable('CartListing', 0, 5);
+                        $(".pending-order").text(j.cart_pending || '');
+                    } else {
+                        failAlert(j.message);
+                    }
+                });
+            }
+        });
+    }
+
+    function removeSupplyCart(cart_id, transaction_id) {
+        Swal.fire({
+            title: 'Remove item?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Remove',
+            cancelButtonText: 'Keep',
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#28a745',
+            width: '300px',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.post("<?= base_url('userpublicmap/Map/remove_supply_from_cart') ?>", {
+                    cart_id: cart_id,
+                    transaction_id: transaction_id,
+                }, function(res) {
+                    let j = JSON.parse(res);
+                    if (j.success) {
+                        successAlert(j.message);
+                        getTable("CartDetails", 1, 1000);
+                        getTable('CartListing', 0, 5);
+                        $(".pending-order").text(j.cart_pending || '');
+                    } else {
+                        failAlert(j.message);
+                    }
+                });
+            }
+        });
+    }
 </script>

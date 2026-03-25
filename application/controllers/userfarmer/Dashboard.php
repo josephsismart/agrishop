@@ -67,7 +67,7 @@ class Dashboard extends MY_Controller
                                                 LEFT JOIN produce p ON fp.produce_id = p.id
                                                 LEFT JOIN price_monitoring_farm_produce pmfp ON mcfp.price_id_during_transact = pmfp.id 
                                                 LEFT JOIN produce_classification pc ON p.produce_classification_id = pc.id
-                                                WHERE tc.id IS null
+                                                WHERE tc.id IS null AND p.name IS NOT NULL
                                                 GROUP BY p.id,pmfp.price,fp.uom,pc.img_path ORDER BY sum(mcfp.qty) desc")->result();
         $p_selling = json_encode($products_selling);
 

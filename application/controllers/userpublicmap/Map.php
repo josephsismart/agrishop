@@ -14,6 +14,26 @@ class Map extends MY_Controller
         date_default_timezone_set("Asia/Manila");
     }
 
+    public function getSupplyCartCount()
+    {
+        $person_id = $this->session->agrishop_person_id;
+        if (!$person_id) {
+            echo json_encode(['count' => 0]);
+            return;
+        }
+
+        $result = $this->db->query("
+            SELECT COUNT(1) AS count
+            FROM my_cart_supply mcs
+            JOIN transaction t ON mcs.transaction_id = t.id
+            JOIN (SELECT * FROM transaction_status WHERE is_latest IS TRUE AND status = 'PENDING') ts ON t.id = ts.transaction_id
+            WHERE t.person_id = ?
+        ", [$person_id]);
+
+        $count = ($result && $result->row()) ? (int) $result->row()->count : 0;
+        echo json_encode(['count' => $count]);
+    }
+
     function searchProduce()
     {
         $data =  [];
@@ -95,6 +115,177 @@ class Map extends MY_Controller
         echo json_encode($data);
     }
 
+
+    public function getSuppliesShop()
+    {
+        $requestData = $_REQUEST;
+        $keyword     = isset($requestData['search']['value'])   ? $requestData['search']['value']   : '';
+        $category_id = isset($requestData['search']['category']) ? $requestData['search']['category'] : '';
+        $searchValue = $this->db->escape_like_str($keyword);
+
+        list($limit, $offset) = $this->calculatePagination($requestData);
+
+        $cat_where = $category_id ? "AND ss.supply_category_id = " . (int)$category_id : "";
+
+        $totalRecords = $this->db->query("
+            SELECT COUNT(1) AS total
+            FROM supplier_supply ss
+            JOIN supply_category sc ON ss.supply_category_id = sc.id
+            JOIN supplier sup ON ss.supplier_id = sup.id AND sup.is_active = 1
+            WHERE ss.is_active = 1 AND ss.qty_available > 0
+              $cat_where
+              AND CONCAT(ss.name, COALESCE(ss.brand,''), sc.name, COALESCE(ss.tags,''))
+                  COLLATE utf8mb4_general_ci LIKE '%$searchValue%'
+        ")->row()->total ?? 0;
+
+        $query = $this->db->query("
+            SELECT ss.id, ss.name, ss.brand, ss.uom, ss.price, ss.qty_available,
+                   ss.img_path, ss.description,
+                   sc.name AS category,
+                   st.store_name, st.lat, st.lon, st.address_text,
+                   CONCAT(p.first_name,' ',p.last_name) AS supplier_name,
+                   p.contact_num
+            FROM supplier_supply ss
+            JOIN supply_category sc ON ss.supply_category_id = sc.id
+            JOIN supplier sup ON ss.supplier_id = sup.id AND sup.is_active = 1
+            JOIN person p ON sup.person_id = p.id
+            LEFT JOIN supplier_store st ON ss.store_id = st.id
+            WHERE ss.is_active = 1 AND ss.qty_available > 0
+              $cat_where
+              AND CONCAT(ss.name, COALESCE(ss.brand,''), sc.name, COALESCE(ss.tags,''))
+                  COLLATE utf8mb4_general_ci LIKE '%$searchValue%'
+            ORDER BY ss.name ASC
+            LIMIT $limit OFFSET $offset
+        ");
+
+        if (!$query) {
+            echo json_encode(['draw' => intval($requestData['draw'] ?? 1), 'recordsTotal' => 0, 'recordsFiltered' => 0, 'data' => []]);
+            return;
+        }
+
+        $data = [];
+        foreach ($query->result() as $v) {
+            $img = (!empty($v->img_path) && file_exists(FCPATH . $v->img_path))
+                ? "<img src='" . base_url($v->img_path) . "' width='60' height='60' class='rounded' style='object-fit:cover;'>"
+                : "<div style='width:60px;height:60px;background:#f0f0f0;border-radius:8px;display:flex;align-items:center;justify-content:center;'><i class='fa fa-box text-muted fa-2x'></i></div>";
+
+            $stock_color = $v->qty_available <= 10 ? 'text-danger' : 'text-success';
+            $location    = $v->store_name ? "{$v->store_name}" . ($v->address_text ? " — {$v->address_text}" : '') : '—';
+
+            $data[] = [
+                $img,
+                "<div>
+                    <div style='font-weight:600;font-size:14px;'>" . htmlspecialchars($v->name) . "</div>
+                    " . ($v->brand ? "<small class='text-muted'>" . htmlspecialchars($v->brand) . "</small>" : "") . "
+                    <br><span class='badge badge-secondary' style='font-size:11px;'>{$v->category}</span>
+                 </div>",
+                "₱ " . number_format($v->price, 2) . "<br><small class='text-muted'>per {$v->uom}</small>",
+                "<span class='$stock_color font-weight-bold'>" . number_format($v->qty_available) . " {$v->uom}</span>",
+                "<small>" . htmlspecialchars($location) . "</small>",
+                "<div class='d-flex align-items-center' style='gap:4px;'>
+                    <input type='number' id='qty_{$v->id}' min='1' max='{$v->qty_available}'
+                           value='1' class='form-control form-control-sm' style='width:65px;'>
+                    <button class='btn btn-sm btn-warning'
+                        onclick='addSupplyToCartShop({$v->id}, {$v->price}, \"qty_{$v->id}\", " . json_encode(htmlspecialchars($v->name)) . ")'>
+                        <i class='fa fa-cart-plus'></i>
+                    </button>
+                    " . ($v->lat ? "<button class='btn btn-sm btn-outline-secondary'
+                        onclick='viewOnMap({$v->lat},{$v->lon},\"" . addslashes($v->store_name) . "\")'>
+                        <i class='fa fa-map-marker-alt'></i>
+                    </button>" : "") . "
+                 </div>",
+            ];
+        }
+
+        echo json_encode([
+            'draw'            => intval($requestData['draw'] ?? 1),
+            'recordsTotal'    => intval($totalRecords),
+            'recordsFiltered' => intval($totalRecords),
+            'data'            => $data,
+        ]);
+    }
+
+    // ── Get supply categories for filter dropdown ─────────────
+    public function getSupplyCategories()
+    {
+        $rows = $this->db->query("SELECT id, name FROM supply_category WHERE is_active = 1 ORDER BY name")->result();
+        echo json_encode($rows ?: []);
+    }
+
+
+    function searchSupplier()
+    {
+        $data  = [];
+        $value = $this->input->post("value");
+
+        $rows = $this->db->query("
+            SELECT
+                st.id           AS store_id,
+                st.store_name,
+                st.lat,
+                st.lon,
+                st.img_path     AS store_img,
+                st.address_text AS store_address,
+                st.barangay_id,
+                p.img_path      AS supplier_img,
+                CONCAT(p.first_name,' ',p.last_name) AS supplier_name,
+                p.contact_num,
+                p.email_address,
+                CONCAT('[', GROUP_CONCAT(
+                    JSON_OBJECT(
+                        'id',           ss.id,
+                        'name',         ss.name,
+                        'brand',        ss.brand,
+                        'category',     sc.name,
+                        'price',        ss.price,
+                        'uom',          ss.uom,
+                        'qty_available',ss.qty_available,
+                        'img_path',     ss.img_path
+                    )
+                    ORDER BY ss.name
+                ), ']') AS supplies
+            FROM supplier_store st
+            JOIN supplier sup    ON st.supplier_id = sup.id AND sup.is_active = 1
+            JOIN person p        ON sup.person_id = p.id
+            JOIN supplier_supply ss ON ss.store_id = st.id AND ss.is_active = 1 AND ss.qty_available > 0
+            JOIN supply_category sc ON ss.supply_category_id = sc.id
+            WHERE st.is_active = 1
+              AND st.lat IS NOT NULL
+              AND st.lon IS NOT NULL
+              AND CONCAT(ss.name, ss.brand, ss.tags, sc.name) COLLATE utf8mb4_general_ci LIKE ?
+            GROUP BY
+                st.id, st.store_name, st.lat, st.lon,
+                st.img_path, st.address_text, st.barangay_id,
+                p.img_path, p.contact_num, p.email_address,
+                CONCAT(p.first_name,' ',p.last_name)
+            ORDER BY st.store_name
+        ", ['%' . $value . '%'])->result();
+
+        foreach ($rows as $row) {
+            $store_address  = $row->store_address ?: $this->getAddress2($row->barangay_id);
+            $store_img      = $row->store_img
+                ? base_url($row->store_img)
+                : base_url('dist/img/media/icons/1x1.png');
+            $supplier_img   = $row->supplier_img
+                ? base_url($row->supplier_img)
+                : base_url('dist/img/media/icons/1x1.png');
+
+            $data[] = [
+                "id"             => $row->store_id,
+                "store_name"     => $row->store_name,
+                "store_img"      => "<img src='$store_img' width='50' height='50' class='rounded'>",
+                "store_address"  => $store_address,
+                "supplier_name"  => $row->supplier_name,
+                "supplier_img"   => "<img src='$supplier_img' width='40' height='40' class='rounded-circle'>",
+                "lat"            => $row->lat,
+                "lon"            => $row->lon,
+                "supplies"       => $row->supplies,
+                "contact"        => "Contact: " . $row->contact_num . " | Email: " . $row->email_address,
+            ];
+        }
+
+        echo json_encode($data);
+    }
 
     function getFarmProduceList()
     {
@@ -366,6 +557,232 @@ class Map extends MY_Controller
         echo json_encode($ret);
     }
 
+    // ── Add promo deal to cart ────────────────────────────────────────────
+    public function add_promo_to_cart()
+    {
+        $this->db->trans_begin();
+        $true  = ["success" => true];
+        $false = ["success" => false];
+
+        $login_id  = $this->session->agrishop_login_id;
+        $person_id = $this->session->agrishop_person_id;
+
+        if (!$login_id) {
+            echo json_encode(["success" => false, "login_required" => true]);
+            return;
+        }
+
+        $promo_id = (int) $this->input->post('promo_id');
+        $qty      = (int) $this->input->post('qty');
+        $qty      = $qty < 1 ? 1 : $qty;
+
+        // Fetch promo — must be active and still valid
+        $today = date('Y-m-d');
+        $promo = $this->db->query("
+            SELECT pd.*,
+                   ff.id   AS farm_id,
+                   CONCAT(p.first_name,' ',p.last_name) AS farmer_name,
+                   p.id    AS farmer_person_id
+            FROM promo_discount pd
+            JOIN farmer f      ON pd.farmer_id = f.id
+            JOIN person p      ON f.person_id  = p.id
+            LEFT JOIN farmer_farm ff ON ff.farmer_id = f.id AND ff.is_active = 1
+            WHERE pd.id = ? AND pd.is_active = 1
+              AND pd.valid_from <= ? AND pd.valid_until >= ?
+            LIMIT 1
+        ", [$promo_id, $today, $today])->row();
+
+        if (!$promo) {
+            echo json_encode(["success" => false, "message" => "Promo not found or has expired."]);
+            return;
+        }
+
+        // Enforce max_qty if set
+        if ($promo->max_qty && $qty > $promo->max_qty) {
+            echo json_encode(["success" => false, "message" => "Max quantity for this promo is {$promo->max_qty}."]);
+            return;
+        }
+
+        $farm_id   = $promo->farm_id;
+        $price     = (float) $promo->discounted_price;
+        $sub_total = $price * $qty;
+        $dateNow   = $this->now();
+
+        // Reuse existing PENDING transaction for this farm or create new one
+        $check = $this->db->query(
+            "SELECT t.id FROM transaction t
+             JOIN (SELECT * FROM transaction_status WHERE is_latest IS TRUE AND status='PENDING') ts
+               ON t.id = ts.transaction_id
+             WHERE t.person_id = ? AND t.farm_id = ? LIMIT 1",
+            [$person_id, $farm_id]
+        )->row();
+
+        if ($check) {
+            $transaction_id = $check->id;
+        } else {
+            $this->db->insert("transaction", [
+                'person_id'          => $person_id,
+                'total_sale_amount'  => 1,
+                'transaction_date'   => $dateNow,
+                'admin_percentage'   => 1,
+                'admin_sale_amount'  => 0.1,
+                'farm_id'            => $farm_id,
+            ]);
+            $transaction_id = $this->db->insert_id();
+            $this->transaction_status([
+                'transaction_id'       => $transaction_id,
+                'status'               => 'PENDING',
+                'created_by_person_id' => $person_id,
+            ]);
+        }
+
+        // Insert into my_cart_promo
+        $this->db->insert("my_cart_promo", [
+            'transaction_id'   => $transaction_id,
+            'promo_discount_id' => $promo_id,
+            'qty'              => $qty,
+            'price_at_add'     => $price,
+            'sub_total'        => $sub_total,
+            'created_at'       => $dateNow,
+        ]);
+
+        if ($this->db->trans_status() === false) {
+            $this->db->trans_rollback();
+            echo json_encode(["success" => false, "message" => "Failed to add promo to cart."]);
+            return;
+        }
+
+        $this->db->trans_commit();
+
+        $cp = $this->getTransactionStatus($person_id, 'PENDING', 'client');
+
+        // Notify farmer
+        if ($promo->farmer_person_id) {
+            $buyer_name = $this->getPersonName($person_id);
+            $this->notify(
+                $promo->farmer_person_id,
+                '🏷️ Promo Order Incoming!',
+                "{$buyer_name} added your promo \"{$promo->title}\" to their cart.",
+                'SUCCESS',
+                'transaction',
+                $transaction_id
+            );
+        }
+
+        echo json_encode([
+            "success"      => true,
+            "message"      => "Promo added to cart!",
+            "cart_pending" => $cp,
+        ]);
+    }
+
+    function addSupplyToCart()
+    {
+        $this->db->trans_begin();
+        $true  = ["success" => true];
+        $false = ["success" => false];
+
+        $person_id         = $this->session->agrishop_person_id;
+        $login_id          = $this->session->agrishop_login_id;
+        $supply_id         = $this->input->post('supply_id');
+        $qty               = $this->input->post('qty');
+        $price             = $this->input->post('price');
+
+        if (!$login_id) {
+            echo json_encode(["login_required" => true]);
+            return;
+        }
+        if (!$supply_id || !$qty || $qty < 1) {
+            echo json_encode(["fill" => true]);
+            return;
+        }
+
+        // Get supply details
+        $supply = $this->db->query("
+            SELECT ss.*, sup.person_id AS supplier_person_id, sup.id AS supplier_id
+            FROM supplier_supply ss
+            JOIN supplier sup ON ss.supplier_id = sup.id
+            WHERE ss.id = ? AND ss.is_active = 1 AND ss.qty_available >= ?
+            LIMIT 1
+        ", [$supply_id, $qty])->row();
+
+        if (!$supply) {
+            echo json_encode(["success" => false, "message" => "Supply not available or insufficient stock."]);
+            return;
+        }
+
+        // Check if there's an open (PENDING) supply transaction for this buyer
+        $existing_trans = $this->db->query("
+            SELECT t.id FROM transaction t
+            JOIN (SELECT * FROM transaction_status WHERE is_latest = TRUE AND status = 'PENDING') ts ON t.id = ts.transaction_id
+            WHERE t.person_id = ? AND t.supplier_id = ?
+            LIMIT 1
+        ", [$person_id, $supply->supplier_id])->row();
+
+        if ($existing_trans) {
+            $transaction_id = $existing_trans->id;
+        } else {
+            // Create new transaction
+            $data_trans = [
+                "person_id"          => $person_id,
+                "supplier_id"        => $supply->supplier_id,
+                "transaction_date"   => date('Y-m-d H:i:s'),
+                "total_sale_amount"  => 0,   // updated on checkout
+                "is_done"            => false,
+            ];
+            $this->db->insert("transaction", $data_trans);
+            $transaction_id = $this->db->insert_id();
+
+            // Initial PENDING status
+            $this->transaction_status([
+                'transaction_id'       => $transaction_id,
+                'status'               => 'PENDING',
+                'created_by_person_id' => $person_id,
+            ]);
+            // Initial UNPAID payment status
+            $this->transaction_payment_status([
+                'transaction_id'       => $transaction_id,
+                'status'               => 'UNPAID',
+                'created_by_person_id' => $person_id,
+            ]);
+            // Initial TO_PICKUP delivery status
+            $this->transaction_delivery_status([
+                'transaction_id'       => $transaction_id,
+                'status'               => 'TO_PICKUP',
+                'created_by_person_id' => $person_id,
+            ]);
+        }
+
+        // Insert cart item
+        $sub_total = $supply->price * $qty;
+        $data_cart = [
+            "transaction_id"       => $transaction_id,
+            "supplier_supply_id"   => $supply_id,
+            "qty"                  => $qty,
+            "sub_total"            => $sub_total,
+            "price_during_transact" => $supply->price,
+            "created_at"           => date('Y-m-d H:i:s'),
+        ];
+
+        if ($this->db->insert("my_cart_supply", $data_cart)) {
+            $true += [
+                "message"        => $supply->name . " added to cart!",
+                "transaction_id" => $transaction_id,
+                "sub_total"      => $sub_total,
+            ];
+            $ret = $true;
+        } else {
+            $false += ["message" => "Failed to add to cart!"];
+            $ret = $false;
+        }
+
+        $this->db->trans_status() === false
+            ? $this->db->trans_rollback()
+            : $this->db->trans_commit();
+
+        echo json_encode($ret);
+    }
+
     public function remove_produce_from_cart()
     {
         $this->db->trans_begin();
@@ -401,83 +818,172 @@ class Map extends MY_Controller
         echo json_encode($ret);
     }
 
+
+    public function remove_supply_from_cart()
+    {
+        $this->db->trans_begin();
+        $person_id      = $this->session->agrishop_person_id;
+        $cart_id        = $this->input->post('cart_id');
+        $transaction_id = $this->input->post('transaction_id');
+        $true  = ["success" => true];
+        $false = ["success" => false];
+
+        $cart = $this->db->query(
+            "SELECT COUNT(1) AS cc FROM my_cart_supply WHERE transaction_id = ?",
+            [$transaction_id]
+        )->row();
+
+        if ($this->db->delete("my_cart_supply", ["id" => $cart_id])) {
+            if ($cart->cc == 1) {
+                $this->db->query("DELETE FROM transaction_status          WHERE transaction_id = ?", [$transaction_id]);
+                $this->db->query("DELETE FROM transaction_payment_status  WHERE transaction_id = ?", [$transaction_id]);
+                $this->db->query("DELETE FROM transaction_delivery_status WHERE transaction_id = ?", [$transaction_id]);
+                $this->db->query("DELETE FROM transaction WHERE id = ?",                            [$transaction_id]);
+            }
+            $cp = $this->getTransactionStatus($person_id, 'PENDING', 'client');
+            $true  += ["message" => "Removed from cart!", "cart_pending" => $cp];
+            $ret    = $true;
+        } else {
+            $false += ["message" => "Failed to remove!"];
+            $ret    = $false;
+        }
+
+        $this->db->trans_status() === false
+            ? $this->db->trans_rollback()
+            : $this->db->trans_commit();
+
+        echo json_encode($ret);
+    }
+
+    public function remove_promo_from_cart()
+    {
+        $this->db->trans_begin();
+        $person_id      = $this->session->agrishop_person_id;
+        $cart_id        = (int) $this->input->post('cart_id');
+        $transaction_id = (int) $this->input->post('transaction_id');
+        $true  = ["success" => true];
+        $false = ["success" => false];
+
+        // Count remaining promo items + farm produce items in this transaction
+        $promo_count   = $this->db->query("SELECT COUNT(1) AS cc FROM my_cart_promo WHERE transaction_id = ?", [$transaction_id])->row()->cc;
+        $produce_count = $this->db->query("SELECT COUNT(1) AS cc FROM my_cart_farm_produce WHERE transaction_id = ?", [$transaction_id])->row()->cc;
+
+        if ($this->db->delete("my_cart_promo", ["id" => $cart_id])) {
+            // If this was the last item in the transaction, clean up the transaction
+            if (($promo_count + $produce_count) == 1) {
+                $this->db->query("DELETE FROM transaction_status WHERE transaction_id = ?", [$transaction_id]);
+                $this->db->query("DELETE FROM transaction WHERE id = ?", [$transaction_id]);
+            }
+            $cp = $this->getTransactionStatus($person_id, 'PENDING', 'client');
+            $true += ["message" => "Promo item removed!", "cart_pending" => $cp];
+            $ret = $true;
+        } else {
+            $false += ["message" => "Failed to remove promo item!"];
+            $ret = $false;
+        }
+
+        $this->db->trans_status() === false
+            ? $this->db->trans_rollback()
+            : $this->db->trans_commit();
+
+        echo json_encode($ret);
+    }
+
     public function getCartListing()
     {
-        $person_id  = $this->session->agrishop_person_id;
+        $person_id   = $this->session->agrishop_person_id;
         $requestData = $_REQUEST;
-        $farm_id = $requestData['search']['farm_id'];
         $searchValue = isset($requestData['search']['value']) ? $requestData['search']['value'] : '';
 
-        // Calculate pagination parameters using the separate function
         list($limit, $offset) = $this->calculatePagination($requestData);
 
-        // Query to get total record count
-        $thisQuery = $this->db->query("SELECT count(1) AS total FROM transaction t1 
-                                    JOIN (SELECT * FROM transaction_status WHERE is_latest IS TRUE) t2 ON t1.id = t2.transaction_id
-		                                    LEFT JOIN (SELECT transaction_id, sum(sub_total) AS payable FROM my_cart_farm_produce mcfp
-		                                    GROUP BY transaction_id) t3 ON t1.id = t3.transaction_id
-                                    LEFT JOIN farmer_farm t4 ON t1.farm_id = t4.id
-                                    WHERE t2.status = 'PENDING' AND t1.person_id = $person_id AND CONCAT(t4.farm_name,t2.status,t3.payable) COLLATE utf8mb4_general_ci LIKE '%$searchValue%'");
-
+        // Unified cart: farm produce orders + supply orders + promo orders all shown as PENDING
+        $thisQuery = $this->db->query("
+            SELECT COUNT(1) AS total
+            FROM transaction t1
+            JOIN (SELECT * FROM transaction_status WHERE is_latest IS TRUE) t2 ON t1.id = t2.transaction_id
+            LEFT JOIN (SELECT transaction_id, SUM(sub_total) AS payable FROM my_cart_farm_produce GROUP BY transaction_id) t3 ON t1.id = t3.transaction_id
+            LEFT JOIN (SELECT transaction_id, SUM(sub_total) AS supply_payable FROM my_cart_supply GROUP BY transaction_id) t3s ON t1.id = t3s.transaction_id
+            LEFT JOIN (SELECT transaction_id, SUM(sub_total) AS promo_payable FROM my_cart_promo GROUP BY transaction_id) t3p ON t1.id = t3p.transaction_id
+            LEFT JOIN farmer_farm t4 ON t1.farm_id = t4.id
+            LEFT JOIN (SELECT supplier_id, MIN(store_name) AS store_name, MIN(img_path) AS img_path FROM supplier_store WHERE is_active=1 GROUP BY supplier_id) ss ON t1.supplier_id = ss.supplier_id
+            WHERE t2.status = 'PENDING' AND t1.person_id = $person_id
+            AND CONCAT(COALESCE(t4.farm_name,''), COALESCE(ss.store_name,''), t2.status, COALESCE(t3.payable,''), COALESCE(t3s.supply_payable,''), COALESCE(t3p.promo_payable,''))
+                COLLATE utf8mb4_general_ci LIKE '%$searchValue%'
+        ");
         $totalRecords = $thisQuery->row()->total;
 
-        $query = $this->db->query("SELECT t1.id AS transaction_id, t4.img_path, DATE_FORMAT(t1.transaction_date,'%m/%d/%y') date_, t4.farm_name,t2.status,t3.payable FROM transaction t1 
-                                    JOIN (SELECT * FROM transaction_status WHERE is_latest IS TRUE) t2 ON t1.id = t2.transaction_id
-		                                    LEFT JOIN (SELECT transaction_id, sum(sub_total) AS payable FROM my_cart_farm_produce mcfp
-		                                    GROUP BY transaction_id) t3 ON t1.id = t3.transaction_id
-                                    LEFT JOIN farmer_farm t4 ON t1.farm_id = t4.id
-                                    WHERE t2.status = 'PENDING' AND t1.person_id = $person_id AND CONCAT(t4.farm_name,t2.status,t3.payable) COLLATE utf8mb4_general_ci LIKE '%$searchValue%'
-                                    ORDER BY t1.id DESC
-                                    LIMIT $limit OFFSET $offset
-                                    ");
+        $query = $this->db->query("
+            SELECT
+                t1.id AS transaction_id,
+                DATE_FORMAT(t1.transaction_date,'%m/%d/%y') AS date_,
+                t2.status,
+                t1.farm_id,
+                t1.supplier_id,
+                t4.img_path      AS farm_img,
+                t4.farm_name,
+                ss.img_path      AS store_img,
+                ss.store_name,
+                COALESCE(t3.payable, 0)         AS payable,
+                COALESCE(t3s.supply_payable, 0) AS supply_payable,
+                COALESCE(t3p.promo_payable, 0)  AS promo_payable
+            FROM transaction t1
+            JOIN (SELECT * FROM transaction_status WHERE is_latest IS TRUE) t2 ON t1.id = t2.transaction_id
+            LEFT JOIN (SELECT transaction_id, SUM(sub_total) AS payable FROM my_cart_farm_produce GROUP BY transaction_id) t3 ON t1.id = t3.transaction_id
+            LEFT JOIN (SELECT transaction_id, SUM(sub_total) AS supply_payable FROM my_cart_supply GROUP BY transaction_id) t3s ON t1.id = t3s.transaction_id
+            LEFT JOIN (SELECT transaction_id, SUM(sub_total) AS promo_payable FROM my_cart_promo GROUP BY transaction_id) t3p ON t1.id = t3p.transaction_id
+            LEFT JOIN farmer_farm t4 ON t1.farm_id = t4.id
+            LEFT JOIN (SELECT supplier_id, MIN(store_name) AS store_name, MIN(img_path) AS img_path FROM supplier_store WHERE is_active=1 GROUP BY supplier_id) ss ON t1.supplier_id = ss.supplier_id
+            WHERE t2.status = 'PENDING' AND t1.person_id = $person_id
+            AND CONCAT(COALESCE(t4.farm_name,''), COALESCE(ss.store_name,''), t2.status, COALESCE(t3.payable,''), COALESCE(t3s.supply_payable,''), COALESCE(t3p.promo_payable,''))
+                COLLATE utf8mb4_general_ci LIKE '%$searchValue%'
+            ORDER BY t1.id DESC
+            LIMIT $limit OFFSET $offset
+        ");
 
         $data = array();
         foreach ($query->result() as $value) {
-            $total = $value->payable + ($value->payable * 0.01);
-            $img = $value->img_path ? base_url($value->img_path) : base_url('dist/img/media/icons/1x1.png');
-            $image_path = "<img src='$img' width='50' height='50' class='rounded' data-toggle='tooltip' data-placement='top' title=''>";
+            // Determine if this is a supply, farm produce, or promo cart
+            $is_supply   = !empty($value->supplier_id) && empty($value->farm_id);
+            $raw_payable = $is_supply
+                ? $value->supply_payable
+                : ($value->payable + $value->promo_payable);
+            $total = $raw_payable + ($raw_payable * 0.01);
+
+            if ($is_supply) {
+                $img        = !empty($value->store_img) ? base_url($value->store_img) : base_url('dist/img/media/icons/1x1.png');
+                $label      = $value->store_name ?: 'Supply Order';
+            } else {
+                $img        = !empty($value->farm_img) ? base_url($value->farm_img) : base_url('dist/img/media/icons/1x1.png');
+                $label      = $value->farm_name ?: 'Farm Order';
+            }
+
+            $image_path   = "<img src='$img' width='50' height='50' class='rounded' style='object-fit:cover;'>";
             $status_badge = $this->statusBadge($value->status);
+
             $data[] = array(
                 '<div class="d-flex align-items-start p-2" style="gap:10px; width:100%; line-height:1.15">
-
-                    <!-- IMAGE -->
-                    <div>
-                        ' . $image_path . '
-                    </div>
-
-                    <!-- INFO -->
+                    <div>' . $image_path . '</div>
                     <div class="flex-grow-1">
-
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
-                                <div style="font-size:12px; color:#777;">
-                                    ' . $value->date_ . '
-                                </div>
-
-                                <div style="font-size:14px; font-weight:600; color:#000;">
-                                    ' . $value->farm_name . '
-                                </div>
+                                <div style="font-size:12px; color:#999;">' . $value->date_ . '</div>
+                                <div style="font-size:15px; font-weight:600; color:#111;">' . $label . '</div>
                             </div>
-
-                            <span class="badge bg-success" style="font-size:14px;">
-                                ₱ ' . $this->format_price($total) . '
+                            <span class="badge badge-success" style="font-size:14px;">
+                                &#8369; ' . $this->format_price($total) . '
                             </span>
                         </div>
-
                         <div class="d-flex align-items-center mt-1" style="gap:6px;">
-                            <span class="badge bg-black"
-                                style="cursor:pointer; font-size:11px;"
+                            <span class="badge" style="background:#222;color:#fff;cursor:pointer;font-size:11px;"
                                 onclick="viewTransactionDetails(' . $value->transaction_id . ')">
                                 <i class="fa fa-eye"></i> view details
                             </span>
-
                             ' . $status_badge . '
                         </div>
-
                     </div>
                 </div>
-                <hr style="margin:4px 0;">
-                '
+                <hr style="margin:4px 0;">'
             );
         } // Prepare the response data in the required format
 
@@ -530,51 +1036,45 @@ class Map extends MY_Controller
 
         $data = array();
         foreach ($query->result() as $value) {
-            $total = $value->payable + ($value->payable * 0.01);
-            $img = $value->img_path ? base_url($value->img_path) : base_url('dist/img/media/icons/1x1.png');
-            $image_path = "<img src='$img' width='50' height='50' class='rounded' data-toggle='tooltip' data-placement='top' title=''>";
+            // Determine if this is a supply or farm produce cart
+            $is_supply = !empty($value->supplier_id) && empty($value->farm_id);
+            $raw_payable = $is_supply ? $value->supply_payable : $value->payable;
+            $total = $raw_payable + ($raw_payable * 0.01);
+
+            if ($is_supply) {
+                $img        = !empty($value->store_img) ? base_url($value->store_img) : base_url('dist/img/media/icons/1x1.png');
+                $label      = $value->store_name ?: 'Supply Order';
+            } else {
+                $img        = !empty($value->farm_img) ? base_url($value->farm_img) : base_url('dist/img/media/icons/1x1.png');
+                $label      = $value->farm_name ?: 'Farm Order';
+            }
+
+            $image_path   = "<img src='$img' width='50' height='50' class='rounded' style='object-fit:cover;'>";
             $status_badge = $this->statusBadge($value->status);
+
             $data[] = array(
                 '<div class="d-flex align-items-start p-2" style="gap:10px; width:100%; line-height:1.15">
-
-                    <!-- IMAGE -->
-                    <div>
-                        ' . $image_path . '
-                    </div>
-
-                    <!-- INFO -->
+                    <div>' . $image_path . '</div>
                     <div class="flex-grow-1">
-
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
-                                <div style="font-size:12px; color:#777;">
-                                    ' . $value->date_ . '
-                                </div>
-
-                                <div style="font-size:14px; font-weight:600; color:#000;">
-                                    ' . $value->farm_name . '
-                                </div>
+                                <div style="font-size:12px; color:#999;">' . $value->date_ . '</div>
+                                <div style="font-size:15px; font-weight:600; color:#111;">' . $label . '</div>
                             </div>
-
-                            <span class="badge bg-success" style="font-size:14px;">
-                                ₱ ' . $this->format_price($total) . '
+                            <span class="badge badge-success" style="font-size:14px;">
+                                &#8369; ' . $this->format_price($total) . '
                             </span>
                         </div>
-
                         <div class="d-flex align-items-center mt-1" style="gap:6px;">
-                            <span class="badge bg-black"
-                                style="cursor:pointer; font-size:11px;"
+                            <span class="badge" style="background:#222;color:#fff;cursor:pointer;font-size:11px;"
                                 onclick="viewTransactionDetails(' . $value->transaction_id . ')">
                                 <i class="fa fa-eye"></i> view details
                             </span>
-
                             ' . $status_badge . '
                         </div>
-
                     </div>
                 </div>
-                <hr style="margin:4px 0;">
-                '
+                <hr style="margin:4px 0;">'
             );
         } // Prepare the response data in the required format
 
@@ -713,51 +1213,45 @@ class Map extends MY_Controller
 
         $data = array();
         foreach ($query->result() as $value) {
-            $total = $value->payable + ($value->payable * 0.01);
-            $img = $value->img_path ? base_url($value->img_path) : base_url('dist/img/media/icons/1x1.png');
-            $image_path = "<img src='$img' width='50' height='50' class='rounded' data-toggle='tooltip' data-placement='top' title=''>";
+            // Determine if this is a supply or farm produce cart
+            $is_supply = !empty($value->supplier_id) && empty($value->farm_id);
+            $raw_payable = $is_supply ? $value->supply_payable : $value->payable;
+            $total = $raw_payable + ($raw_payable * 0.01);
+
+            if ($is_supply) {
+                $img        = !empty($value->store_img) ? base_url($value->store_img) : base_url('dist/img/media/icons/1x1.png');
+                $label      = $value->store_name ?: 'Supply Order';
+            } else {
+                $img        = !empty($value->farm_img) ? base_url($value->farm_img) : base_url('dist/img/media/icons/1x1.png');
+                $label      = $value->farm_name ?: 'Farm Order';
+            }
+
+            $image_path   = "<img src='$img' width='50' height='50' class='rounded' style='object-fit:cover;'>";
             $status_badge = $this->statusBadge($value->status);
+
             $data[] = array(
                 '<div class="d-flex align-items-start p-2" style="gap:10px; width:100%; line-height:1.15">
-
-                    <!-- IMAGE -->
-                    <div>
-                        ' . $image_path . '
-                    </div>
-
-                    <!-- INFO -->
+                    <div>' . $image_path . '</div>
                     <div class="flex-grow-1">
-
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
-                                <div style="font-size:12px; color:#777;">
-                                    ' . $value->date_ . '
-                                </div>
-
-                                <div style="font-size:14px; font-weight:600; color:#000;">
-                                    ' . $value->farm_name . '
-                                </div>
+                                <div style="font-size:12px; color:#999;">' . $value->date_ . '</div>
+                                <div style="font-size:15px; font-weight:600; color:#111;">' . $label . '</div>
                             </div>
-
-                            <span class="badge bg-success" style="font-size:14px;">
-                                ₱ ' . $this->format_price($total) . '
+                            <span class="badge badge-success" style="font-size:14px;">
+                                &#8369; ' . $this->format_price($total) . '
                             </span>
                         </div>
-
                         <div class="d-flex align-items-center mt-1" style="gap:6px;">
-                            <span class="badge bg-black"
-                                style="cursor:pointer; font-size:11px;"
+                            <span class="badge" style="background:#222;color:#fff;cursor:pointer;font-size:11px;"
                                 onclick="viewTransactionDetails(' . $value->transaction_id . ')">
                                 <i class="fa fa-eye"></i> view details
                             </span>
-
                             ' . $status_badge . '
                         </div>
-
                     </div>
                 </div>
-                <hr style="margin:4px 0;">
-                '
+                <hr style="margin:4px 0;">'
             );
         } // Prepare the response data in the required format
 
@@ -904,357 +1398,450 @@ class Map extends MY_Controller
 
     public function getCartDetails()
     {
-        $person_id  = $this->session->agrishop_person_id;
-        $requestData = $_REQUEST;
-        $transaction_id = $requestData['search']['transaction_id'];
-        $searchValue = isset($requestData['search']['value']) ? $requestData['search']['value'] : '';
+        $person_id      = $this->session->agrishop_person_id;
+        $requestData    = $_REQUEST;
+        $transaction_id = (int)($requestData['search']['transaction_id'] ?? 0);
 
-        // Calculate pagination parameters using the separate function
+        if (!$transaction_id) {
+            echo json_encode(['draw' => 1, 'recordsTotal' => 0, 'recordsFiltered' => 0, 'data' => []]);
+            return;
+        }
+
         list($limit, $offset) = $this->calculatePagination($requestData);
 
-        $query = $this->db->query("SELECT t1.id as cart_id,t1.transaction_id,t1.qty,t4.price,t4.price_wholesale,t2.uom,t3.name as produce_name,t3.img_path,t1.created_at, t1.is_wholesale,
-                                        t5.status as t_status,t6.status as t_p_status,t7.status as t_d_status
-                                    FROM my_cart_farm_produce t1
-                                    LEFT JOIN farm_produce t2 ON t1.farm_produce_id = t2.id
-                                    LEFT JOIN produce t3 ON t2.produce_id = t3.id
-                                    LEFT JOIN (SELECT * FROM transaction_status WHERE transaction_id = $transaction_id AND is_latest IS TRUE) t5 ON t1.transaction_id = t5.transaction_id
-                                    LEFT JOIN (SELECT * FROM transaction_payment_status WHERE transaction_id = $transaction_id AND is_latest IS TRUE) t6 ON t1.transaction_id = t6.transaction_id
-                                    LEFT JOIN (SELECT * FROM transaction_delivery_status WHERE transaction_id = $transaction_id AND is_latest IS TRUE) t7 ON t1.transaction_id = t7.transaction_id
-                                    LEFT JOIN (SELECT * FROM price_monitoring_farm_produce WHERE is_latest IS TRUE) t4 ON t1.price_id_during_transact = t4.id
-                                    WHERE t1.transaction_id =$transaction_id
-                                    ORDER BY t1.id DESC
-                                    LIMIT $limit OFFSET $offset
-                                    ");
-        $q_status = $query->row()->t_status;
-        $q_p_status = $query->row()->t_p_status;
-        $q_d_status = $query->row()->t_d_status;
-        $pay_to_admin = $this->db->query("SELECT * FROM transaction_payment_to_admin t8 WHERE t8.transaction_id = $transaction_id LIMIT 1");
-        if ($q_status == 'PENDING') {
-            $gcash_details = $this->db->query("SELECT mcfp.transaction_id ,fpm.*,t8.approved_by as t_p_approved_by, t8.id as t_p_id FROM my_cart_farm_produce mcfp 
-									JOIN farm_produce fp ON mcfp.farm_produce_id = fp.id
-									JOIN farmer_farm ff ON fp.farm_id = ff.id
-                                    JOIN farmer f ON ff.farmer_id = f.id
-									JOIN farmer_payment_method fpm ON f.person_id = fpm.person_id
-                                    LEFT JOIN transaction_payment_to_admin t8 ON mcfp.transaction_id = t8.transaction_id
-									WHERE mcfp.transaction_id = $transaction_id LIMIT 1");
-        }
+        // ── Detect cart type: supply vs farm produce ─────────────────────
+        $trans = $this->db->query("
+            SELECT t.farm_id, t.supplier_id
+            FROM transaction t WHERE t.id = ? LIMIT 1
+        ", [$transaction_id])->row();
 
-        $data = array();
-        $subtotal = 0;
-        $g_name = '';
-        $g_number = '';
-        $g_qr = '';
-        $g_pay = '';
-        $trash = '';
-        foreach ($query->result() as $value) {
-            $pricing = $value->is_wholesale == 't' ? $value->price_wholesale : $value->price;
-            $price = $pricing * $value->qty;
-            $subtotal += $price;
+        $is_supply = $trans && !empty($trans->supplier_id) && empty($trans->farm_id);
 
-            $img = $value->img_path
-                ? base_url($value->img_path)
-                : base_url('dist/img/media/icons/1x1.png');
-            if ($q_status == 'PENDING') {
-                $trash = '<span class="text-black"
-                            style="cursor:pointer; font-size:13px; margin-top:2px;"
-                            title="Remove"
-                            onclick="removeCart(' . $value->cart_id . ',' . $value->transaction_id . ')">
-                            <i class="fa fa-trash"></i>
-                        </span>';
-            }
-            $data[] = array(
-                '
-                    <div class="d-flex align-items-start p-2" style="gap:10px; width:100%">
+        // ── Fetch status rows ─────────────────────────────────────────────
+        $status_row = $this->db->query("
+            SELECT ts.status AS t_status, tps.status AS t_p_status, tds.status AS t_d_status
+            FROM transaction t
+            LEFT JOIN (SELECT * FROM transaction_status          WHERE transaction_id=? AND is_latest IS TRUE) ts  ON t.id=ts.transaction_id
+            LEFT JOIN (SELECT * FROM transaction_payment_status  WHERE transaction_id=? AND is_latest IS TRUE) tps ON t.id=tps.transaction_id
+            LEFT JOIN (SELECT * FROM transaction_delivery_status WHERE transaction_id=? AND is_latest IS TRUE) tds ON t.id=tds.transaction_id
+            WHERE t.id=? LIMIT 1
+        ", [$transaction_id, $transaction_id, $transaction_id, $transaction_id])->row();
 
-                        <!-- PRODUCT IMAGE -->
-                        <img src="' . $img . '" 
-                            width="56" height="56" 
-                            class="rounded shadow-sm"
-                            style="object-fit:cover">
+        $q_status   = $status_row->t_status   ?? '';
+        $q_p_status = $status_row->t_p_status ?? '';
+        $q_d_status = $status_row->t_d_status ?? '';
 
-                        <!-- PRODUCT INFO -->
-                        <div class="flex-grow-1" style="line-height:1.15">
-
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <div style="font-size:14px; font-weight:600; color:#222; margin-bottom:2px;">
-                                        ' . $value->produce_name . '
-                                    </div>
-
-                                    <div class="text-muted" style="font-size:12px;">
-                                        ' . $value->qty . ' ' . $value->uom . ' × ₱ ' . ($value->is_wholesale == 't' ?
-                    $this->format_price($value->price_wholesale) . ' <span class="badge bg-gray p-1" style="font-size:10px;">wholesale</span>'
-                    :  $this->format_price($value->price)) . '
-                                    </div>
-                                </div>
-
-                                <!-- REMOVE -->
-                                ' . $trash . '
-                            </div>
-
-                            <!-- PRICE -->
-                            <div style="margin-top:4px;">
-                                <span class="badge bg-success px-2 py-1" style="font-size:12px;">
-                                    ₱ ' . $this->format_price($price) . '
-                                </span>
-                            </div>
-
-                        </div>
-                    </div>
-                    <hr style="margin:4px 0;">
-                    '
-            );
-        }
-        // checkout
-
-        $percent = 0.01;
-        $convenience_fee = $subtotal * $percent;
-        $total_payment   = $subtotal + $convenience_fee;
-        $convenience_fee_ =  ' ₱ ' . $this->format_price($convenience_fee);
+        // ── Payment to admin row ──────────────────────────────────────────
+        $pay_to_admin = $this->db->query(
+            "SELECT * FROM transaction_payment_to_admin WHERE transaction_id=? LIMIT 1",
+            [$transaction_id]
+        );
         $t_p_approved_by = '';
-        $t_p_id = '';
+        $t_p_id          = '';
         if ($pay_to_admin->num_rows() > 0) {
             $t_p_approved_by = $pay_to_admin->row()->approved_by;
-            $t_p_id = $pay_to_admin->row()->id;
+            $t_p_id          = $pay_to_admin->row()->id;
         }
-        $to_admin_payment = $t_p_id == '' ? '<font color="black"><i class="fa fa-times-circle"></i>To be paid ' . $convenience_fee_ . '</font>' : ($t_p_id && $t_p_approved_by == '' ? '<font color="orange"><i class="fa fa-exclamation-circle"></i>To be verified ' . $convenience_fee_ . '</font>' : '<font color="green"><i class="fa fa-check-circle"></i>Verified ' . $convenience_fee_ . '</font>');
-        $to_admin_payment_stat = $t_p_id == '' ? 'TO_BE_PAID' : ($t_p_id && $t_p_approved_by == '' ? 'TO_BE_VERIFIED' : 'VERIFIED');
 
+        $data     = [];
+        $subtotal = 0;
 
+        // ══════════════════════════════════════════════════════════════════
+        //  SUPPLY CART
+        // ══════════════════════════════════════════════════════════════════
+        if ($is_supply) {
 
-        if ($q_status == 'PENDING') {
+            $items = $this->db->query("
+                SELECT
+                    mcs.id          AS cart_id,
+                    mcs.transaction_id,
+                    mcs.qty,
+                    mcs.sub_total,
+                    mcs.price_during_transact,
+                    ss.name         AS item_name,
+                    ss.uom,
+                    ss.img_path
+                FROM my_cart_supply mcs
+                JOIN supplier_supply ss ON mcs.supplier_supply_id = ss.id
+                WHERE mcs.transaction_id = ?
+                ORDER BY mcs.id DESC
+                LIMIT $limit OFFSET $offset
+            ", [$transaction_id]);
 
-            if ($gcash_details->num_rows() > 0) {
-                $g = $gcash_details->row();
+            foreach ($items->result() as $v) {
+                $price     = $v->price_during_transact * $v->qty;
+                $subtotal += $price;
+                $img       = !empty($v->img_path)
+                    ? base_url($v->img_path)
+                    : base_url('dist/img/media/icons/1x1.png');
 
-                $gcash_icon = base_url('dist/img/credit/gcash_50x50.png');
-                $g_name = $g->account_name;
-                $g_number = $g->number;
-                $g_qr = $g->qr;
+                $trash = '';
+                if ($q_status == 'PENDING') {
+                    $trash = '<span class="text-danger" style="cursor:pointer;font-size:13px;"
+                                title="Remove"
+                                onclick="removeSupplyCart(' . $v->cart_id . ',' . $transaction_id . ')">
+                                <i class="fa fa-trash"></i>
+                              </span>';
+                }
 
-                $g_pay = ' <div class="form-check form-check-inline" style="margin-right:10px;">
-                                    <input class="form-check-input" type="radio" name="payment_method"
-                                        id="pay_gcash" value="gcash">
-                                    <label class="form-check-label pay_gcash" 
-                                        data-name="' . $g_name . '" 
-                                        data-number="' . $g_number . '" 
-                                        data-qr="' . $g_qr . '" 
-                                    for="pay_gcash" style="cursor:pointer;">
-                                        <img src="' . $gcash_icon . '" alt="GCash" style="width: 20px; height: 20px; margin-left: 5px;">
-                                        GCash
-                                    </label>
-                                </div>';
-            }
-            $data[] = array(
-                '
-                        <div class="p-2" style="width:100%; font-size:13px; line-height:1.2">
-
-                            <!-- DELIVERY OPTION -->
-                            <div>
-                                <div style="font-weight:600; margin-bottom:2px;">Delivery</div>
-
-                                <div class="form-check form-check-inline" style="margin-right:10px;">
-                                    <input class="form-check-input" type="radio" name="delivery_option"
-                                        id="pickup" value="pickup" checked>
-                                    <label class="form-check-label" for="pickup"  style="cursor:pointer;">
-                                        Pick-up
-                                    </label>
+                $data[] = [
+                    '<div class="d-flex align-items-start p-2" style="gap:10px;width:100%">
+                        <img src="' . $img . '" width="56" height="56" class="rounded shadow-sm" style="object-fit:cover">
+                        <div class="flex-grow-1" style="line-height:1.15">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div style="font-size:14px;font-weight:600;color:#222;margin-bottom:2px;">'
+                        . htmlspecialchars($v->item_name) . '
+                                    </div>
+                                    <div class="text-muted" style="font-size:12px;">
+                                        ' . $v->qty . ' ' . $v->uom . ' &times; &#8369;&nbsp;' . $this->format_price($v->price_during_transact) . '
+                                    </div>
                                 </div>
-
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="delivery_option"
-                                        id="cod" value="cod">
-                                    <label class="form-check-label" for="cod"  style="cursor:pointer;">
-                                        COD (Cash on Delivery)
-                                    </label>
-                                </div>
+                                ' . $trash . '
                             </div>
-
-                            <!-- MODE OF PAYMENT -->
-                            <div>
-                                <div style="font-weight:600; margin-bottom:2px;">Payment</div>
-
-                                <div class="form-check form-check-inline" style="margin-right:10px;">
-                                    <input class="form-check-input" type="radio" name="payment_method"
-                                        id="pay_cash" 
-                                        data-total="' . $total_payment . '" 
-                                        data-trans_id="' . $transaction_id . '"
-                                        data-convenience_fee="' . $convenience_fee . '"
-                                        data-subtotal="' . $subtotal . '"
-                                        data-percentage="' . $percent . '"
-                                        data-to_admin_payment_stat="' . $to_admin_payment_stat . '"
-                                        value="cash" checked>
-                                    <label class="form-check-label" for="pay_cash" style="cursor:pointer;">
-                                    <i class="fa fa-money-bill"></i>
-                                        Cash
-                                    </label>
-                                </div>
-
-                                ' . $g_pay . '
-
-                            </div>
-
-                            <hr style="margin:6px 0;">
-
-                            <!-- PAYMENT BREAKDOWN -->
-                            <div class="d-flex justify-content-between">
-                                <span>Subtotal</span>
-                                <span>₱ ' . $this->format_price($subtotal) . '</span>
-                            </div>
-                            <div class="d-flex justify-content-between text-muted">
-                                <span>Fee (1%) <small>(Convenience Fee)</small></span>
-                                <span> ' . $to_admin_payment . '</span>
-                            </div>
-
-                            <hr style="margin:6px 0;">
-
-                            <!-- TOTAL PAYMENT (HIGHLIGHT) -->
-                            <div class="d-flex justify-content-between align-items-center 
-                                        p-2 rounded"
-                                style="background:#e9f7ef; font-size:15px;">
-                                <span style="font-weight:700;">Total</span>
-                                <span class="text-black" style="font-weight:bold;">
-                                    ₱ ' . $this->format_price($total_payment) . '
+                            <div style="margin-top:4px;">
+                                <span class="badge badge-success px-2 py-1" style="font-size:12px;">
+                                    &#8369; ' . $this->format_price($price) . '
                                 </span>
                             </div>
-
                         </div>
-                        '
-            );
-
-            $data[] = array('
-            <div id="gcashDetailsBox" class="p-3 mt-2 border rounded" 
-                style="display:none; font-size:13px; background:#f9fbff;">
-
-                <!-- INSTRUCTIONS -->
-                <div class="mb-2">
-                    <div style="font-weight:600; margin-bottom:4px;">
-                        How to Pay via GCash
                     </div>
+                    <hr style="margin:4px 0;">'
+                ];
+            }
 
-                    <ol style="padding-left:18px; margin-bottom:6px;">
-                        <li>Open your <b>GCash</b> app</li>
-                        <li>Tap <b>Scan QR</b></li>
-                        <li>Scan the QR code below</li>
-                        <li>Enter the <b>exact amount</b> to pay</li>
-                        <li>Confirm the payment</li>
-                        <li>Upload the <b>proof of payment</b> below</li>
-                    </ol>
+            // ── Supplier GCash payment method ─────────────────────────────
+            $g_pay = '';
+            if ($q_status == 'PENDING') {
+                $sup_pay = $this->db->query("
+                    SELECT spm.*
+                    FROM my_cart_supply mcs
+                    JOIN supplier_supply ss  ON mcs.supplier_supply_id = ss.id
+                    JOIN supplier sup        ON ss.supplier_id = sup.id
+                    JOIN supplier_payment_method spm ON sup.person_id = spm.person_id
+                    WHERE mcs.transaction_id = ? AND spm.is_active = 1
+                    LIMIT 1
+                ", [$transaction_id]);
 
-                    <small class="text-muted">
-                        ⚠️ Payment will be verified after submission
-                    </small>
-                </div>
+                if ($sup_pay->num_rows() > 0) {
+                    $g        = $sup_pay->row();
+                    $gcash_icon = base_url('dist/img/credit/gcash_50x50.png');
+                    $g_pay    = '
+                        <div class="form-check form-check-inline" style="margin-right:10px;">
+                            <input class="form-check-input" type="radio" name="payment_method" id="pay_gcash" value="gcash">
+                            <label class="form-check-label pay_gcash"
+                                data-name="'  . $g->account_name . '"
+                                data-number="' . $g->number . '"
+                                data-qr="'    . base_url($g->qr) . '"
+                                for="pay_gcash" style="cursor:pointer;">
+                                <img src="' . $gcash_icon . '" style="width:20px;height:20px;margin-left:5px;"> GCash
+                            </label>
+                        </div>';
+                }
+            }
 
-                <hr style="margin:6px 0;">
-
-                <!-- QR CODE -->
-                <div class="text-center mb-2">
-                    <img id="gcashQR" src="" alt="GCash QR" 
-                        style="max-width:200px;" class="shadow-sm">
-                </div>
-
-                <!-- ACCOUNT INFO -->
-                <div class="text-center mb-2">
-                    <div style="font-weight:600;" id="gcashName"></div>
-                    <div class="text-muted" id="gcashNumber"></div>
-                </div>
-
-                <hr style="margin:6px 0;">
-
-                <!-- PROOF UPLOAD -->
-                <div>
-                    <label style="font-weight:600;">
-                        Upload Proof of Payment 
-                        <i style="color:red;">(Required)</i>
-                    </label>
-
-                    <input type="file" 
-                        class="form-control form-control-sm mt-1" 
-                        name="proof_of_payment" 
-                        accept="image/*">
-                </div>
-
-            </div>');
-
-            $data[] = array(
-                '<button class="btn btn-primary btn-block w-100 checkout-btn" onclick="checkout()">
-                Checkout
-            </button>',
-            );
+            // ══════════════════════════════════════════════════════════════════
+            //  FARM PRODUCE CART
+            // ══════════════════════════════════════════════════════════════════
         } else {
-            $data[] = array(
-                '
-                        <div class="p-2" style="width:100%; font-size:13px; line-height:1.2">
 
-                            <!-- DELIVERY OPTION -->
-                            <div>
-                                <div style="font-weight:600; margin-bottom:2px;">Delivery Status</div>
+            $items = $this->db->query("
+                SELECT
+                    t1.id AS cart_id, t1.transaction_id, t1.qty,
+                    t4.price, t4.price_wholesale, t2.uom,
+                    t3.name AS item_name, t3.img_path,
+                    t1.is_wholesale
+                FROM my_cart_farm_produce t1
+                LEFT JOIN farm_produce t2 ON t1.farm_produce_id = t2.id
+                LEFT JOIN produce t3 ON t2.produce_id = t3.id
+                LEFT JOIN (SELECT * FROM price_monitoring_farm_produce WHERE is_latest IS TRUE) t4
+                    ON t1.price_id_during_transact = t4.id
+                WHERE t1.transaction_id = $transaction_id
+                ORDER BY t1.id DESC
+                LIMIT $limit OFFSET $offset
+            ");
 
-                                <div class="form-check form-check-inline" style="margin-right:10px;">
-                                    <label class="form-check-label" for="pickup"  style="cursor:pointer;">
-                                        ' . $this->statusBadge($q_d_status) . '
-                                    </label>
+            foreach ($items->result() as $v) {
+                $pricing   = $v->is_wholesale == 't' ? $v->price_wholesale : $v->price;
+                $price     = $pricing * $v->qty;
+                $subtotal += $price;
+                $img       = $v->img_path
+                    ? base_url($v->img_path)
+                    : base_url('dist/img/media/icons/1x1.png');
+
+                $trash = '';
+                if ($q_status == 'PENDING') {
+                    $trash = '<span class="text-danger" style="cursor:pointer;font-size:13px;"
+                                title="Remove"
+                                onclick="removeCart(' . $v->cart_id . ',' . $transaction_id . ')">
+                                <i class="fa fa-trash"></i>
+                              </span>';
+                }
+
+                $ws_badge = $v->is_wholesale == 't'
+                    ? ' <span class="badge badge-secondary" style="font-size:10px;">wholesale</span>'
+                    : '';
+
+                $data[] = [
+                    '<div class="d-flex align-items-start p-2" style="gap:10px;width:100%">
+                        <img src="' . $img . '" width="56" height="56" class="rounded shadow-sm" style="object-fit:cover">
+                        <div class="flex-grow-1" style="line-height:1.15">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div style="font-size:14px;font-weight:600;color:#222;margin-bottom:2px;">'
+                        . $v->item_name . '
+                                    </div>
+                                    <div class="text-muted" style="font-size:12px;">
+                                        ' . $v->qty . ' ' . $v->uom . ' &times; &#8369;&nbsp;' . $this->format_price($pricing) . $ws_badge . '
+                                    </div>
                                 </div>
+                                ' . $trash . '
                             </div>
-
-                            <!-- MODE OF PAYMENT -->
-                            <div>
-                                <div style="font-weight:600; margin-bottom:2px;">Payment</div>
-                                <div class="form-check form-check-inline" style="margin-right:10px;">
-                                    <label class="form-check-label" for="pay_cash" id="pay_cash" 
-                                        data-trans_id="' . $transaction_id . '" style="cursor:pointer;">
-                                        ' . $this->statusBadge($q_p_status) . '
-                                    </label>
-                                </div>
-
-                            </div>
-
-                            <hr style="margin:6px 0;">
-
-                            <!-- PAYMENT BREAKDOWN -->
-                            <div class="d-flex justify-content-between">
-                                <span>Subtotal</span>
-                                <span>₱ ' . $this->format_price($subtotal) . '</span>
-                            </div>
-
-                            <div class="d-flex justify-content-between text-muted">
-                                <span>Fee (1%) <small>(Convenience Fee)</small></span>
-                                <span> ' . $to_admin_payment . '</span>
-                            </div>
-
-                            <hr style="margin:6px 0;">
-
-                            <!-- TOTAL PAYMENT (HIGHLIGHT) -->
-                            <div class="d-flex justify-content-between align-items-center 
-                                        p-2 rounded"
-                                style="background:#e9f7ef; font-size:15px;">
-                                <span style="font-weight:700;">Total</span>
-                                <span class="text-black" style="font-weight:bold;">
-                                    ₱ ' . $this->format_price($total_payment) . '
+                            <div style="margin-top:4px;">
+                                <span class="badge badge-success px-2 py-1" style="font-size:12px;">
+                                    &#8369; ' . $this->format_price($price) . '
                                 </span>
                             </div>
-
                         </div>
-                        '
-            );
-        }
+                    </div>
+                    <hr style="margin:4px 0;">'
+                ];
+            }
 
-        if ($q_status == 'RESERVED') {
-            $data[] = array(
-                '<button class="btn bg-danger text-white btn-block w-100 cancel-btn" onclick="cancelOrder()">
-                Cancel Order
-            </button>',
-            );
+            // ── Promo cart items (my_cart_promo) ──────────────────────────
+            $promo_items = $this->db->query("
+                SELECT mcp.id AS cart_id, mcp.transaction_id, mcp.qty,
+                       mcp.price_at_add, mcp.sub_total,
+                       pd.title, pd.img_path, pd.discount_percent,
+                       pr.name AS produce_name
+                FROM my_cart_promo mcp
+                JOIN promo_discount pd ON mcp.promo_discount_id = pd.id
+                LEFT JOIN farm_produce fp ON pd.farm_produce_id = fp.id
+                LEFT JOIN produce pr      ON fp.produce_id = pr.id
+                WHERE mcp.transaction_id = $transaction_id
+                ORDER BY mcp.id DESC
+            ");
+
+            foreach ($promo_items->result() as $pv) {
+                $subtotal += (float) $pv->sub_total;
+                $pimg = $pv->img_path
+                    ? base_url($pv->img_path)
+                    : base_url('dist/img/media/icons/1x1.png');
+
+                $p_trash = '';
+                if ($q_status == 'PENDING') {
+                    $p_trash = '<span class="text-danger" style="cursor:pointer;font-size:13px;" title="Remove"
+                                    onclick="removePromoCart(' . $pv->cart_id . ',' . $transaction_id . ')">
+                                    <i class="fa fa-trash"></i>
+                                </span>';
+                }
+
+                $data[] = [
+                    '<div class="d-flex align-items-start p-2" style="gap:10px;width:100%">
+                        <img src="' . $pimg . '" width="56" height="56" class="rounded shadow-sm" style="object-fit:cover">
+                        <div class="flex-grow-1" style="line-height:1.15">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <span class="badge badge-danger" style="font-size:10px;margin-bottom:3px;">'
+                        . $pv->discount_percent . '% OFF PROMO</span>
+                                    <div style="font-size:14px;font-weight:600;color:#222;margin-bottom:2px;">'
+                        . htmlspecialchars($pv->title) . '
+                                    </div>
+                                    <div class="text-muted" style="font-size:12px;">
+                                        ' . $pv->qty . ' unit(s) &times; &#8369;&nbsp;' . $this->format_price($pv->price_at_add) . '
+                                    </div>
+                                </div>
+                                ' . $p_trash . '
+                            </div>
+                            <div style="margin-top:4px;">
+                                <span class="badge badge-success px-2 py-1" style="font-size:12px;">
+                                    &#8369; ' . $this->format_price($pv->sub_total) . '
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <hr style="margin:4px 0;">'
+                ];
+            }
+
+            // ── Farmer GCash payment method ───────────────────────────────
+            $g_pay = '';
+            if ($q_status == 'PENDING') {
+                // Try gcash from farm produce first, fallback to promo farmer
+                $gcash_details = $this->db->query("
+                    SELECT fpm.*
+                    FROM my_cart_farm_produce mcfp
+                    JOIN farm_produce fp  ON mcfp.farm_produce_id = fp.id
+                    JOIN farmer_farm ff   ON fp.farm_id = ff.id
+                    JOIN farmer f         ON ff.farmer_id = f.id
+                    JOIN farmer_payment_method fpm ON f.person_id = fpm.person_id
+                    WHERE mcfp.transaction_id = $transaction_id LIMIT 1
+                ");
+
+                // If no farm produce gcash, check promo farmer gcash
+                if ($gcash_details->num_rows() == 0) {
+                    $gcash_details = $this->db->query("
+                        SELECT fpm.*
+                        FROM my_cart_promo mcp
+                        JOIN promo_discount pd ON mcp.promo_discount_id = pd.id
+                        JOIN farmer f          ON pd.farmer_id = f.id
+                        JOIN farmer_payment_method fpm ON f.person_id = fpm.person_id
+                        WHERE mcp.transaction_id = $transaction_id LIMIT 1
+                    ");
+                }
+
+                if ($gcash_details->num_rows() > 0) {
+                    $g          = $gcash_details->row();
+                    $gcash_icon = base_url('dist/img/credit/gcash_50x50.png');
+                    $g_pay      = '
+                        <div class="form-check form-check-inline" style="margin-right:10px;">
+                            <input class="form-check-input" type="radio" name="payment_method" id="pay_gcash" value="gcash">
+                            <label class="form-check-label pay_gcash"
+                                data-name="'   . $g->account_name . '"
+                                data-number="' . $g->number . '"
+                                data-qr="'     . $g->qr . '"
+                                for="pay_gcash" style="cursor:pointer;">
+                                <img src="' . $gcash_icon . '" style="width:20px;height:20px;margin-left:5px;"> GCash
+                            </label>
+                        </div>';
+                }
+            }
+
+            // ── Shared summary / checkout / status rows ───────────────────────
+            $percent         = 0.01;
+            $convenience_fee = $subtotal * $percent;
+            $total_payment   = $subtotal + $convenience_fee;
+            $convenience_fee_fmt = '&#8369; ' . $this->format_price($convenience_fee);
+
+            $to_admin_payment = $t_p_id == ''
+                ? '<span class="text-dark"><i class="fa fa-times-circle"></i> To be paid ' . $convenience_fee_fmt . '</span>'
+                : ($t_p_id && $t_p_approved_by == ''
+                    ? '<span class="text-warning"><i class="fa fa-exclamation-circle"></i> To be verified ' . $convenience_fee_fmt . '</span>'
+                    : '<span class="text-success"><i class="fa fa-check-circle"></i> Verified ' . $convenience_fee_fmt . '</span>');
+
+            $to_admin_payment_stat = $t_p_id == '' ? 'TO_BE_PAID'
+                : ($t_p_id && $t_p_approved_by == '' ? 'TO_BE_VERIFIED' : 'VERIFIED');
+
+            if ($q_status == 'PENDING') {
+                // Checkout summary row
+                $data[] = [
+                    '
+                <div class="p-2" style="width:100%;font-size:13px;line-height:1.2">
+                    <div class="mb-2">
+                        <div style="font-weight:600;margin-bottom:4px;">Delivery</div>
+                        <div class="form-check form-check-inline mr-3">
+                            <input class="form-check-input" type="radio" name="delivery_option" id="pickup" value="pickup" checked>
+                            <label class="form-check-label" for="pickup" style="cursor:pointer;">Pick-up</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="delivery_option" id="cod" value="cod">
+                            <label class="form-check-label" for="cod" style="cursor:pointer;">COD (Cash on Delivery)</label>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <div style="font-weight:600;margin-bottom:4px;">Payment</div>
+                        <div class="form-check form-check-inline mr-3">
+                            <input class="form-check-input" type="radio" name="payment_method" id="pay_cash"
+                                data-total="'            . $total_payment . '"
+                                data-trans_id="'         . $transaction_id . '"
+                                data-convenience_fee="'  . $convenience_fee . '"
+                                data-subtotal="'         . $subtotal . '"
+                                data-percentage="'       . $percent . '"
+                                data-to_admin_payment_stat="' . $to_admin_payment_stat . '"
+                                value="cash" checked>
+                            <label class="form-check-label" for="pay_cash" style="cursor:pointer;">
+                                <i class="fa fa-money-bill mr-1"></i> Cash
+                            </label>
+                        </div>
+                        ' . $g_pay . '
+                    </div>
+                    <hr style="margin:6px 0;">
+                    <div class="d-flex justify-content-between"><span>Subtotal</span><span>&#8369; ' . $this->format_price($subtotal) . '</span></div>
+                    <div class="d-flex justify-content-between text-muted">
+                        <span>Fee (1%) <small>(Convenience Fee)</small></span>
+                        <span>' . $to_admin_payment . '</span>
+                    </div>
+                    <hr style="margin:6px 0;">
+                    <div class="d-flex justify-content-between align-items-center p-2 rounded" style="background:#e9f7ef;font-size:15px;">
+                        <span style="font-weight:700;">Total</span>
+                        <span style="font-weight:bold;">&#8369; ' . $this->format_price($total_payment) . '</span>
+                    </div>
+                </div>'
+                ];
+
+                // GCash details box
+                $data[] = [
+                    '
+                <div id="gcashDetailsBox" class="p-3 mt-2 border rounded" style="display:none;font-size:13px;background:#f9fbff;">
+                    <div style="font-weight:600;margin-bottom:6px;">How to Pay via GCash</div>
+                    <ol style="padding-left:18px;margin-bottom:6px;">
+                        <li>Open your <b>GCash</b> app</li>
+                        <li>Tap <b>Scan QR</b> and scan the QR below</li>
+                        <li>Enter the <b>exact amount</b> then confirm</li>
+                        <li>Upload <b>proof of payment</b> below</li>
+                    </ol>
+                    <small class="text-muted">&#9888; Payment will be verified after submission</small>
+                    <hr style="margin:6px 0;">
+                    <div class="text-center mb-2">
+                        <img id="gcashQR" src="" alt="GCash QR" style="max-width:180px;" class="shadow-sm rounded">
+                    </div>
+                    <div class="text-center mb-2">
+                        <div style="font-weight:600;" id="gcashName"></div>
+                        <div class="text-muted" id="gcashNumber"></div>
+                    </div>
+                    <hr style="margin:6px 0;">
+                    <label style="font-weight:600;">Upload Proof of Payment <i style="color:red;">(Required)</i></label>
+                    <input type="file" class="form-control form-control-sm mt-1" name="proof_of_payment" accept="image/*">
+                </div>'
+                ];
+
+                // Checkout button
+                $data[] = ['<button class="btn btn-primary btn-block w-100" onclick="checkout()">
+                <i class="fa fa-shopping-cart mr-1"></i> Checkout
+            </button>'];
+            } else {
+                // Non-pending: show statuses only
+                $data[] = [
+                    '
+                <div class="p-2" style="width:100%;font-size:13px;line-height:1.2">
+                    <div class="mb-2">
+                        <div style="font-weight:600;margin-bottom:4px;">Delivery Status</div>
+                        ' . $this->statusBadge($q_d_status) . '
+                    </div>
+                    <div class="mb-2">
+                        <div style="font-weight:600;margin-bottom:4px;">Payment Status</div>
+                        ' . $this->statusBadge($q_p_status) . '
+                    </div>
+                    <hr style="margin:6px 0;">
+                    <div class="d-flex justify-content-between"><span>Subtotal</span><span>&#8369; ' . $this->format_price($subtotal) . '</span></div>
+                    <div class="d-flex justify-content-between text-muted">
+                        <span>Fee (1%) <small>(Convenience Fee)</small></span>
+                        <span>' . $to_admin_payment . '</span>
+                    </div>
+                    <hr style="margin:6px 0;">
+                    <div class="d-flex justify-content-between align-items-center p-2 rounded" style="background:#e9f7ef;font-size:15px;">
+                        <span style="font-weight:700;">Total</span>
+                        <span style="font-weight:bold;">&#8369; ' . $this->format_price($total_payment) . '</span>
+                    </div>
+                </div>'
+                ];
+
+                if ($q_status == 'RESERVED') {
+                    $data[] = ['<button class="btn btn-danger btn-block w-100" onclick="cancelOrder()">
+                    <i class="fa fa-times mr-1"></i> Cancel Order
+                </button>'];
+                }
+            }
+
+            echo json_encode([
+                'draw'            => intval($requestData['draw']),
+                'recordsTotal'    => 10000,
+                'recordsFiltered' => 10000,
+                'data'            => $data,
+            ]);
         }
-        $response = array(
-            'draw' => intval($requestData['draw']),
-            'recordsTotal' => intval(10000),
-            'recordsFiltered' => intval(10000), // For simplicity, assuming no filtering is applied
-            'data' => $data,
-        );
-        echo json_encode($response);
     }
+
 
     public function payprocessingfee()
     {
@@ -1275,8 +1862,8 @@ class Map extends MY_Controller
                     "transaction_id" => $trans_id,
                     "amount" => $convenience_fee,
                     "img_path" => $upload,
-                    "approved_at" => $dateNow,//for test to be delete
-                    "approved_by" => 1,//for test to be delete
+                    "approved_at" => $dateNow, //for test to be delete
+                    "approved_by" => 1, //for test to be delete
                 ];
             }
         }
@@ -1331,13 +1918,19 @@ class Map extends MY_Controller
             JOIN produce p ON pql.produce_id = p.id")->result();
         if (!empty($check_qty_left)) {
             $item = $check_qty_left[0];
-
             echo json_encode([
                 "success" => false,
                 "message" => "Quantity for {$item->name} left is {$item->qty_left}, not enough!"
             ]);
             return;
         }
+
+        // Add promo subtotal into the overall subtotal for this transaction
+        $promo_sub = $this->db->query(
+            "SELECT COALESCE(SUM(sub_total),0) AS total FROM my_cart_promo WHERE transaction_id = ?",
+            [$transaction_id]
+        )->row()->total;
+        $subtotal = (float)$subtotal + (float)$promo_sub;
 
 
         // FILE (GCash proof)
@@ -1417,10 +2010,31 @@ class Map extends MY_Controller
 
         if ($this->db->insert("transaction_details", $data_transaction_details)) {
             $cp = $this->getTransactionStatus($person_id, 'PENDING', 'client');
-            $true += ["message"   => "Checkout success!", "cart_pending"   => $cp];
+            $true += ["message" => "Checkout success!", "cart_pending" => $cp];
             $ret = $true;
+
+            // 🔔 Notify supplier if this is a supply transaction
+            $trans_check = $this->db->query(
+                "SELECT t.supplier_id, sup.person_id AS supplier_person_id
+                 FROM transaction t
+                 JOIN supplier sup ON t.supplier_id = sup.id
+                 WHERE t.id = ? LIMIT 1",
+                [$transaction_id]
+            )->row();
+
+            if ($trans_check && $trans_check->supplier_person_id) {
+                $buyer_name = $this->getPersonName($person_id);
+                $this->notify(
+                    $trans_check->supplier_person_id,
+                    '🛒 New Order Received!',
+                    "You have a new supply order from {$buyer_name}. Please review and prepare.",
+                    'SUCCESS',
+                    'transaction',
+                    $transaction_id
+                );
+            }
         } else {
-            $false += ["message"   => "Failed to add to cart!"];
+            $false += ["message" => "Failed to add to cart!"];
             $ret = $false;
         }
 

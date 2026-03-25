@@ -10,14 +10,15 @@
 
 
 
-    var map = L.map('map').setView([8.85, 125.65], 11);
+    window._mapFallbackImg = '<?= base_url("dist/img/media/icons/1x1.png") ?>';
+    window.map = L.map('map').setView([8.85, 125.65], 11);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
     // Ensure proper sizing
-    setTimeout(() => map.invalidateSize(), 0);
-    window.addEventListener('resize', () => map.invalidateSize());
+    setTimeout(() => { if(window.map && typeof window.map.invalidateSize==='function') window.map.invalidateSize(); }, 0);
+    window.addEventListener('resize', () => { if(window.map && typeof window.map.invalidateSize==='function') window.map.invalidateSize(); });
     let mapMarkers = [];
     let markerCoords = [];
 
@@ -339,11 +340,7 @@
         var lat = parseFloat(farm.lat);
         var lon = parseFloat(farm.lon);
 
-        var marker = L.marker([lat, lon]).addTo(map);
-        mapMarkers.push(marker);
-        markerCoords.push([lat, lon]);
-
-        // Parse produce array
+        // Parse produce array first (we need image for the pin)
         var produceList = [];
         try {
             produceList = JSON.parse(farm.produce);
@@ -351,7 +348,32 @@
             console.error("Invalid produce JSON:", farm.produce);
         }
 
-        // Farm image (already HTML from your PHP)
+        // Use first produce image as the pin icon
+        var firstProduceImg = (produceList.length > 0 && produceList[0].img_path)
+            ? produceList[0].img_path
+            : null;
+        var farmImgUrl = firstProduceImg || window._mapFallbackImg;
+
+        var pinIcon = L.divIcon({
+            className: '',
+            html: '<div style="position:relative;width:52px;">'
+                + '<div style="width:48px;height:48px;border-radius:50%;overflow:hidden;'
+                + 'border:3px solid #28a745;box-shadow:0 3px 8px rgba(0,0,0,.35);background:#f0fdf4;">'
+                + '<img src="' + farmImgUrl + '" width="48" height="48" '
+                + 'style="object-fit:cover;width:100%;height:100%;" '
+                + 'onerror="this.onerror=null;this.src=window._mapFallbackImg"/>'
+                + '</div>'
+                + '<div style="width:0;height:0;border-left:10px solid transparent;'
+                + 'border-right:10px solid transparent;border-top:12px solid #28a745;'
+                + 'margin:0 auto;"></div></div>',
+            iconSize: [52, 62],
+            iconAnchor: [26, 62],
+            popupAnchor: [0, -65]
+        });
+
+        var marker = L.marker([lat, lon], { icon: pinIcon }).addTo(map);
+
+        // Farm image HTML (for popup)
         var farmImgHtml = farm.farm_img_path ? farm.farm_img_path : "";
 
         // Build produce HTML list with images
@@ -436,8 +458,6 @@
             produceHtml = "<br><i>No produce available</i>";
         }
 
-        // Marker
-        var marker = L.marker([lat, lon]).addTo(map);
         farmCache[farm.id] = farm;
         // Popup with image at the top
         marker.bindPopup(`
@@ -485,6 +505,9 @@
 
                 </div>
             `);
+
+        mapMarkers.push(marker);
+        markerCoords.push([lat, lon]);
 
         // --- hover / keep-open logic ---
         let isOverMarker = false;
@@ -575,9 +598,6 @@
         // optional: remove popupopen listener when marker is removed / if you have cleanup logic
         // --- end hover logic ---
 
-        mapMarkers.push(marker);
-        markerCoords.push([lat, lon]);
-
         if (userLatLng && markerCoords.length > 0) {
             let nearest = null;
             let minDist = Infinity;
@@ -663,7 +683,7 @@
 
                     clearMarkers(); // <–– make sure you have this
 
-                    map.invalidateSize();
+                    if (window.map && typeof window.map.invalidateSize === 'function') window.map.invalidateSize();
                     markerCoords = []; // <–– reset coordinates
 
                     for (var i = 0; i < result.length; i++) {

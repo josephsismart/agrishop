@@ -1063,3 +1063,57 @@
         </div>
     </div>
 </div>
+
+<!-- ══════════════════════════════════════════════════════════
+     PROMO CART MODAL
+══════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="modalPromoCart" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content rounded shadow border-0">
+            <div class="modal-header py-2" style="background:linear-gradient(135deg,#f59e0b,#ef4444);">
+                <h5 class="modal-title text-white mb-0">
+                    <i class="fa fa-tag mr-1"></i> Promo Deal — Add to Cart
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body p-3">
+                <!-- Promo image -->
+                <div class="text-center mb-3">
+                    <img id="promoCartImg" src="" width="100%" height="180"
+                         style="object-fit:cover;border-radius:10px;"
+                         onerror="this.src='<?= base_url('dist/img/media/icons/1x1.png') ?>'">
+                </div>
+                <!-- Badge + Title -->
+                <div class="d-flex align-items-center mb-1">
+                    <span id="promoCartBadge" class="badge badge-danger mr-2" style="font-size:13px;"></span>
+                    <span id="promoCartProduce" class="badge badge-success" style="font-size:11px;"></span>
+                </div>
+                <h6 id="promoCartTitle" class="font-weight-bold mb-1" style="font-size:15px;"></h6>
+                <p id="promoCartDesc" class="text-muted mb-2" style="font-size:12px;"></p>
+
+                <!-- Prices -->
+                <div class="d-flex align-items-baseline mb-1" style="gap:10px;">
+                    <span id="promoCartOrigPrice" style="text-decoration:line-through;color:#9ca3af;font-size:13px;"></span>
+                    <span id="promoCartDiscPrice" style="font-size:22px;font-weight:900;color:#059669;"></span>
+                </div>
+                <div id="promoCartUntil" class="text-warning" style="font-size:11px;font-weight:700;margin-bottom:14px;"></div>
+
+                <hr class="my-2">
+
+                <!-- Qty -->
+                <div class="d-flex align-items-center" style="gap:12px;">
+                    <label class="font-weight-bold mb-0" style="font-size:13px;">Quantity:</label>
+                    <input type="number" id="promoCartQty" value="1" min="1"
+                           class="form-control form-control-sm" style="width:90px;">
+                    <span class="text-muted" style="font-size:12px;">units</span>
+                </div>
+            </div>
+            <div class="modal-footer p-2">
+                <button class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
+                <button class="btn btn-success btn-sm px-4 font-weight-bold" id="btnAddPromoToCart">
+                    🛒 Add to Cart
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

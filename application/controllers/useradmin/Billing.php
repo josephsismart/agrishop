@@ -58,11 +58,12 @@ class Billing extends MY_Controller
 
         // Query to get total record count
         $billing = $this->billing();
-        $thisQuery = $this->db->query("SELECT COUNT(1) AS total
+        $thisQuery = $this->db->query(
+            "SELECT COUNT(1) AS total
                                             FROM ($billing) t1
                                         WHERE t1.is_paid = false 
                                         AND CONCAT(t1.payment_for, t1.total_payment, t1.status, t1.invoice_no) COLLATE utf8mb4_general_ci LIKE '%$searchValue%'"
-                                        );
+        );
 
         $totalRecords = $thisQuery->row()->total;
         $query = $this->db->query("SELECT id, proof_img_path, DATE_FORMAT(created_at,'%m-%d-%Y %h:%i%p') as billing_date, farmer,DATE_FORMAT(paid_at,'%d-%m-%Y') date_paid, payment_for,total_payment, status, status_remarks, invoice_no AS ref FROM ($billing) t1
@@ -75,9 +76,7 @@ class Billing extends MY_Controller
         $cc = $offset + 1;
         foreach ($query->result() as $key => $value) {
             $is_a_v = $value->status;
-            $status_ = $is_a_v == 'PENDING' ? "<span class='badge bg-warning'>PENDING</span>" : 
-                    ($is_a_v == 'FOR_APPROVAL' ? "<span class='badge bg-info'>FOR_APPROVAL</span>" :
-                     ($is_a_v == 'APPROVED' ? "<span class='badge bg-success'>APPROVED</span>" : "<span class='badge bg-danger'>REJECTED</span><br/><small class='wrap-text'>{$value->status_remarks}</small>"));
+            $status_ = $is_a_v == 'PENDING' ? "<span class='badge bg-warning'>PENDING</span>" : ($is_a_v == 'FOR_APPROVAL' ? "<span class='badge bg-info'>FOR_APPROVAL</span>" : ($is_a_v == 'APPROVED' ? "<span class='badge bg-success'>APPROVED</span>" : "<span class='badge bg-danger'>REJECTED</span><br/><small class='wrap-text'>{$value->status_remarks}</small>"));
             $button = $is_a_v == 'FOR_APPROVAL' || $is_a_v == 'APPROVED' ? "<button title='View Details' class='btn btn-sm bg-black view-details' onclick='viewPaymentDetails(\"" . $value->proof_img_path . "\")'><i class='fa fa-paperclip'></i></button>" .
                 " <button title='Approve Payment' class='btn btn-sm bg-success approve-payment' onclick='approvePayment(" . $value->id . "," . $value->total_payment . "," . "\"" . $value->payment_for . "\"," . "\"" . $value->ref . "\")'><i class='fa fa-check'></i></button>" .
                 " <button title='Reject Payment' class='btn btn-sm bg-danger reject-payment' onclick='rejectPayment(" . $value->id . ")'><i class='fa fa-times'></i></button>"
@@ -104,29 +103,47 @@ class Billing extends MY_Controller
 
     function reject_payment()
     {
-        $billing_id = $this->input->post('billing_id');
+        $billing_id       = $this->input->post('billing_id');
         $rejection_reason = $this->input->post('rejection_reason');
-        $true = ["success"   => true];
+        $true = ["success" => true];
 
-        $this->insert_billing_status($billing_id, 'REJECTED', $rejection_reason);
-        $true += ["message"   => "Successfully rejected!"];
-        $ret = $true;
+        // Get farmer_id for notification
+        $b = $this->db->query("SELECT farmer_id FROM invoice_billing WHERE id = ? LIMIT 1", [$billing_id])->row();
 
+        // Update proof_of_payment as rejected
+        $this->db->update("invoice_billing_proof_of_payment", [
+            "is_approved"               => 0,
+            "approved_by_person_id"     => $this->session->agrishop_person_id,
+            "approved_at"               => date('Y-m-d H:i:s'),
+            "remarks"                   => $rejection_reason,
+        ], ["invoice_billing_id" => $billing_id]);
 
-        echo json_encode($ret);
+        // Status → REJECTED (so farmer can resubmit)
+        $this->insert_billing_status($billing_id, 'REJECTED', $rejection_reason, null, $b ? $b->farmer_id : null);
+
+        $true += ["message" => "Payment rejected. Farmer will be notified to resubmit."];
+        echo json_encode($true);
     }
 
     function accept_payment()
     {
-        $billing_id = $this->input->post('billing_id');
-        $true = ["success"   => true];
+        $billing_id  = $this->input->post('billing_id');
+        $payment_for = $this->input->post('payment_for');
+        $farmer_id   = $this->input->post('farmer_id');
+        $true = ["success" => true];
 
-        $this->insert_billing_status($billing_id, 'PAID');
-        $true += ["message"   => "Successfully accepted!"];
-        $ret = $true;
+        // Mark proof as approved
+        $this->db->update("invoice_billing_proof_of_payment", [
+            "is_approved"               => 1,
+            "approved_by_person_id"     => $this->session->agrishop_person_id,
+            "approved_at"               => date('Y-m-d H:i:s'),
+        ], ["invoice_billing_id" => $billing_id]);
 
+        // Status → PAID + extend subscription
+        $this->insert_billing_status($billing_id, 'PAID', null, $payment_for, $farmer_id);
 
-        echo json_encode($ret);
+        $true += ["message" => "Payment approved! Subscription extended."];
+        echo json_encode($true);
     }
 
     function getBillingHistory()
@@ -157,7 +174,7 @@ class Billing extends MY_Controller
         foreach ($query->result() as $key => $value) {
             $is_a_v = $value->status;
             $status_ = $is_a_v == 'PAID' ? "<span class='badge bg-success'>PAID</span>" : "<span class='badge bg-gray'>" . $is_a_v . "</span>";
-            $view= "<button title='View Details' class='btn btn-sm bg-black view-details' onclick='viewPaymentDetails(\"" . $value->proof_img_path . "\")'><i class='fa fa-paperclip'></i></button>";
+            $view = "<button title='View Details' class='btn btn-sm bg-black view-details' onclick='viewPaymentDetails(\"" . $value->proof_img_path . "\")'><i class='fa fa-paperclip'></i></button>";
             $data[] = array(
                 $value->billing_date,
                 "<b>" . $value->farmer . "</b>",

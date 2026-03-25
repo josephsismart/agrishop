@@ -61,6 +61,7 @@ $route['map'] = 'system/Map';
 $route['paybilling'] = 'userfarmer/Billing/paybilling';
 $route['subscribe_application'] = 'ud440aed189/Subscribe/subscribe_application';
 $route['check_subscription'] = 'ud440aed189/Subscribe/check_subscription';
+$route['code'] = 'system/Code';
 $route['login'] = 'system/Login';
 $route['signup'] = 'system/Signup';
 $route['index'] = 'system/Index';
@@ -89,8 +90,22 @@ $route['userfarmer/getIncomingOrders'] = 'userfarmer/Orders/getIncomingOrders';
 $route['check_order_status'] = 'system/Index/status';
 $route['payprocessingfee'] = 'userpublicmap/Map/payprocessingfee';
 
-// $route['save_national'] = 'useradmin/Dataentry/savenational';
-// $route['save_local'] = 'uservalidator/Dataentry/savelocal';
-// $route['get_national'] = 'useradmin/Dataentry/getnational';
-// $route['get_local'] = 'uservalidator/Dataentry/getlocal';
-// $route['get_localN'] = 'useradmin/Dataentry/getlocal';
+$route['getNotificationCount']      = 'system/Login/getNotificationCount';
+$route['getUnreadNotifications']    = 'system/Login/getUnreadNotifications';
+$route['markNotificationsRead']     = 'system/Login/markNotificationsRead';
+
+// Approval / pending flow
+$route['pending']                               = 'system/Pending/index';
+$route['checkApprovalStatus']                   = 'useradmin/Users/checkApprovalStatus';
+
+// Notification endpoints (if not already added)
+$route['getNotificationCount']                  = 'system/Login/getNotificationCount';
+$route['getUnreadNotifications']                = 'system/Login/getUnreadNotifications';
+$route['markNotificationsRead']                 = 'system/Login/markNotificationsRead';
+
+// Supplies shop (public)
+$route['userpublicmap/map/getSuppliesShop']     = 'userpublicmap/Map/getSuppliesShop';
+$route['userpublicmap/map/getSupplyCategories'] = 'userpublicmap/Map/getSupplyCategories';
+$route['userpublicmap/map/addSupplyToCart']     = 'userpublicmap/Map/addSupplyToCart';
+$route['userpublicmap/map/getSupplyCartCount']  = 'userpublicmap/Map/getSupplyCartCount';
+$route['userpublicmap/map/searchSupplier']      = 'userpublicmap/Map/searchSupplier';

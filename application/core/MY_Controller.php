@@ -83,6 +83,21 @@ class MY_Controller extends CI_Controller
         }
     }
 
+    public function getNotificationCount()
+    {
+        $this->getNotificationCount1();
+    }
+
+    public function getUnreadNotifications()
+    {
+        $this->getUnreadNotifications1();
+    }
+
+    public function markNotificationsRead()
+    {
+        $this->markNotificationsRead1();
+    }
+
     public function user_create_page($data = [])
     {
         return $this->load->view('interface/user/layout/Page', $data, false);
@@ -374,205 +389,225 @@ class MY_Controller extends CI_Controller
     public function insert_billing_status($id, $status, $remarks = null, $payment_for = null, $farmer_id = null)
     {
         $person_id = $this->session->agrishop_person_id;
+
+        // Mark previous statuses as not latest
+        $this->db->update("invoice_billing_status", ["is_latest" => 0], ["invoice_billing_id" => $id]);
+
         $this->db->insert("invoice_billing_status", [
-            "invoice_billing_id" => $id,
-            "status" => $status,
-            "remarks" => $remarks,
-            "is_latest" => true,
-            "created_by_person_id" => $person_id,
+            "invoice_billing_id"    => $id,
+            "status"                => $status,
+            "remarks"               => $remarks,
+            "is_latest"             => true,
+            "created_at"            => date('Y-m-d H:i:s'),
+            "created_by_person_id"  => $person_id,
         ]);
-        if ($status == 'PAID') {
+
+        if ($status === 'PAID') {
             $this->db->update("invoice_billing", [
-                "is_paid" => true,
-                "paid_at" => date("Y-m-d H:i:s"),
-                "approved_payment_by_person_id" => $person_id,
-            ], [
-                "id" => $id,
-            ]);
+                "is_paid"                           => true,
+                "paid_at"                           => date("Y-m-d H:i:s"),
+                "approved_payment_by_person_id"     => $person_id,
+            ], ["id" => $id]);
+
+            // ✅ FIX: was inserting into "billing" (wrong table)
+            // Now correctly extends subscription_history
+            if ($payment_for === 'SUBSCRIPTION' && $farmer_id) {
+                // Get last subscription to chain from its end date
+                $last = $this->db->query("
+                    SELECT subscription_to FROM subscription_history
+                    WHERE farmer_id = ? ORDER BY id DESC LIMIT 1
+                ", [$farmer_id])->row();
+
+                $from = $last ? $last->subscription_to : date('Y-m-d');
+                $to   = date('Y-m-d', strtotime($from . ' +1 month'));
+
+                $this->db->insert("subscription_history", [
+                    "farmer_id"             => $farmer_id,
+                    "subscription_type"     => 'REGULAR',
+                    "is_active"             => true,
+                    "subscription_from"     => $from,
+                    "subscription_to"       => $to,
+                    "billing_due_date"      => $to,
+                    "grace_period_days"     => 7,
+                    "created_at"            => date("Y-m-d H:i:s"),
+                    "created_by_person_id"  => $person_id,
+                ]);
+            }
+
+            // Notify the farmer/supplier that payment was approved
+            $this->_notify_payment_approved($id, $payment_for);
         }
 
-        if ($payment_for == 'SUBSCRIPTION' && $status == 'PAID') {
-            $this->db->insert("billing", [
-                "farmer_id" => $farmer_id,
-                "subscription_type" => 'REGULAR',
-                "is_active" => true,
-                "subscription_from" => date("Y-m-d"),
-                "subscription_to" => date("Y-m-d", strtotime("+1 month")),
-                "billing_due_date" => date("Y-m-d", strtotime("+1 month")),
-                "grace_period_days" => 7,
-                "created_at" => date("Y-m-d H:i:s"),
-                "created_by_person_id" => $person_id,
-            ]);
+        if ($status === 'REJECTED') {
+            // Notify the farmer/supplier that payment was rejected
+            $this->_notify_payment_rejected($id, $remarks);
         }
     }
 
-    // public function check_subscription()
-    // {
-    //     $farmer_id = $this->session->agrishop_login_farmer_id;
-    //     if (!$farmer_id) return;
 
-    //     /* 1️⃣ WAITING FOR ADMIN VALIDATION */
-    //     $approved_active = $this->db->query("
-    //     SELECT 1
-    //     FROM farmer_subscription
-    //     WHERE farmer_id = ?
-    //     AND is_latest = true
-    //     AND is_active = true
-    //     AND is_expired = false
-    //     LIMIT 1
-    // ", [$farmer_id])->row();
+    public function insert_supplier_billing_status($id, $status, $remarks = null, $supplier_id = null)
+    {
+        $person_id = $this->session->agrishop_person_id;
 
-    //     if ($approved_active) {
-    //         $this->session->set_userdata([
-    //             "agrishop_login_uri" => "userfarmer",
-    //             "agrishop_login_landing" => "dashboard"
-    //         ]);
-    //         return;
-    //     }
+        $this->db->update("supplier_invoice_billing_status", ["is_latest" => 0], ["invoice_billing_id" => $id]);
 
-    //     /* 1️⃣ WAITING FOR ADMIN VALIDATION */
-    //     $pending = $this->db->query("
-    //     SELECT 1
-    //     FROM farmer_subscription_application
-    //     WHERE farmer_id = ?
-    //     AND checked_at IS NULL
-    //     LIMIT 1
-    // ", [$farmer_id])->row();
+        $this->db->insert("supplier_invoice_billing_status", [
+            "invoice_billing_id"    => $id,
+            "status"                => $status,
+            "remarks"               => $remarks,
+            "is_latest"             => true,
+            "created_at"            => date('Y-m-d H:i:s'),
+            "created_by_person_id"  => $person_id,
+        ]);
 
-    //     if ($pending) {
-    //         $this->session->set_userdata([
-    //             "agrishop_login_uri" => "ud440aed188v",
-    //             "agrishop_login_landing" => "validation"
-    //         ]);
+        if ($status === 'PAID') {
+            $this->db->update("supplier_invoice_billing", [
+                "is_paid"                       => true,
+                "paid_at"                       => date("Y-m-d H:i:s"),
+                "approved_payment_by_person_id" => $person_id,
+            ], ["id" => $id]);
 
-    //         return;
-    //     }
+            if ($supplier_id) {
+                $last = $this->db->query("
+                    SELECT subscription_to FROM supplier_subscription_history
+                    WHERE supplier_id = ? ORDER BY id DESC LIMIT 1
+                ", [$supplier_id])->row();
 
-    //     /* 2️⃣ ACTIVE PAID SUBSCRIPTION */
-    //     $paid = $this->db->query("
-    //     SELECT *
-    //     FROM farmer_subscription
-    //     WHERE farmer_id = ?
-    //     AND is_latest = true
-    //     AND is_active = true
-    //     AND is_expired = false
-    //     AND end_date >= CURRENT_DATE
-    //     LIMIT 1
-    // ", [$farmer_id])->row();
+                $from = $last ? $last->subscription_to : date('Y-m-d');
+                $to   = date('Y-m-d', strtotime($from . ' +1 month'));
 
-    //     if ($paid) {
-    //         return; // ✅ allow normal routing
-    //     }
+                $this->db->insert("supplier_subscription_history", [
+                    "supplier_id"           => $supplier_id,
+                    "subscription_type"     => 'REGULAR',
+                    "is_active"             => true,
+                    "subscription_from"     => $from,
+                    "subscription_to"       => $to,
+                    "billing_due_date"      => $to,
+                    "grace_period_days"     => 7,
+                    "created_at"            => date("Y-m-d H:i:s"),
+                    "created_by_person_id"  => $person_id,
+                ]);
+            }
+        }
+    }
 
-    //     /* 3️⃣ PAID SUB EXPIRED */
-    //     $paid_expired = $this->db->query("
-    //     SELECT *
-    //     FROM farmer_subscription
-    //     WHERE farmer_id = ?
-    //     AND is_latest = true
-    //     AND (is_expired = true OR end_date < CURRENT_DATE)
-    //     LIMIT 1
-    // ", [$farmer_id])->row();
 
-    //     if ($paid_expired) {
-    //         $this->session->set_userdata([
-    //             "agrishop_login_uri" => "ud440aed189",
-    //             "agrishop_login_landing" => "subscribe"
-    //         ]);
-    //         return;
-    //     }
 
-    //     /* 4️⃣ FREE SUBSCRIPTION */
-    //     $free = $this->db->query("
-    //     SELECT *
-    //     FROM farmer_subscription_free
-    //     WHERE farmer_id = ?
-    //     LIMIT 1
-    // ", [$farmer_id])->row();
+    public function notify($person_id, $title, $message, $type = 'INFO', $ref_type = null, $ref_id = null)
+    {
+        if (!$person_id) return;
+        $this->db->insert("notification", [
+            "person_id"      => $person_id,
+            "title"          => $title,
+            "message"        => $message,
+            "type"           => $type,
+            "is_read"        => 0,
+            "reference_type" => $ref_type,
+            "reference_id"   => $ref_id,
+            "created_at"     => date('Y-m-d H:i:s'),
+        ]);
+    }
 
-    //     if ($free) {
-    //         if (date('Y-m-d') > $free->ended_at) {
-    //             $this->db->query("
-    //             UPDATE farmer_subscription_free
-    //             SET is_expired = true
-    //             WHERE farmer_id = ?
-    //         ", [$farmer_id]);
+    public function getUnreadNotifications1()
+    {
+        $person_id = $this->session->agrishop_person_id;
+        if (!$person_id) {
+            echo json_encode([]);
+            return;
+        }
+        $rows = $this->db->query("
+            SELECT id, title, message, type, reference_type, reference_id,
+                   DATE_FORMAT(created_at, '%b %d %h:%i%p') AS time_ago
+            FROM notification
+            WHERE person_id = ? AND is_read = 0
+            ORDER BY created_at DESC
+            LIMIT 20
+        ", [$person_id])->result();
+        echo json_encode($rows);
+    }
 
-    //             $this->session->set_userdata([
-    //                 "agrishop_login_uri" => "ud440aed189",
-    //                 "agrishop_login_landing" => "subscribe"
-    //             ]);
-    //         }
-    //         return;
-    //     }
+    public function markNotificationsRead1()
+    {
+        $person_id = $this->session->agrishop_person_id;
+        if (!$person_id) return;
+        $this->db->update("notification", ["is_read" => 1], ["person_id" => $person_id]);
+        echo json_encode(["success" => true]);
+    }
 
-    //     /* 5️⃣ NO SUBSCRIPTION AT ALL */
-    //     $this->session->set_userdata([
-    //         "agrishop_login_uri" => "ud440aed189",
-    //         "agrishop_login_landing" => "subscribe"
-    //     ]);
-    // }
+    public function getNotificationCount1()
+    {
+        $person_id = $this->session->agrishop_person_id;
+        if (!$person_id) {
+            echo json_encode(["count" => 0]);
+            return;
+        }
+        $row = $this->db->query("
+            SELECT COUNT(1) AS count FROM notification
+            WHERE person_id = ? AND is_read = 0
+        ", [$person_id])->row();
+        echo json_encode(["count" => (int) $row->count]);
+    }
 
-    // public function check_subscription()
-    // {
-    //     $farmer_id = $this->session->agrishop_login_farmer_id;
-    //     $data = $this->db->query("SELECT * FROM farmer_subscription_application WHERE farmer_id = " . $farmer_id . " AND checked_at IS NULL")->row();
+    // Internal: notify farmer/supplier on payment approved
+    private function _notify_payment_approved($billing_id, $payment_for)
+    {
+        // Get farmer person_id from billing
+        $b = $this->db->query("
+            SELECT ib.farmer_id, f.person_id
+            FROM invoice_billing ib
+            JOIN farmer f ON ib.farmer_id = f.id
+            WHERE ib.id = ? LIMIT 1
+        ", [$billing_id])->row();
 
-    //     if ($data) {
-    //         $data_session = [
-    //             "agrishop_login_uri" => "ud440aed188v",
-    //             "agrishop_login_landing" => "Validation"
-    //         ];
-    //         $this->session->set_userdata($data_session);
-    //     }
+        if ($b && $b->person_id) {
+            $this->notify(
+                $b->person_id,
+                'Payment Approved ✅',
+                'Your ' . ($payment_for ?: 'billing') . ' payment has been verified and approved.',
+                'SUCCESS',
+                'invoice_billing',
+                $billing_id
+            );
+        }
+    }
 
-    //     #check farmer subscription
-    //     if ($farmer_id) {
-    //         $chck2 = $this->db->query("SELECT f.id,DATE_FORMAT(fsf.ended_at,'yyyy-mm-dd') AS free_end_at, fsf.confirmed AS free_confirmed, fsf.is_expired AS free_expired,
-    //                                         fs2.start_date, fs2.end_date,fs2.is_active,fs2.is_expired ,fs2.is_latest, fsa.checked, fsa.checked_at
-    //                                         FROM farmer AS f
-    //                                         JOIN farmer_subscription_free fsf ON f.id = fsf.farmer_id
-    //                                         LEFT JOIN (SELECT * FROM farmer_subscription WHERE is_latest = true) fs2 ON f.id= fs2.farmer_id
-    //                                         LEFT JOIN farmer_subscription_application fsa ON fs2.farmer_application_subscription_id = fsa.id
-    //                                         WHERE f.id = ?", array($farmer_id));
-    //         if ($chck2->num_rows() > 0) {
-    //             $row2 = $chck2->row();
+    // Internal: notify farmer/supplier on payment rejected
+    private function _notify_payment_rejected($billing_id, $reason)
+    {
+        $b = $this->db->query("
+            SELECT ib.farmer_id, f.person_id
+            FROM invoice_billing ib
+            JOIN farmer f ON ib.farmer_id = f.id
+            WHERE ib.id = ? LIMIT 1
+        ", [$billing_id])->row();
 
-    //             if (date('Y-m-d') > $row2->free_end_at && $row2->end_date == null) {
-    //                 $this->db->query("UPDATE farmer_subscription_free SET is_expired = true WHERE farmer_id = $farmer_id");
-    //                 $data += [
-    //                     "agrishop_login_sub_free_expired" => 't',
-    //                     "agrishop_login_uri" => 'ud440aed189',
-    //                     "agrishop_login_landing" => 'subscribe',
-    //                 ];
-    //             } else if ($row2->is_expired == true) {
-    //                 $data += [
-    //                     "agrishop_login_sub_free_expired" => 't',
-    //                     "agrishop_login_uri" => 'ud440aed189',
-    //                     "agrishop_login_landing" => 'subscribe',
-    //                 ];
-    //             } else {
-    //                 $data += [
-    //                     "agrishop_login_sub_free_expired" => 'f',
-    //                     "agrishop_login_uri"        => ($this->session->agrishop_login_change_pwd == 't' ? "ud440aed189" : ($this->session->agrishop_login_level == 0 ? "useradmin" : ($this->session->agrishop_login_level == 1 ? "userconsumer" : ($this->session->agrishop_login_level == 2 ? "userfarmer" : "")))),
-    //                     "agrishop_login_landing"    => $this->session->agrishop_login_change_pwd == 't' ? "changepassword" : ($this->session->agrishop_login_level == 2 ? "dashboard" : "dataentry"),
-    //                 ];
-    //             }
+        if ($b && $b->person_id) {
+            $this->notify(
+                $b->person_id,
+                'Payment Rejected ❌',
+                'Your payment was rejected. Reason: ' . ($reason ?: 'No reason given') . '. Please submit a new proof of payment.',
+                'DANGER',
+                'invoice_billing',
+                $billing_id
+            );
+        }
+    }
 
-    //             if ($row2->end_date !== null && date('Y-m-d') >= $row2->end_date) {
-    //                 $data += [
-    //                     "agrishop_login_uri" => 'ud440aed189',
-    //                     "agrishop_login_landing" => 'subscribe',
-    //                 ];
-    //             }
-    //         }
-    //     }
+    // ── PATCH 5: Order notification helper ────────────────────
+    // Call this from FarmProduce/Orders when a new order arrives (RESERVED status)
+    // ADD this method:
 
-    //     // $farmer_id = $this->session->agrishop_login_farmer_id;
-    //     // $data = $this->db->query("SELECT * FROM farmer_subscription WHERE farmer_id = " . $farmer_id . " AND is_active = true AND is_latest = true")->row();
-    //     // return $data;
-    // }
-
+    public function notify_new_order($farmer_person_id, $transaction_id)
+    {
+        $this->notify(
+            $farmer_person_id,
+            'New Order Received 🛒',
+            'You have a new order waiting for your confirmation.',
+            'INFO',
+            'transaction',
+            $transaction_id
+        );
+    }
 
 
     public function price_qty_left()
@@ -1357,15 +1392,15 @@ class MY_Controller extends CI_Controller
 
     public function defaultImage($img_path_, $produce_id)
     {
-            $query = $this->db->query("SELECT pc.img_path as default_img FROM produce p
+        $query = $this->db->query("SELECT pc.img_path as default_img FROM produce p
                                         JOIN produce_classification pc ON p.produce_classification_id = pc.id
                                         WHERE p.id = $produce_id LIMIT 1");
-            $default_img_path = $query->row("default_img");
-     
-            return (!empty($img_path_) && file_exists(FCPATH . $img_path_))
-                ? base_url($img_path_)
-                : base_url($default_img_path);
-    }   
+        $default_img_path = $query->row("default_img");
+
+        return (!empty($img_path_) && file_exists(FCPATH . $img_path_))
+            ? base_url($img_path_)
+            : base_url($default_img_path);
+    }
 
     public function scanlog($x, $type, $scanned_id, $io, $g_name, $g_id)
     {

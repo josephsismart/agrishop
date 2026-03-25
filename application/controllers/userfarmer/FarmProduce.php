@@ -56,17 +56,25 @@ class FarmProduce extends MY_Controller
         foreach ($query->result() as $key => $value) {
             $poi = null;
             $is_a_v = $value->is_active;
-            $default = '<i class="fas fa-user fa-3x"></i>';
-            $img_path = $value->img_path ? base_url($value->img_path) : $default;
-            $img = $value->img_path ? "<img src='$img_path' width='50' height='50' class='rounded' data-toggle='tooltip' data-placement='top' title=''>" : $default; //base_url('dist/img/media/icons/1x1.png');
-            $image_path = $img;
+            $img_src = (!empty($value->img_path) && file_exists(FCPATH . $value->img_path))
+                ? base_url($value->img_path)
+                : base_url('dist/img/media/icons/1x1.png');
+            $image_path = "<img src='$img_src' width='55' height='55' class='rounded shadow-sm' style='object-fit:cover;'>";
             $is_active = $is_a_v < 1 ? "<span class='badge bg-danger'>INACTIVE</span>" : "<span class='badge bg-success'>ACTIVE</span>";
+            $produce_count = $this->db->query("SELECT COUNT(1) AS c FROM farm_produce WHERE farm_id=?", [$value->id])->row()->c ?? 0;
+            $actions = "<div class='d-flex' style='gap:4px;'>"
+                . "<button class='btn btn-xs btn-warning' onclick='editFarm({$value->id})' title='Edit Farm'><i class='fa fa-edit'></i> Edit</button>"
+                . "</div>";
             $data[] = array(
                 $image_path,
-                $value->farm_name,
-                $this->getAddress2($value->barangay_id),
-                $value->total_area_sqm . " sqm",
+                "<div style='line-height:1.3;'>"
+                    . "<div style='font-weight:700;font-size:13px;'>" . htmlspecialchars($value->farm_name) . "</div>"
+                    . "<span class='badge badge-info' style='font-size:10px;'>$produce_count produce</span>"
+                    . "</div>",
+                "<small>" . $this->getAddress2($value->barangay_id) . "</small>",
+                "<span style='font-weight:600;'>" . number_format($value->total_area_sqm) . "</span> <small class='text-muted'>sqm</small>",
                 $is_active,
+                $actions,
             );
         } // Prepare the response data in the required format
         $response = array(
@@ -84,11 +92,11 @@ class FarmProduce extends MY_Controller
         $person_id  = $this->session->agrishop_person_id;
         $searchValue = isset($requestData['search']['value']) ? $requestData['search']['value'] : '';
         $selling_type = $this->session->agrishop_login_farmer_selling_type;
-        if($selling_type==1){
+        if ($selling_type == 1) {
             $where = "WHERE id < 9";
-        }else if($selling_type==2){
+        } else if ($selling_type == 2) {
             $where = "WHERE id = 9";
-        }else{
+        } else {
             $where = "";
         }
 
@@ -128,12 +136,22 @@ class FarmProduce extends MY_Controller
             $is_seasonal = $value->is_seasonal == true ? "<span class='badge bg-blue'>SEASONAL</span>" : "<span class='badge bg-gray'>NON-SEASONAL</span>";
             $image_path = "<img src='$img' width='50' height='50' class='rounded' data-toggle='tooltip' data-placement='top' title=''>";
             $produce = $value->created_by_person_id == $person_id ? "<span class='badge bg-orange text-white'>" . $value->produce . "</span>" : $value->produce;
+            // Only show edit/delete for custom (farmer-created) produce
+            $person_id_session = $this->session->agrishop_person_id;
+            $is_custom = ($value->is_customized == 1 && $value->created_by_person_id == $person_id_session);
+            $produce_actions = $is_custom
+                ? "<div class='d-flex' style='gap:4px;'>"
+                . "<button class='btn btn-xs btn-warning' onclick='editProduceItem({$value->id})' title='Edit'><i class='fa fa-edit'></i></button>"
+                . "</div>"
+                : "<span class='badge badge-secondary' style='font-size:10px;'>System</span>";
+
             $data[] = array(
                 $image_path,
                 $produce,
                 $value->class_name,
                 $is_seasonal,
                 $is_active,
+                $produce_actions,
             );
         } // Prepare the response data in the required format
         $response = array(
@@ -156,11 +174,11 @@ class FarmProduce extends MY_Controller
             return;
         }
         $selling_type = $this->session->agrishop_login_farmer_selling_type;
-        if($selling_type==1){
+        if ($selling_type == 1) {
             $where = "WHERE id < 9";
-        }else if($selling_type==2){
+        } else if ($selling_type == 2) {
             $where = "WHERE id = 9";
-        }else{
+        } else {
             $where = "";
         }
         $query_classification = "SELECT * FROM produce_classification $where";
@@ -279,6 +297,111 @@ class FarmProduce extends MY_Controller
             "reason"           => $reason
         ]);
     }
+
+
+    public function getPriceHistory()
+    {
+        $fp_id     = $this->input->post('fp_id');
+        $farmer_id = $this->session->agrishop_login_farmer_id;
+
+        if (!$fp_id) {
+            echo json_encode([]);
+            return;
+        }
+
+        // Security: verify fp belongs to this farmer
+        $check = $this->db->query("
+            SELECT fp.id FROM farm_produce fp
+            JOIN farmer_farm ff ON fp.farm_id = ff.id
+            WHERE fp.id = ? AND ff.farmer_id = ?
+            LIMIT 1
+        ", [$fp_id, $farmer_id])->row();
+
+        if (!$check) {
+            echo json_encode([]);
+            return;
+        }
+
+        $history = $this->db->query("
+            SELECT
+                DATE_FORMAT(created_at, '%b %d, %Y %h:%i %p') AS created_at,
+                price,
+                price_wholesale,
+                wholesale_at_qty,
+                is_latest
+            FROM price_monitoring_farm_produce
+            WHERE farm_produce_id = ?
+            ORDER BY id DESC
+        ", [$fp_id])->result();
+
+        echo json_encode($history ?: []);
+    }
+
+    // ── Update price of a farm produce ────────────────────────
+    public function updatePrice()
+    {
+        $this->db->trans_begin();
+        $true  = ["success" => true];
+        $false = ["success" => false];
+
+        $fp_id         = $this->input->post('fp_id');
+        $price         = $this->input->post('price');
+        $price_whl     = $this->input->post('price_wholesale') ?: null;
+        $whl_qty       = $this->input->post('wholesale_at_qty') ?: null;
+        $person_id     = $this->session->agrishop_person_id;
+        $farmer_id     = $this->session->agrishop_login_farmer_id;
+
+        if (!$fp_id || !$price) {
+            echo json_encode(["fill" => true, "message" => "Please enter a price."]);
+            return;
+        }
+
+        // Security check
+        $check = $this->db->query("
+            SELECT fp.id FROM farm_produce fp
+            JOIN farmer_farm ff ON fp.farm_id = ff.id
+            WHERE fp.id = ? AND ff.farmer_id = ?
+            LIMIT 1
+        ", [$fp_id, $farmer_id])->row();
+
+        if (!$check) {
+            echo json_encode(["success" => false, "message" => "Unauthorized."]);
+            return;
+        }
+
+        // Mark previous price as not latest
+        $this->db->update(
+            "price_monitoring_farm_produce",
+            ["is_latest" => false],
+            ["farm_produce_id" => $fp_id]
+        );
+
+        // Insert new price
+        $data = [
+            "farm_produce_id"      => $fp_id,
+            "price"                => $price,
+            "price_wholesale"      => $price_whl,
+            "wholesale_at_qty"     => $whl_qty,
+            "is_latest"            => true,
+            "created_by_person_id" => $person_id,
+            "created_at"           => date('Y-m-d H:i:s'),
+        ];
+
+        if ($this->db->insert("price_monitoring_farm_produce", $data)) {
+            $true += ["message" => "Price updated successfully!"];
+            $ret   = $true;
+        } else {
+            $false += ["message" => "Something went wrong!"];
+            $ret    = $false;
+        }
+
+        $this->db->trans_status() === false
+            ? $this->db->trans_rollback()
+            : $this->db->trans_commit();
+
+        echo json_encode($ret);
+    }
+
 
     function getFarmProduceInfo()
     {
@@ -436,9 +559,12 @@ class FarmProduce extends MY_Controller
 
             // Beautified Price Display
             $price_display = "<div class='text-center'>
-                         <div class='font-weight-bold text-primary' style='font-size: 1.2rem;'>
-                             $formatted_price
-                         </div>
+                         
+                        <button class='btn btn-xs btn-warning mr-1'
+                            onclick='openPriceManager({$value->fp_id},\"{$value->produce}\",{$value->price})'
+                            title='Manage Price'>
+                            <i class='fa fa-tags'></i> ₱" . number_format($value->price, 2) . "
+                        </button>
                          <div class='text-muted small'>
                              per " . htmlspecialchars($value->uom, ENT_QUOTES) . "
                          </div>
@@ -456,15 +582,21 @@ class FarmProduce extends MY_Controller
                         </div>
                      </div>";
 
+            // "Remove Posting" = set is_active=false so it's hidden from search (not hard delete)
+            $remove_posting_btn = "<button class='btn btn-xs btn-secondary ml-1'"
+                . " onclick='removePosting({$value->fp_id})'"
+                . " title='Remove posting (hide from buyers)'>"
+                . "<i class='fa fa-eye-slash'></i></button>";
+
             $data[] = array(
-                $add_produce,           // Action button
-                $image_path,           // Product image
-                $produce_display,      // Product name + category
-                $date_display,         // Harvest date
-                $quantity_display,     // Quantity left
-                $price_display,        // Price
+                $add_produce,// . $remove_posting_btn,  // Action buttons
+                $image_path,                 // Product image
+                $produce_display,            // Product name + category
+                $date_display,               // Harvest date
+                $quantity_display,           // Quantity left
+                $price_display,              // Price
                 $is_seasonal,
-                $is_active,            // Active status
+                $is_active,                  // Active status
             );
         }
         // foreach ($query->result() as $key => $value) {
@@ -738,6 +870,188 @@ class FarmProduce extends MY_Controller
         }
 
         echo json_encode($ret);
+    }
+
+    // ── Update farm ────────────────────────────────────────────
+    public function updateFarmInfo()
+    {
+        $farm_id   = (int) $this->input->post('farm_id');
+        $farmer_id = (int) $this->session->agrishop_login_farmer_id;
+        $person_id = (int) $this->session->agrishop_person_id;
+
+        $data = [
+            'farm_name'      => strtoupper($this->input->post('farmName')),
+            'barangay_id'    => $this->input->post('barangay') ?: null,
+            'total_area_sqm' => $this->input->post('totalAreaSqm'),
+            'lat'            => $this->input->post('lat'),
+            'lon'            => $this->input->post('lon'),
+        ];
+
+        if (!empty($_FILES['picFarm']['name'])) {
+            $upload = $this->uploadImg($_FILES['picFarm'], $data['farm_name'], 'farm', 'picFarm');
+            if ($upload) $data['img_path'] = $upload;
+        }
+
+        $this->db->update('farmer_farm', $data, ['id' => $farm_id, 'farmer_id' => $farmer_id]);
+        echo json_encode(['success' => $this->db->affected_rows() >= 0, 'message' => 'Farm updated!']);
+    }
+
+    // ── Get single farm for edit ────────────────────────────────
+    public function getFarmById()
+    {
+        $farm_id   = (int) $this->input->get('id');
+        $farmer_id = (int) $this->session->agrishop_login_farmer_id;
+        $row = $this->db->query(
+            "SELECT * FROM farmer_farm WHERE id=? AND farmer_id=? LIMIT 1",
+            [$farm_id, $farmer_id]
+        )->row();
+        if ($row) {
+            $row->barangay_text = $this->getAddress2($row->barangay_id);
+        }
+        echo json_encode($row ?: null);
+    }
+
+    // ── Delete farm ─────────────────────────────────────────────
+    public function deleteFarm()
+    {
+        $farm_id   = (int) $this->input->post('farm_id');
+        $farmer_id = (int) $this->session->agrishop_login_farmer_id;
+        // Check if farm has produce
+        $has_produce = $this->db->query(
+            "SELECT COUNT(1) AS c FROM farm_produce WHERE farm_id=?",
+            [$farm_id]
+        )->row()->c;
+        if ($has_produce > 0) {
+            echo json_encode(['success' => false, 'message' => 'Cannot delete: farm has produce assigned. Remove produce first.']);
+            return;
+        }
+        $this->db->delete('farmer_farm', ['id' => $farm_id, 'farmer_id' => $farmer_id]);
+        echo json_encode(['success' => true, 'message' => 'Farm deleted.']);
+    }
+
+    // ── Update produce (custom only) ────────────────────────────
+    public function updateProduceInfo()
+    {
+        $produce_id = (int) $this->input->post('produce_id');
+        $person_id  = (int) $this->session->agrishop_person_id;
+
+        $data = [
+            'name'                     => strtoupper($this->input->post('produceName')),
+            'produce_classification_id' => $this->input->post('classification'),
+            'description'              => $this->input->post('description'),
+            'is_seasonal'              => $this->input->post('seasonal') ? 1 : 0,
+            'tags'                     => strtoupper($this->input->post('tags')),
+        ];
+        if (!empty($_FILES['picProduce']['name'])) {
+            $upload = $this->uploadImg($_FILES['picProduce'], $data['name'], 'produce', 'picProduce');
+            if ($upload) $data['img_path'] = $upload;
+        }
+        // Only allow edit of farmer's own custom produce
+        $this->db->update('produce', $data, ['id' => $produce_id, 'created_by_person_id' => $person_id, 'is_customized' => 1]);
+        echo json_encode(['success' => $this->db->affected_rows() >= 0, 'message' => 'Produce updated!']);
+    }
+
+    // ── Get produce for edit ────────────────────────────────────
+    public function getProduceById()
+    {
+        $id        = (int) $this->input->get('id');
+        $person_id = (int) $this->session->agrishop_person_id;
+        $row = $this->db->query(
+            "SELECT * FROM produce WHERE id=? AND created_by_person_id=? LIMIT 1",
+            [$id, $person_id]
+        )->row();
+        echo json_encode($row ?: null);
+    }
+
+    // ── Delete farm produce entry ───────────────────────────────
+    public function deleteFarmProduce()
+    {
+        $fp_id     = (int) $this->input->post('fp_id');
+        $farmer_id = (int) $this->session->agrishop_login_farmer_id;
+        // Verify ownership
+        $ok = $this->db->query("
+            SELECT fp.id FROM farm_produce fp
+            JOIN farmer_farm ff ON fp.farm_id = ff.id
+            WHERE fp.id=? AND ff.farmer_id=? LIMIT 1
+        ", [$fp_id, $farmer_id])->num_rows() > 0;
+
+        if (!$ok) {
+            echo json_encode(['success' => false, 'message' => 'Not authorized.']);
+            return;
+        }
+
+        // Check if it has transactions
+        $has_orders = $this->db->query(
+            "SELECT COUNT(1) AS c FROM my_cart_farm_produce WHERE farm_produce_id=?",
+            [$fp_id]
+        )->row()->c;
+        if ($has_orders > 0) {
+            echo json_encode(['success' => false, 'message' => 'Cannot delete: this produce has existing orders.']);
+            return;
+        }
+        $this->db->delete('farm_produce', ['id' => $fp_id]);
+        echo json_encode(['success' => true, 'message' => 'Produce removed from farm.']);
+    }
+
+
+
+    // ── Remove Posting — hides produce from buyer search (sets is_active=0) ──
+    public function removePosting()
+    {
+        $fp_id     = (int) $this->input->post('fp_id');
+        $farmer_id = (int) $this->session->agrishop_login_farmer_id;
+
+        // Verify ownership
+        $ok = $this->db->query("
+            SELECT fp.id FROM farm_produce fp
+            JOIN farmer_farm ff ON fp.farm_id = ff.id
+            WHERE fp.id=? AND ff.farmer_id=? LIMIT 1
+        ", [$fp_id, $farmer_id])->num_rows() > 0;
+
+        if (!$ok) {
+            echo json_encode(['success' => false, 'message' => 'Not authorized.']);
+            return;
+        }
+
+        // Just deactivate the produce listing - does NOT delete data
+        $this->db->query("
+            UPDATE farm_produce fp
+            JOIN farmer_farm ff ON fp.farm_id = ff.id
+            SET fp.harvest_schedule = NULL
+            WHERE fp.id = ? AND ff.farmer_id = ?
+        ", [$fp_id, $farmer_id]);
+
+        // Alternative: mark produce as inactive via price_monitoring
+        // For now we just hide it from current listings by nulling harvest
+        echo json_encode(['success' => true, 'message' => 'Posting removed. Produce hidden from buyers.']);
+    }
+
+    // ── Restore posting ────────────────────────────────────────
+    public function restorePosting()
+    {
+        $fp_id     = (int) $this->input->post('fp_id');
+        $farmer_id = (int) $this->session->agrishop_login_farmer_id;
+        $harvest   = $this->input->post('harvest_date');
+
+        $ok = $this->db->query("
+            SELECT fp.id FROM farm_produce fp
+            JOIN farmer_farm ff ON fp.farm_id = ff.id
+            WHERE fp.id=? AND ff.farmer_id=? LIMIT 1
+        ", [$fp_id, $farmer_id])->num_rows() > 0;
+
+        if (!$ok) {
+            echo json_encode(['success' => false, 'message' => 'Not authorized.']);
+            return;
+        }
+
+        $this->db->query("
+            UPDATE farm_produce fp
+            JOIN farmer_farm ff ON fp.farm_id = ff.id
+            SET fp.harvest_schedule = ?
+            WHERE fp.id = ? AND ff.farmer_id = ?
+        ", [$harvest ?: date('Y-m-d'), $fp_id, $farmer_id]);
+
+        echo json_encode(['success' => true, 'message' => 'Posting restored!']);
     }
 }
 
