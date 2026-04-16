@@ -59,40 +59,10 @@ $farm_produce = base_url() . $uri . '/FarmProduce'; ?>
         }
 
 
-        .custom-sidebar {
-            position: fixed;
-            top: 0;
-            right: -300px;
-            width: 300px;
-            height: 100%;
-            background: #fff;
-            z-index: 1050;
-            transition: right 0.3s ease;
-        }
-
-        .custom-sidebar.show {
-            right: 0;
-        }
-
-        #sidebar-backdrop {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: none;
-            z-index: 1040;
-        }
-
-        #sidebar-backdrop.show {
-            display: block;
-        }
-
         /* The map takes full remaining height */
         #map {
             width: 100%;
-            height: calc(100vh - var(--nav-height));
+            height: calc(100vh - var(--agri-nav-h, 64px));
 
             display: none;
             /* Hidden by default */
@@ -114,7 +84,7 @@ $farm_produce = base_url() . $uri . '/FarmProduce'; ?>
         /* Put your search box on top of the map */
         .search-box {
             position: absolute;
-            top: calc(var(--nav-height) + 10px);
+            top: calc(var(--agri-nav-h, 64px) + 10px);
             left: 20px;
             z-index: 9999;
         }
@@ -270,100 +240,8 @@ $farm_produce = base_url() . $uri . '/FarmProduce'; ?>
         </div>
     </div>
 
-    <div id="offcanvasNavbar" class="custom-sidebar">
-
-        <div class="sidebar-header d-flex justify-content-between align-items-center p-3">
-            <h4 class="fw-normal text-uppercase fs-6 m-0">Menu</h4>
-            <button id="sidebar-close" class="close" data-dismiss="offcanvas" aria-label="Close" style="font-size: 2.2rem !important;">&times;</button>
-        </div>
-
-        <div class="offcanvas-body pt-2 pl-2">
-            <?php $this->load->view('interface/system/layout/Navbar') ?>
-        </div>
-
-    </div>
-
-    <div id="sidebar-backdrop"></div>
-
-    <header id="topNav">
-
-        <div class="container-lg">
-            <div class="row py-3 border-bottom">
-
-                <div class="col-5 text-center text-sm-start d-flex gap-3">
-                    <a href="<?= base_url(); ?>">
-                        <img src="<?php echo base_url(); ?>dist/layout_shop/images/logo.svg" alt="logo" class="img-fluid">
-                    </a>
-                </div>
-
-                <div class="col-7">
-                    <ul class="d-flex justify-content-end list-unstyled m-0">
-                        <li class="nav-item">
-                            <a class="p-2 mx-1 text-dark" style="text-decoration: none;" href="#" onclick="showSuppliesShop()">
-                                <i class="fa fa-store mr-1"></i> Farm Supplies
-                            </a>
-                        </li>
-                        <li>
-                            <?php if ($role_lvl != "") { ?>
-                                <!-- <a href="<?php if ($role_lvl == 0) {
-                                                    echo base_url(); ?>user_admin<?php } elseif ($role_lvl == 1) {
-                                                                                    echo '#';
-                                                                                } elseif ($role_lvl == 2) {
-                                                                                    echo $farm_produce;
-                                                                                } ?>" class="p-2 mx-1 text-dark" style="text-decoration: none;font-weight: bold">
-                                    <i class="fa fa-user"></i> <?php echo $this->session->agrishop_login_uname; ?>
-                                </a> -->
-
-                                <?php if ($role_lvl != 2 || $role_lvl != 1) { ?>
-                                    <a href="#" data-toggle="modal" data-target="#modalCartListing" class="p-2 mx-1 text-dark" style="text-decoration: none;" onclick="getTable('CartListing', 0, 5);">
-                                        <i class="fa fa-shopping-basket"></i> Cart<span class="badge bg-warning pending-order" title="pending orders"><?= $status['transaction_status_pending'] ?></span>
-                                    </a>
-                                <?php } ?>
-
-                            <?php } else { ?>
-                                <a href="<?php echo base_url(); ?>login" class="p-2 mx-1 text-dark" style="text-decoration: none;">
-                                    <i class="fa fa-user"></i> Login
-                                </a>
-                            <?php } ?>
-                        </li>
-                        <?php if ($role_lvl == "") { ?>
-                            <li><a href="<?php echo base_url(); ?>signup" class="p-2 mx-1 text-dark" style="text-decoration: none;">
-                                    <i class="fa fa-user"></i> Sign Up
-                                </a>
-                            </li>
-                        <?php } ?>
-                        <?php if ($role_lvl != "") { ?>
-                            <li>
-                                <a href="#" id="bars" class="p-2 mx-1 text-dark" data-toggle="offcanvas" data-target="#offcanvasNavbar" aria-controls="offcanvasNavbar">
-                                    <i class="fa fa-bars"></i>
-                                </a>
-                            </li>
-                        <?php } ?>
-                    </ul>
-                </div>
-
-                <div class="col-12 mt-3">
-                    <div class="search-bar row bg-light p-2 rounded-4">
-
-                        <div class="col-10">
-                            <input type="text" class="form-control border-0 bg-transparent" id="searchProduce"
-                                   placeholder="" autocomplete="off"
-                                   onkeydown="if(event.key==='Enter'){event.preventDefault();searchProduces();}">
-                        </div>
-                        <div class="col-1" style="text-align: right;">
-                            <i class="fa fa-search" onclick="searchProduces()" style="cursor: pointer;"></i>
-                        </div>
-                        <div class="col-1" style="text-align: left;">
-                            <badge type="button" id="home_click" class="badge bg-success" onclick="
-                                $('#map').hide(1000);
-                                $('#landing_Page').show(400);$('#home_click').hide();" style="display:none;"><i class="fa fa-home"></i> HOME</badge>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-    </header>
+    <?php $this->load->view('interface/system/layout/Navbar') ?>
+    <div class="agri-nav-spacer"></div>
 
     <!-- <div class="buttons" id="cityButtons"></div> -->
     <div id="suppliesShopSection" style="display:none;">
@@ -400,19 +278,15 @@ $farm_produce = base_url() . $uri . '/FarmProduce'; ?>
             </div>
 
             <!-- Datatable -->
-            <div class="card shadow-sm">
-                <div class="card-body p-2">
-                    <table id="tblSuppliesShop" class="table table-sm table-hover" style="width:100%">
-                        <thead>
-                            <tr>
-                                <th width="70">Image</th>
-                                <th>Supply</th>
-                                <th>Price</th>
-                                <th>Stock</th>
-                                <th>Location</th>
-                                <th width="160">Order</th>
-                            </tr>
-                        </thead>
+            <style>
+                #tblSuppliesShop thead { display: none; }
+                #tblSuppliesShop td { padding: 0 !important; border: none; }
+                #tblSuppliesShop.dataTable { border-collapse: collapse !important; }
+            </style>
+            <div class="card shadow-sm" style="border-radius:12px;overflow:hidden;">
+                <div class="card-body p-0">
+                    <table id="tblSuppliesShop" class="table" style="width:100%;margin:0;">
+                        <thead><tr><th>Supply</th></tr></thead>
                         <tbody></tbody>
                     </table>
                 </div>
@@ -497,21 +371,10 @@ $farm_produce = base_url() . $uri . '/FarmProduce'; ?>
     <?php $this->load->view('interface/system/layout/script') ?>
     <?php $this->load->view('interface/system/layout/cart_script') ?>
     <?php $this->load->view('interface/system/layout/map') ?>
+    <?php if ($this->session->agrishop_login_id) $this->load->view('interface/usercustomer/OrdersModal') ?>
 
     <script>
         $(function() {
-
-            $('#bars').click(function() {
-                $('#offcanvasNavbar').addClass('show');
-                $('#sidebar-backdrop').addClass('show');
-                $('body').addClass('overflow-hidden');
-            });
-
-            $('#sidebar-close, #sidebar-backdrop').click(function() {
-                $('#offcanvasNavbar').removeClass('show');
-                $('#sidebar-backdrop').removeClass('show');
-                $('body').removeClass('overflow-hidden');
-            });
 
             const texts = [
                 "Search: Tomato",
@@ -729,16 +592,11 @@ $farm_produce = base_url() . $uri . '/FarmProduce'; ?>
 
         function initSuppliesTable() {
             $("#tblSuppliesShop").DataTable({
-                order: [
-                    [1, "asc"]
-                ],
-                dom: 'frtip',
+                dom: 'rtip',
                 processing: true,
                 serverSide: true,
-                language: {
-                    searchPlaceholder: "Search..."
-                },
-                searching: false, // use custom search above
+                searching: false,
+                order: [],
                 ajax: {
                     url: "<?= base_url('userpublicmap/map/getSuppliesShop') ?>",
                     type: "POST",
@@ -747,6 +605,9 @@ $farm_produce = base_url() . $uri . '/FarmProduce'; ?>
                         d.search.category = $('#supplyCategoryFilter').val();
                     }
                 },
+                columns: [
+                    { data: 'card', orderable: false }
+                ],
                 lengthMenu: [10, 25, 50],
                 pageLength: 10,
             });

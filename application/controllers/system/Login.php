@@ -174,6 +174,10 @@ class Login extends MY_Controller
                     "agrishop_login_img"                 => $img,
                     "agrishop_pending_trans_count"       => $this->getTransactionStatus($person_id, 'PENDING', 'client'),
 
+                    // Role approval flags (derived from $uri resolved above)
+                    "agrishop_is_approved_farmer"        => ($uri === 'userfarmer')   ? 1 : 0,
+                    "agrishop_is_approved_supplier"      => ($uri === 'usersupplier') ? 1 : 0,
+
                     // Farmer-specific
                     "agrishop_login_farmer_id"           => $row1->farmer_id,
                     "agrishop_login_farmer_selling_type" => $row1->farmer_selling_type,
@@ -201,7 +205,11 @@ class Login extends MY_Controller
                 } elseif ($uri === 'system' && $landing === 'pending') {
                     // Unapproved farmer/supplier — go to pending page
                     redirect(base_url('pending'));
-                } elseif (in_array($row1->level, [2, 3, 4])) {
+                } elseif ($row1->level == 2 || $row1->level == 4) {
+                    // Farmers and suppliers land on the main index —
+                    // they shop as customers and access their panel via the Manage dropdown
+                    redirect(base_url('index'));
+                } elseif ($row1->level == 3) {
                     redirect(base_url($uri . '/' . $landing));
                 } else {
                     redirect(base_url('index'));

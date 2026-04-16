@@ -246,7 +246,7 @@ class Orders extends MY_Controller
         $subtotal = 0;
 
         foreach ($rows as $value) {
-            $pricing  = $value->is_wholesale == 't' ? $value->price_wholesale : $value->price;
+            $pricing  = $value->is_wholesale ? $value->price_wholesale : $value->price;
             $price    = $pricing * $value->qty;
             $subtotal += $price;
 
@@ -254,7 +254,7 @@ class Orders extends MY_Controller
                 ? base_url($value->img_path)
                 : base_url('dist/img/media/icons/1x1.png');
 
-            $wholesale_badge = $value->is_wholesale == 't'
+            $wholesale_badge = $value->is_wholesale
                 ? ' <span class="badge badge-secondary" style="font-size:10px;">wholesale</span>'
                 : '';
 

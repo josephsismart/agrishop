@@ -4,12 +4,6 @@
     let status_ = null;
     const farmCache = {};
     document.addEventListener("DOMContentLoaded", function() {
-        const nav = document.getElementById("topNav");
-        const navHeight = nav.offsetHeight;
-
-        // Set CSS variable dynamically
-        document.documentElement.style.setProperty('--nav-height', navHeight + 'px');
-
         // If the map already exists, refresh size
         setTimeout(() => {
             if (window.map) map.invalidateSize();
@@ -179,7 +173,10 @@
                     }
                     if (formId == "PayProcessingFee") {
                         $('#modalProcessingFeeModal').modal('hide');
-                        getTable('CartDetails', 1, 1000);
+                        // Mark fee as paid so checkout() skips the fee modal on auto-call
+                        $('#pay_cash').data('to_admin_payment_stat', 'TO_BE_VERIFIED');
+                        // Auto-proceed to checkout — no need to click Checkout again
+                        checkout();
                     }
                 } else if (d.exist == true) {
                     existAlert("Application already exist!");

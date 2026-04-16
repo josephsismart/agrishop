@@ -374,7 +374,20 @@
         var marker = L.marker([lat, lon], { icon: pinIcon }).addTo(map);
 
         // Farm image HTML (for popup)
-        var farmImgHtml = farm.farm_img_path ? farm.farm_img_path : "";
+        var farmImgHtml = farm.farm_img_url
+            ? `<img src="${farm.farm_img_url}" width="220" style="width:100%;height:110px;object-fit:cover;border-radius:10px 10px 0 0;display:block;">`
+            : "";
+
+        // Farmer info HTML
+        var farmerHtml = `
+            <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#f8faf5;border-radius:8px;margin-bottom:8px;">
+                <img src="${farm.farmer_img_url || 'dist/img/media/icons/1x1.png'}"
+                     style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #28a745;flex-shrink:0;">
+                <div style="min-width:0;">
+                    <div style="font-weight:700;font-size:12px;line-height:1.2;">${farm.farmer_name || '—'}</div>
+                    <div style="font-size:11px;color:#6c757d;">Farmer / Owner</div>
+                </div>
+            </div>`;
 
         // Build produce HTML list with images
         var produceHtml = "";
@@ -461,48 +474,46 @@
         farmCache[farm.id] = farm;
         // Popup with image at the top
         marker.bindPopup(`
-                <div style="max-width:240px;">
+                <div style="max-width:250px;padding:0;overflow:hidden;">
 
-                    <!-- Farm Image -->
-                    <div class="mb-2 text-center">
-                        ${farmImgHtml}
+                    <!-- Farm Banner Image -->
+                    ${farmImgHtml}
+
+                    <div style="padding:10px 12px 12px;">
+
+                        <!-- Farm Name -->
+                        <div style="font-weight:800;font-size:15px;color:#1a1a1a;margin-bottom:2px;">
+                            <i class="fa fa-store" style="color:#f59e0b;margin-right:4px;"></i>${farm.farm_name}
+                        </div>
+
+                        <!-- Location -->
+                        <div style="font-size:11px;color:#6c757d;margin-bottom:10px;">
+                            <i class="fa fa-map-marker-alt" style="color:#dc3545;margin-right:3px;"></i>${farm.farm_location}
+                        </div>
+
+                        <!-- Farmer Info -->
+                        ${farmerHtml}
+
+                        <!-- Action Buttons -->
+                        <div style="display:flex;gap:6px;margin-bottom:10px;">
+                            <button class="btn btn-primary btn-sm" style="flex:1;font-size:12px;"
+                                onclick="orderNow(${farm.id})">
+                                <i class="fa fa-shopping-cart mr-1"></i> Order Now
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" style="flex:1;font-size:12px;"
+                                onclick="routeToFarm(${lat}, ${lon})">
+                                <i class="fa fa-route mr-1"></i> View Route
+                            </button>
+                        </div>
+
+                        <hr style="margin:8px 0;">
+
+                        <!-- Produce List -->
+                        <div style="font-size:12px;">
+                            ${produceHtml}
+                        </div>
+
                     </div>
-
-                    <!-- Farm Name -->
-                    <div class="text-center mb-1">
-                        <span class="badge bg-warning text-dark" style="font-size:14px;">
-                            ${farm.farm_name}
-                        </span>
-                    </div>
-
-                    <!-- Location -->
-                    <div class="text-center mb-2">
-                        <small class="fw-bold">${farm.farm_location}</small><br>
-                        <small class="text-muted">
-                            Coordinates: ${lat}, ${lon}
-                        </small>
-                    </div>
-
-                    <!-- Action Buttons -->
-                    <div class="d-flex justify-content-between mb-2">
-                        <button class="btn btn-primary btn-sm flex-fill me-1"
-                            onclick="orderNow(${farm.id})">
-                            Order Now
-                        </button>
-
-                        <button class="btn btn-outline-secondary btn-sm flex-fill ms-1"
-                            onclick="routeToFarm(${lat}, ${lon})">
-                            View Route
-                        </button>
-                    </div>
-
-                    <hr class="my-2">
-
-                    <!-- Produce List -->
-                    <div style="font-size:12px;">
-                        ${produceHtml}
-                    </div>
-
                 </div>
             `);
 

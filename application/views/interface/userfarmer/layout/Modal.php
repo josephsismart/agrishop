@@ -477,13 +477,34 @@ $uri = $this->session->agrishop_login_uri;
                 </button>
             </div>
 
-            <?= form_open(base_url($uri . '/FarmProduce/saveFarmProduce'), 'id="form_save_dataFarmProduceSupply"'); ?>
+            <?= form_open_multipart(base_url($uri . '/FarmProduce/saveFarmProduce'), 'id="form_save_dataFarmProduceSupply"'); ?>
 
             <input name="farmId" hidden>
             <input name="produceSelectedId" hidden>
 
             <!-- BODY -->
             <div class="modal-body p-2 mb-n3">
+
+                <!-- Image Upload -->
+                <div class="card mb-3 border-success">
+                    <div class="card-body p-2">
+                        <label class="form-label text-dark font-weight-bold mb-1 d-block" style="font-size:1rem;">
+                            <i class="fas fa-camera mr-2 text-success"></i>Produce Photo <span class="text-muted font-weight-normal" style="font-size:.85rem;">(optional)</span>
+                        </label>
+                        <div class="d-flex align-items-center gap-3" style="gap:12px;">
+                            <img id="fpImgPreview" src="<?= base_url('dist/img/media/icons/1x1.png') ?>"
+                                 style="width:80px;height:80px;object-fit:cover;border-radius:10px;border:2px solid #d1fae5;background:#f9fafb;" alt="Preview">
+                            <div class="flex-grow-1" style="flex:1;">
+                                <label for="fpImgInput" class="btn btn-outline-success btn-sm w-100 mb-1" style="cursor:pointer;">
+                                    <i class="fas fa-upload mr-1"></i> Choose Photo
+                                </label>
+                                <input type="file" id="fpImgInput" name="picProduce" accept="image/*" class="d-none">
+                                <small class="text-muted d-block" style="font-size:.8rem;">JPG, PNG up to 5MB</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Step 1: Select Produce -->
                 <div class="card mb-4 border-success">
                     <div class="card-header bg-light-success py-2">
@@ -707,12 +728,24 @@ $uri = $this->session->agrishop_login_uri;
         }
     });
 
+    // Image preview
+    $(document).on('change', '#fpImgInput', function() {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) { $('#fpImgPreview').attr('src', e.target.result); };
+            reader.readAsDataURL(file);
+        }
+    });
+
     // Reset modal state on close
     $('#modalFarmProduceSupply').on('hidden.bs.modal', function() {
         // $('#varietyField').hide();
         $('#aiPricePanel').hide();
         $('#btnToggleAiPrice').html('<i class="fas fa-robot mr-1"></i> Show Suggested Market Price');
         $('input[name="variety"]').val('');
+        $('#fpImgPreview').attr('src', '<?= base_url('dist/img/media/icons/1x1.png') ?>');
+        $('#fpImgInput').val('');
     });
 </script>
 
@@ -1389,6 +1422,69 @@ $uri = $this->session->agrishop_login_uri;
                 <button type="button" class="btn btn-success btn-sm w-100 mt-3" onclick="updateStatus('payment',$('#paymentStatus').val())"><i class="fas fa-check"></i> Update Status</button>
             </div>
 
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     UNIFIED ORDER STATUS MODAL
+════════════════════════════════════════════════ -->
+<div class="modal fade" id="modalUpdateOrderStatus" tabindex="-1" data-backdrop="static" role="dialog">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content shadow-lg fm-modal-content">
+            <div class="modal-header fm-modal-header">
+                <h5 class="modal-title mb-0">
+                    <i class="fa fa-clipboard-check mr-2"></i> Update Order Status
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body pb-2">
+                <input type="hidden" id="updateStatusTransId">
+
+                <div class="fm-section-card mb-2">
+                    <label class="fm-form-label">
+                        <i class="fa fa-clipboard-list mr-1" style="color:#16a34a;"></i> Order Status
+                    </label>
+                    <div class="text-muted small mb-1">Current: <strong id="curOrderStatus">—</strong></div>
+                    <select id="selOrderStatus" class="form-control fm-form-control form-control-sm">
+                        <option value="">— Keep current —</option>
+                    </select>
+                </div>
+
+                <div class="fm-section-card mb-2">
+                    <label class="fm-form-label">
+                        <i class="fa fa-truck mr-1" style="color:#0891b2;"></i> Delivery Status
+                    </label>
+                    <div class="text-muted small mb-1">Current: <strong id="curDeliveryStatus">—</strong></div>
+                    <select id="selDeliveryStatus" class="form-control fm-form-control form-control-sm">
+                        <option value="">— Keep current —</option>
+                        <option value="TO_PICKUP">TO PICKUP</option>
+                        <option value="TO_DELIVER">TO DELIVER</option>
+                        <option value="ON_THE_WAY">ON THE WAY</option>
+                        <option value="DELIVERED">DELIVERED</option>
+                    </select>
+                </div>
+
+                <div class="fm-section-card mb-0">
+                    <label class="fm-form-label">
+                        <i class="fa fa-money-bill mr-1" style="color:#16a34a;"></i> Payment Status
+                    </label>
+                    <div class="text-muted small mb-1">Current: <strong id="curPaymentStatus">—</strong></div>
+                    <select id="selPaymentStatus" class="form-control fm-form-control form-control-sm">
+                        <option value="">— Keep current —</option>
+                        <option value="UNPAID">UNPAID</option>
+                        <option value="VERIFYING">VERIFYING</option>
+                        <option value="PAID">PAID</option>
+                        <option value="FAILED">FAILED</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer py-2" style="background:#f0fdf4;border-top:1.5px solid #d1fae5;">
+                <button class="btn btn-outline-secondary btn-sm" data-dismiss="modal">Cancel</button>
+                <button class="fm-btn-save" id="btnSaveAllStatuses" onclick="saveAllStatuses()" style="width:auto;padding:7px 22px;font-size:13px;">
+                    <i class="fa fa-save mr-1"></i> Save
+                </button>
+            </div>
         </div>
     </div>
 </div>

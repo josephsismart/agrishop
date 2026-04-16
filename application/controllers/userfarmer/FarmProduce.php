@@ -801,6 +801,13 @@ class FarmProduce extends MY_Controller
 
         if ($this->db->insert("farm_produce", $data)) {
             $farm_produce_id = $this->db->insert_id();
+
+            // Handle produce image upload
+            if (isset($_FILES['picProduce']) && $_FILES['picProduce']['error'] === UPLOAD_ERR_OK) {
+                $upload = $this->uploadImg($_FILES['picProduce'], 'produce_' . $produceSelectedId, 'produce', 'picProduce');
+                $this->db->update('produce', ['img_path' => $upload], ['id' => $produceSelectedId]);
+            }
+
             $data_price_monitor = [
                 "farm_produce_id" => $farm_produce_id,
                 "price" => $price,

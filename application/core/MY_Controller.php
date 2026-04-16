@@ -139,7 +139,7 @@ class MY_Controller extends CI_Controller
         // if (isset($this->session->agrishop_login_id) && $this->uri->segment(1) == "" || $this->uri->segment(1) == "login" || $this->uri->segment(1) == "map") {
         if (isset($this->session->agrishop_login_id) && $this->uri->segment(1) == "" || $this->uri->segment(1) == "login" || $this->uri->segment(1) == "map") {
             if ($level != "") {
-                if ($uri == "userconsumer") {
+                if ($uri == "userconsumer" || $uri == "userfarmer" || $uri == "usersupplier" || $uri == "") {
                     redirect(base_url('index'));
                 } else {
                     redirect(base_url($uri . '/' . $landing));

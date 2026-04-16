@@ -100,12 +100,14 @@ class Map extends MY_Controller
             $farm_image_path = "<img src='$farm_image' width='50' height='50' class='rounded pr-2' data-toggle='tooltip' data-placement='top' title=''>";
             $farmer_image_path = "<img src='$farmer_image' width='50' height='50' class='rounded pr-2' data-toggle='tooltip' data-placement='top' title=''>";
             $data[] = [
-                "id"    => $value->farm_id,
-                "farm_img_path"    => $farm_image_path,
+                "id"           => $value->farm_id,
+                "farm_img_path"  => $farm_image_path,
+                "farm_img_url"   => $farm_image,
                 "farm_name"    => $value->farm_name,
-                "farm_location"    => $farm_address,
+                "farm_location"  => $farm_address,
                 "farmer_img_path" => $farmer_image_path,
-                "farmer_name" => $value->farmer_name,
+                "farmer_img_url"  => $farmer_image,
+                "farmer_name"  => $value->farmer_name,
                 "lat"  => $value->lat,
                 "lon"  => $value->lon,
                 "produce"    => $value->produce,
@@ -163,38 +165,79 @@ class Map extends MY_Controller
             return;
         }
 
+        // Category colour map
+        $catColors = [
+            'PESTICIDE'  => ['bg' => '#fef3c7', 'color' => '#92400e'],
+            'SEEDS'      => ['bg' => '#d1fae5', 'color' => '#065f46'],
+            'TOOLS'      => ['bg' => '#dbeafe', 'color' => '#1e40af'],
+            'FEEDS'      => ['bg' => '#ede9fe', 'color' => '#5b21b6'],
+            'FERTILIZER' => ['bg' => '#fce7f3', 'color' => '#9d174d'],
+            'EQUIPMENT'  => ['bg' => '#e0f2fe', 'color' => '#0369a1'],
+        ];
+
         $data = [];
         foreach ($query->result() as $v) {
-            $img = (!empty($v->img_path) && file_exists(FCPATH . $v->img_path))
-                ? "<img src='" . base_url($v->img_path) . "' width='60' height='60' class='rounded' style='object-fit:cover;'>"
-                : "<div style='width:60px;height:60px;background:#f0f0f0;border-radius:8px;display:flex;align-items:center;justify-content:center;'><i class='fa fa-box text-muted fa-2x'></i></div>";
+            $catKey = strtoupper($v->category);
+            $catBg  = isset($catColors[$catKey]) ? $catColors[$catKey]['bg']    : '#f3f4f6';
+            $catFg  = isset($catColors[$catKey]) ? $catColors[$catKey]['color']  : '#374151';
 
-            $stock_color = $v->qty_available <= 10 ? 'text-danger' : 'text-success';
-            $location    = $v->store_name ? "{$v->store_name}" . ($v->address_text ? " — {$v->address_text}" : '') : '—';
+            if (!empty($v->img_path) && file_exists(FCPATH . $v->img_path)) {
+                $imgHtml = "<img src='" . base_url($v->img_path) . "' style='width:72px;height:72px;object-fit:cover;border-radius:10px;flex-shrink:0;'>";
+            } else {
+                $imgHtml = "<div style='width:72px;height:72px;background:#f0fdf4;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;'><i class='fa fa-seedling' style='color:#16a34a;font-size:28px;'></i></div>";
+            }
 
-            $data[] = [
-                $img,
-                "<div>
-                    <div style='font-weight:600;font-size:14px;'>" . htmlspecialchars($v->name) . "</div>
-                    " . ($v->brand ? "<small class='text-muted'>" . htmlspecialchars($v->brand) . "</small>" : "") . "
-                    <br><span class='badge badge-secondary' style='font-size:11px;'>{$v->category}</span>
-                 </div>",
-                "₱ " . number_format($v->price, 2) . "<br><small class='text-muted'>per {$v->uom}</small>",
-                "<span class='$stock_color font-weight-bold'>" . number_format($v->qty_available) . " {$v->uom}</span>",
-                "<small>" . htmlspecialchars($location) . "</small>",
-                "<div class='d-flex align-items-center' style='gap:4px;'>
-                    <input type='number' id='qty_{$v->id}' min='1' max='{$v->qty_available}'
-                           value='1' class='form-control form-control-sm' style='width:65px;'>
-                    <button class='btn btn-sm btn-warning'
-                        onclick='addSupplyToCartShop({$v->id}, {$v->price}, \"qty_{$v->id}\", " . json_encode(htmlspecialchars($v->name)) . ")'>
-                        <i class='fa fa-cart-plus'></i>
-                    </button>
-                    " . ($v->lat ? "<button class='btn btn-sm btn-outline-secondary'
-                        onclick='viewOnMap({$v->lat},{$v->lon},\"" . addslashes($v->store_name) . "\")'>
-                        <i class='fa fa-map-marker-alt'></i>
-                    </button>" : "") . "
-                 </div>",
-            ];
+            $stockBg    = $v->qty_available <= 10 ? '#fee2e2' : '#d1fae5';
+            $stockColor = $v->qty_available <= 10 ? '#991b1b' : '#065f46';
+            $stockIcon  = $v->qty_available <= 10 ? 'fa-exclamation-circle' : 'fa-check-circle';
+            $location   = $v->store_name ? htmlspecialchars($v->store_name) . ($v->address_text ? ' · ' . htmlspecialchars($v->address_text) : '') : '—';
+
+            $mapBtn = $v->lat
+                ? "<button onclick='viewOnMap({$v->lat},{$v->lon},\"" . addslashes($v->store_name) . "\")' "
+                .  "style='display:inline-flex;align-items:center;justify-content:center;padding:6px 10px;border:1px solid #d1d5db;border-radius:8px;background:#fff;color:#374151;cursor:pointer;font-size:12px;'>"
+                .  "<i class='fa fa-map-marker-alt'></i></button>"
+                : '';
+
+            $nameEncoded = json_encode(htmlspecialchars($v->name));
+
+            $card = "
+<div style='display:flex;align-items:flex-start;gap:14px;padding:14px 16px;border-bottom:1px solid #f1f5f9;'>
+  {$imgHtml}
+  <div style='flex:1;min-width:0;'>
+
+    <!-- Row 1: name + category badge -->
+    <div style='display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;'>
+      <span style='font-weight:700;font-size:14px;color:#111827;'>" . htmlspecialchars($v->name) . "</span>
+      <span style='background:{$catBg};color:{$catFg};font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap;'>{$v->category}</span>
+    </div>
+
+    <!-- Row 2: brand + location -->
+    <div style='font-size:12px;color:#6b7280;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'>
+      " . ($v->brand ? "<span style='font-weight:500;color:#374151;'>" . htmlspecialchars($v->brand) . "</span> &nbsp;·&nbsp; " : '') . "
+      <i class='fa fa-map-marker-alt' style='color:#ef4444;font-size:10px;'></i> {$location}
+    </div>
+
+    <!-- Row 3: price | stock | qty + buttons -->
+    <div style='display:flex;align-items:center;gap:8px;flex-wrap:wrap;'>
+      <span style='background:#f0fdf4;color:#15803d;font-weight:700;font-size:14px;padding:4px 10px;border-radius:20px;'>
+        ₱" . number_format($v->price, 2) . " <span style='font-size:11px;font-weight:400;'>/ {$v->uom}</span>
+      </span>
+      <span style='background:{$stockBg};color:{$stockColor};font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;'>
+        <i class='fa {$stockIcon}' style='margin-right:2px;'></i>" . number_format($v->qty_available) . " {$v->uom}
+      </span>
+      <input type='number' id='qty_{$v->id}' min='1' max='{$v->qty_available}' value='1'
+             style='width:58px;padding:4px 6px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;text-align:center;'>
+      <button onclick='addSupplyToCartShop({$v->id},{$v->price},\"qty_{$v->id}\",{$nameEncoded})'
+              style='display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:#f59e0b;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;'>
+        <i class='fa fa-cart-plus'></i> Add
+      </button>
+      {$mapBtn}
+    </div>
+
+  </div>
+</div>";
+
+            $data[] = ['card' => $card];
         }
 
         echo json_encode([
@@ -1562,7 +1605,7 @@ class Map extends MY_Controller
             ");
 
             foreach ($items->result() as $v) {
-                $pricing   = $v->is_wholesale == 't' ? $v->price_wholesale : $v->price;
+                $pricing   = $v->is_wholesale ? $v->price_wholesale : $v->price;
                 $price     = $pricing * $v->qty;
                 $subtotal += $price;
                 $img       = $v->img_path
@@ -1578,7 +1621,7 @@ class Map extends MY_Controller
                               </span>';
                 }
 
-                $ws_badge = $v->is_wholesale == 't'
+                $ws_badge = $v->is_wholesale
                     ? ' <span class="badge badge-secondary" style="font-size:10px;">wholesale</span>'
                     : '';
 
@@ -1699,7 +1742,7 @@ class Map extends MY_Controller
                             <label class="form-check-label pay_gcash"
                                 data-name="'   . $g->account_name . '"
                                 data-number="' . $g->number . '"
-                                data-qr="'     . $g->qr . '"
+                                data-qr="'     . base_url($g->qr) . '"
                                 for="pay_gcash" style="cursor:pointer;">
                                 <img src="' . $gcash_icon . '" style="width:20px;height:20px;margin-left:5px;"> GCash
                             </label>

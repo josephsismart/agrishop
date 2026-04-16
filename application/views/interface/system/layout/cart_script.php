@@ -102,9 +102,6 @@
         $("#modalOrderProduce [name=farmerImage]").html(data.farmer_img_path);
     }
 
-    $(".checkout-btn").click(function() {
-        alert('a')
-    });
 
 
 

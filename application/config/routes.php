@@ -82,6 +82,13 @@ $route['search-barangay'] = 'userpublicmap/map/search_barangay';
 $route['search-barangay-caraga'] = 'userpublicmap/map/search_barangay_caraga';
 $route['save-rating'] = 'userpublicmap/map/save_rating';
 
+// User Customer Routes
+$route['usercustomer/Orders']             = 'usercustomer/Orders/index';
+$route['usercustomer/Orders/getOrders']   = 'usercustomer/Orders/getOrders';
+$route['usercustomer/Orders/getTracking'] = 'usercustomer/Orders/getTracking';
+$route['usercustomer/Orders/cancelOrder']  = 'usercustomer/Orders/cancelOrder';
+$route['usercustomer/Orders/saveRating']   = 'usercustomer/Orders/saveRating';
+
 // User Farmer Routes
 $route['userfarmer/orders'] = 'userfarmer/Orders';
 $route['userfarmer/accept_order'] = 'userfarmer/Orders/accept_order';
